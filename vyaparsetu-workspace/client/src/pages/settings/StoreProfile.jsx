@@ -1,0 +1,3 @@
+export default function StoreProfile() {
+  return <div className="p-6"><h1>StoreProfile Module</h1><p>Real module logic goes here.</p></div>;
+}
