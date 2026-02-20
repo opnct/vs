@@ -210,7 +210,7 @@ export default function Layout() {
     route_statements = ""
 
     for page in pages:
-        # Create React File for each page
+        # Create React File for each page (Notice the double curly braces {{18}} to prevent python f-string errors)
         component_code = f"""
 import React from 'react';
 import {{ ArrowRight, CheckCircle2, Store }} from 'lucide-react';
@@ -287,9 +287,18 @@ export default function App() {{
 """
     create_file(f"{base}/src/App.jsx", app_jsx)
 
-    print(f"\n✅ Website successfully generated with 50+ Real React Router Pages!")
-    print("Run `cd website`, `npm install`, then `npm run dev`.")
-    print("This folder is fully Vercel-compatible via the vercel.json configuration.")
+    # ==========================================
+    # 5. PRINT EXACT TERMINAL COMMANDS
+    # ==========================================
+    print("\n" + "="*60)
+    print("🎉 BOOM! YOUR 50+ PAGE REACT WEBSITE IS GENERATED!")
+    print("="*60)
+    print("\n👉 COPY AND PASTE THESE EXACT 3 COMMANDS INTO YOUR TERMINAL:\n")
+    print("cd website")
+    print("npm install")
+    print("npm run dev -- --host") 
+    print("\n(Note: The '-- --host' flag ensures it works perfectly in GitHub Codespaces)")
+    print("="*60 + "\n")
 
 if __name__ == "__main__":
     generate_website()
