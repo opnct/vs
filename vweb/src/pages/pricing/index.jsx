@@ -9,13 +9,9 @@ export default function Pricing() {
       <h1 className="text-5xl font-black text-gray-900 mb-6">Simple, honest pricing.</h1>
       <p className="text-xl text-gray-500 mb-10">Start for free, upgrade when you need advanced features.</p>
       
-      {/* Toggle Logic */}
       <div className="flex items-center justify-center gap-4 mb-16">
         <span className={`font-bold ${!isAnnual ? 'text-gray-900' : 'text-gray-400'}`}>Monthly Billing</span>
-        <button 
-          onClick={() => setIsAnnual(!isAnnual)}
-          className="w-16 h-8 bg-blue-600 rounded-full relative p-1 transition-colors"
-        >
+        <button onClick={() => setIsAnnual(!isAnnual)} className="w-16 h-8 bg-blue-600 rounded-full relative p-1 transition-colors">
           <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform ${isAnnual ? 'translate-x-8' : 'translate-x-0'}`}></div>
         </button>
         <span className={`font-bold ${isAnnual ? 'text-gray-900' : 'text-gray-400'}`}>Annual Billing <span className="text-green-500 text-xs ml-1">(Save 20%)</span></span>

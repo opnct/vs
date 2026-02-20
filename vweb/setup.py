@@ -8,7 +8,7 @@ def create_file(path, content):
     print(f"✅ Created: {path}")
 
 def build_pages():
-    print("🚀 Generating 50+ Real React Pages & Overwriting Configs...")
+    print("🚀 Generating 50+ Real React Pages in Subfolders & Overwriting Configs...")
     base = "website"
 
     # ==========================================
@@ -163,8 +163,8 @@ export default function Layout() {
     # 3. INTERACTIVE CUSTOM PAGES (Home, Pricing, Contact)
     # ==========================================
     
-    # HOME PAGE (With complex UI)
-    create_file(f"{base}/src/pages/Home.jsx", """
+    # HOME PAGE - Note: using single {20} because this is a raw python string (""") not an f-string (f""")
+    create_file(f"{base}/src/pages/home/index.jsx", """
 import React from 'react';
 import { ArrowRight, ShieldCheck, TrendingUp, Store, Users, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -172,7 +172,6 @@ import { Link } from 'react-router-dom';
 export default function Home() {
   return (
     <div className="animate-in fade-in duration-500">
-      {/* Hero */}
       <header className="pt-24 pb-20 px-6 md:px-12 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12">
         <div className="flex-1 text-center lg:text-left">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold mb-6 border border-blue-100">
@@ -187,7 +186,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
             <Link to="/pricing" className="bg-blue-600 text-white text-lg font-bold px-8 py-4 rounded-xl shadow-xl hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
-              Start Free Trial <ArrowRight size={{20}}/>
+              Start Free Trial <ArrowRight size={20}/>
             </Link>
             <Link to="/contact" className="bg-white text-gray-800 border-2 border-gray-200 text-lg font-bold px-8 py-4 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-all flex items-center justify-center">
               Request Demo
@@ -216,7 +215,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Value Props */}
       <section className="py-24 bg-white border-y border-gray-100">
         <div className="max-w-7xl mx-auto px-6 md:px-12 text-center">
           <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-16">Everything you need to succeed.</h2>
@@ -244,8 +242,8 @@ export default function Home() {
 }
 """)
 
-    # PRICING PAGE (Interactive React Logic)
-    create_file(f"{base}/src/pages/Pricing.jsx", """
+    # PRICING PAGE
+    create_file(f"{base}/src/pages/pricing/index.jsx", """
 import React, { useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 
@@ -257,13 +255,9 @@ export default function Pricing() {
       <h1 className="text-5xl font-black text-gray-900 mb-6">Simple, honest pricing.</h1>
       <p className="text-xl text-gray-500 mb-10">Start for free, upgrade when you need advanced features.</p>
       
-      {/* Toggle Logic */}
       <div className="flex items-center justify-center gap-4 mb-16">
         <span className={`font-bold ${!isAnnual ? 'text-gray-900' : 'text-gray-400'}`}>Monthly Billing</span>
-        <button 
-          onClick={() => setIsAnnual(!isAnnual)}
-          className="w-16 h-8 bg-blue-600 rounded-full relative p-1 transition-colors"
-        >
+        <button onClick={() => setIsAnnual(!isAnnual)} className="w-16 h-8 bg-blue-600 rounded-full relative p-1 transition-colors">
           <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform ${isAnnual ? 'translate-x-8' : 'translate-x-0'}`}></div>
         </button>
         <span className={`font-bold ${isAnnual ? 'text-gray-900' : 'text-gray-400'}`}>Annual Billing <span className="text-green-500 text-xs ml-1">(Save 20%)</span></span>
@@ -309,8 +303,8 @@ export default function Pricing() {
 }
 """)
 
-    # CONTACT PAGE (Interactive Form Logic)
-    create_file(f"{base}/src/pages/Contact.jsx", """
+    # CONTACT PAGE - Note: using single {64} because this is a raw python string (""") not an f-string (f""")
+    create_file(f"{base}/src/pages/company/contact.jsx", """
 import React, { useState } from 'react';
 import { Store, CheckCircle2 } from 'lucide-react';
 
@@ -331,7 +325,7 @@ export default function Contact() {
 
       {submitted ? (
         <div className="bg-green-50 border border-green-200 rounded-3xl p-12 text-center">
-          <CheckCircle2 size={{64}} className="text-green-500 mx-auto mb-6"/>
+          <CheckCircle2 size={64} className="text-green-500 mx-auto mb-6"/>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Request Received!</h2>
           <p className="text-gray-600">Our team will call you within 24 hours to schedule your demo.</p>
         </div>
@@ -362,74 +356,76 @@ export default function Contact() {
 """)
 
     # ==========================================
-    # 4. GENERATE 49+ GENERIC SEO PAGES 
+    # 4. GENERATE 49+ GENERIC SEO PAGES IN SUBFOLDERS
     # ==========================================
     pages = [
         # Features (9)
-        {"path": "/features/smart-pos", "name": "FeaturePOS", "title": "Smart Point of Sale", "desc": "Lightning fast billing, even offline."},
-        {"path": "/features/inventory", "name": "FeatureInventory", "title": "Live Inventory Sync", "desc": "Auto-deduction with every barcode scan."},
-        {"path": "/features/udhaar-ledger", "name": "FeatureUdhaar", "title": "Udhaar Intelligence", "desc": "Track credit and send automated WhatsApp reminders."},
-        {"path": "/features/marketplace", "name": "FeatureMarketplace", "title": "Hyperlocal Marketplace", "desc": "Get discovered by customers in a 5km radius."},
-        {"path": "/features/suppliers", "name": "FeatureSuppliers", "title": "Supplier Hub", "desc": "Compare distributor prices in real-time."},
-        {"path": "/features/delivery", "name": "FeatureDelivery", "title": "Delivery Pooling", "desc": "Share delivery partners with nearby stores."},
-        {"path": "/features/analytics", "name": "FeatureAnalytics", "title": "Business Analytics", "desc": "Track peak hours and top-selling products."},
-        {"path": "/features/community", "name": "FeatureCommunity", "title": "Retailer Community", "desc": "Join local bulk-buying groups for better margins."},
-        {"path": "/features/loyalty", "name": "FeatureLoyalty", "title": "Loyalty Engine", "desc": "Reward repeat customers with cashback points."},
+        {"path": "/features/smart-pos", "name": "FeaturePOS", "file": "features/smart-pos", "title": "Smart Point of Sale", "desc": "Lightning fast billing, even offline."},
+        {"path": "/features/inventory", "name": "FeatureInventory", "file": "features/inventory", "title": "Live Inventory Sync", "desc": "Auto-deduction with every barcode scan."},
+        {"path": "/features/udhaar-ledger", "name": "FeatureUdhaar", "file": "features/udhaar-ledger", "title": "Udhaar Intelligence", "desc": "Track credit and send automated WhatsApp reminders."},
+        {"path": "/features/marketplace", "name": "FeatureMarketplace", "file": "features/marketplace", "title": "Hyperlocal Marketplace", "desc": "Get discovered by customers in a 5km radius."},
+        {"path": "/features/suppliers", "name": "FeatureSuppliers", "file": "features/suppliers", "title": "Supplier Hub", "desc": "Compare distributor prices in real-time."},
+        {"path": "/features/delivery", "name": "FeatureDelivery", "file": "features/delivery", "title": "Delivery Pooling", "desc": "Share delivery partners with nearby stores."},
+        {"path": "/features/analytics", "name": "FeatureAnalytics", "file": "features/analytics", "title": "Business Analytics", "desc": "Track peak hours and top-selling products."},
+        {"path": "/features/community", "name": "FeatureCommunity", "file": "features/community", "title": "Retailer Community", "desc": "Join local bulk-buying groups for better margins."},
+        {"path": "/features/loyalty", "name": "FeatureLoyalty", "file": "features/loyalty", "title": "Loyalty Engine", "desc": "Reward repeat customers with cashback points."},
 
         # Industries (10)
-        {"path": "/industries/grocery", "name": "IndGrocery", "title": "POS for Kirana & Grocery", "desc": "Manage thousands of FMCG SKUs easily."},
-        {"path": "/industries/electronics", "name": "IndElectronics", "title": "POS for Electronics", "desc": "Track serial numbers and warranties."},
-        {"path": "/industries/apparel", "name": "IndApparel", "title": "POS for Clothing Shops", "desc": "Manage colors, sizes, and seasonal inventory."},
-        {"path": "/industries/hardware", "name": "IndHardware", "title": "POS for Hardware Stores", "desc": "Handle bulk item pricing and builder accounts."},
-        {"path": "/industries/pharmacy", "name": "IndPharmacy", "title": "POS for Pharmacies", "desc": "Strict batch & expiry date tracking."},
-        {"path": "/industries/footwear", "name": "IndFootwear", "title": "POS for Footwear", "desc": "Barcode generation for unbranded goods."},
-        {"path": "/industries/supermarket", "name": "IndSupermarket", "title": "Supermarket OS", "desc": "Multi-lane billing and warehouse management."},
-        {"path": "/industries/mobile-accessories", "name": "IndMobile", "title": "Mobile Accessories", "desc": "Fast checkout for high-volume low-ticket items."},
-        {"path": "/industries/fmcg-distributors", "name": "IndFMCG", "title": "For FMCG Distributors", "desc": "Route planning and payment collections."},
-        {"path": "/industries/stationery", "name": "IndStationery", "title": "POS for Stationery", "desc": "Manage loose items and bulk school orders."},
+        {"path": "/industries/grocery", "name": "IndGrocery", "file": "industries/grocery", "title": "POS for Kirana & Grocery", "desc": "Manage thousands of FMCG SKUs easily."},
+        {"path": "/industries/electronics", "name": "IndElectronics", "file": "industries/electronics", "title": "POS for Electronics", "desc": "Track serial numbers and warranties."},
+        {"path": "/industries/apparel", "name": "IndApparel", "file": "industries/apparel", "title": "POS for Clothing Shops", "desc": "Manage colors, sizes, and seasonal inventory."},
+        {"path": "/industries/hardware", "name": "IndHardware", "file": "industries/hardware", "title": "POS for Hardware Stores", "desc": "Handle bulk item pricing and builder accounts."},
+        {"path": "/industries/pharmacy", "name": "IndPharmacy", "file": "industries/pharmacy", "title": "POS for Pharmacies", "desc": "Strict batch & expiry date tracking."},
+        {"path": "/industries/footwear", "name": "IndFootwear", "file": "industries/footwear", "title": "POS for Footwear", "desc": "Barcode generation for unbranded goods."},
+        {"path": "/industries/supermarket", "name": "IndSupermarket", "file": "industries/supermarket", "title": "Supermarket OS", "desc": "Multi-lane billing and warehouse management."},
+        {"path": "/industries/mobile-accessories", "name": "IndMobile", "file": "industries/mobile-accessories", "title": "Mobile Accessories", "desc": "Fast checkout for high-volume low-ticket items."},
+        {"path": "/industries/fmcg-distributors", "name": "IndFMCG", "file": "industries/fmcg-distributors", "title": "For FMCG Distributors", "desc": "Route planning and payment collections."},
+        {"path": "/industries/stationery", "name": "IndStationery", "file": "industries/stationery", "title": "POS for Stationery", "desc": "Manage loose items and bulk school orders."},
 
         # SEO Location Pages (10)
-        {"path": "/locations/pune", "name": "LocPune", "title": "Best POS Software in Pune", "desc": "Trusted by 500+ stores in Kothrud, Baner, and Viman Nagar."},
-        {"path": "/locations/mumbai", "name": "LocMumbai", "title": "Best POS Software in Mumbai", "desc": "Fast billing for fast-moving Mumbai retailers."},
-        {"path": "/locations/delhi", "name": "LocDelhi", "title": "Best POS Software in Delhi", "desc": "Secure your inventory across the NCR region."},
-        {"path": "/locations/bangalore", "name": "LocBangalore", "title": "Best POS Software in Bangalore", "desc": "Tech-enabled retail for the silicon valley."},
-        {"path": "/locations/hyderabad", "name": "LocHyderabad", "title": "Best POS Software in Hyderabad", "desc": "Manage multiple branches across the city."},
-        {"path": "/locations/ahmedabad", "name": "LocAhmedabad", "title": "Best POS Software in Ahmedabad", "desc": "Built for the smart business owners of Gujarat."},
-        {"path": "/locations/chennai", "name": "LocChennai", "title": "Best POS Software in Chennai", "desc": "Tamil language support for local billing."},
-        {"path": "/locations/kolkata", "name": "LocKolkata", "title": "Best POS Software in Kolkata", "desc": "Organize your supply chain perfectly."},
-        {"path": "/locations/jaipur", "name": "LocJaipur", "title": "Best POS Software in Jaipur", "desc": "Perfect for wholesale and retail merchants."},
-        {"path": "/locations/indore", "name": "LocIndore", "title": "Best POS Software in Indore", "desc": "Powering the cleanest city's retail network."},
+        {"path": "/locations/pune", "name": "LocPune", "file": "locations/pune", "title": "Best POS Software in Pune", "desc": "Trusted by 500+ stores in Kothrud, Baner, and Viman Nagar."},
+        {"path": "/locations/mumbai", "name": "LocMumbai", "file": "locations/mumbai", "title": "Best POS Software in Mumbai", "desc": "Fast billing for fast-moving Mumbai retailers."},
+        {"path": "/locations/delhi", "name": "LocDelhi", "file": "locations/delhi", "title": "Best POS Software in Delhi", "desc": "Secure your inventory across the NCR region."},
+        {"path": "/locations/bangalore", "name": "LocBangalore", "file": "locations/bangalore", "title": "Best POS Software in Bangalore", "desc": "Tech-enabled retail for the silicon valley."},
+        {"path": "/locations/hyderabad", "name": "LocHyderabad", "file": "locations/hyderabad", "title": "Best POS Software in Hyderabad", "desc": "Manage multiple branches across the city."},
+        {"path": "/locations/ahmedabad", "name": "LocAhmedabad", "file": "locations/ahmedabad", "title": "Best POS Software in Ahmedabad", "desc": "Built for the smart business owners of Gujarat."},
+        {"path": "/locations/chennai", "name": "LocChennai", "file": "locations/chennai", "title": "Best POS Software in Chennai", "desc": "Tamil language support for local billing."},
+        {"path": "/locations/kolkata", "name": "LocKolkata", "file": "locations/kolkata", "title": "Best POS Software in Kolkata", "desc": "Organize your supply chain perfectly."},
+        {"path": "/locations/jaipur", "name": "LocJaipur", "file": "locations/jaipur", "title": "Best POS Software in Jaipur", "desc": "Perfect for wholesale and retail merchants."},
+        {"path": "/locations/indore", "name": "LocIndore", "file": "locations/indore", "title": "Best POS Software in Indore", "desc": "Powering the cleanest city's retail network."},
 
         # Comparisons (6)
-        {"path": "/compare/vyapar", "name": "CompVyapar", "title": "VyaparSetu vs Vyapar App", "desc": "Why modern retailers are switching to VyaparSetu."},
-        {"path": "/compare/khatabook", "name": "CompKhatabook", "title": "VyaparSetu vs Khatabook", "desc": "Beyond just a ledger. Get full POS functionality."},
-        {"path": "/compare/tally", "name": "CompTally", "title": "VyaparSetu vs Tally", "desc": "Cloud-first retail management without the complexity."},
-        {"path": "/compare/marg", "name": "CompMarg", "title": "VyaparSetu vs Marg ERP", "desc": "Modern UI, zero training time required."},
-        {"path": "/compare/mybillbook", "name": "CompMyBillBook", "title": "VyaparSetu vs MyBillBook", "desc": "Advanced inventory and supplier hubs included."},
-        {"path": "/compare/zohobooks", "name": "CompZoho", "title": "VyaparSetu vs Zoho Books", "desc": "Designed specifically for Indian brick-and-mortar."},
+        {"path": "/compare/vyapar", "name": "CompVyapar", "file": "compare/vyapar", "title": "VyaparSetu vs Vyapar App", "desc": "Why modern retailers are switching to VyaparSetu."},
+        {"path": "/compare/khatabook", "name": "CompKhatabook", "file": "compare/khatabook", "title": "VyaparSetu vs Khatabook", "desc": "Beyond just a ledger. Get full POS functionality."},
+        {"path": "/compare/tally", "name": "CompTally", "file": "compare/tally", "title": "VyaparSetu vs Tally", "desc": "Cloud-first retail management without the complexity."},
+        {"path": "/compare/marg", "name": "CompMarg", "file": "compare/marg", "title": "VyaparSetu vs Marg ERP", "desc": "Modern UI, zero training time required."},
+        {"path": "/compare/mybillbook", "name": "CompMyBillBook", "file": "compare/mybillbook", "title": "VyaparSetu vs MyBillBook", "desc": "Advanced inventory and supplier hubs included."},
+        {"path": "/compare/zohobooks", "name": "CompZoho", "file": "compare/zohobooks", "title": "VyaparSetu vs Zoho Books", "desc": "Designed specifically for Indian brick-and-mortar."},
 
         # Resources & Misc (14)
-        {"path": "/about", "name": "About", "title": "Built for Bharat", "desc": "Our mission to digitize Tier 2 and Tier 3 cities."},
-        {"path": "/resources/blog", "name": "ResBlog", "title": "Retail Insider Blog", "desc": "Tips and tricks to grow your physical store."},
-        {"path": "/resources/case-studies", "name": "ResCaseStudies", "title": "Customer Success Stories", "desc": "Read how stores increased revenue by 40%."},
-        {"path": "/resources/help-center", "name": "ResHelp", "title": "Help Center", "desc": "Tutorials, FAQs, and setup guides."},
-        {"path": "/resources/api", "name": "ResAPI", "title": "Developer API", "desc": "Integrate VyaparSetu with your custom apps."},
-        {"path": "/resources/hardware", "name": "ResHardware", "title": "Compatible Hardware", "desc": "Printers, barcode scanners, and cash drawers."},
-        {"path": "/resources/onboarding", "name": "ResOnboarding", "title": "Store Onboarding", "desc": "We help upload your first 1000 items."},
-        {"path": "/resources/updates", "name": "ResUpdates", "title": "Product Updates", "desc": "See what's new in the VyaparSetu OS."},
-        {"path": "/resources/webinars", "name": "ResWebinars", "title": "Training Webinars", "desc": "Live weekly training for your store staff."},
-        {"path": "/legal/privacy", "name": "LegalPrivacy", "title": "Privacy Policy", "desc": "How we protect your customer and store data."},
-        {"path": "/legal/terms", "name": "LegalTerms", "title": "Terms of Service", "desc": "Rules and regulations of the VyaparSetu platform."},
-        {"path": "/legal/refunds", "name": "LegalRefunds", "title": "Refund Policy", "desc": "Subscription cancellation and refund rules."},
-        {"path": "/legal/security", "name": "LegalSecurity", "title": "Security Architecture", "desc": "Bank-grade encryption for your retail data."},
-        {"path": "/legal/gdpr", "name": "LegalGDPR", "title": "Data Compliance", "desc": "Compliance with regional data protection laws."}
+        {"path": "/about", "name": "About", "file": "company/about", "title": "Built for Bharat", "desc": "Our mission to digitize Tier 2 and Tier 3 cities."},
+        {"path": "/resources/blog", "name": "ResBlog", "file": "resources/blog", "title": "Retail Insider Blog", "desc": "Tips and tricks to grow your physical store."},
+        {"path": "/resources/case-studies", "name": "ResCaseStudies", "file": "resources/case-studies", "title": "Customer Success Stories", "desc": "Read how stores increased revenue by 40%."},
+        {"path": "/resources/help-center", "name": "ResHelp", "file": "resources/help-center", "title": "Help Center", "desc": "Tutorials, FAQs, and setup guides."},
+        {"path": "/resources/api", "name": "ResAPI", "file": "resources/api", "title": "Developer API", "desc": "Integrate VyaparSetu with your custom apps."},
+        {"path": "/resources/hardware", "name": "ResHardware", "file": "resources/hardware", "title": "Compatible Hardware", "desc": "Printers, barcode scanners, and cash drawers."},
+        {"path": "/resources/onboarding", "name": "ResOnboarding", "file": "resources/onboarding", "title": "Store Onboarding", "desc": "We help upload your first 1000 items."},
+        {"path": "/resources/updates", "name": "ResUpdates", "file": "resources/updates", "title": "Product Updates", "desc": "See what's new in the VyaparSetu OS."},
+        {"path": "/resources/webinars", "name": "ResWebinars", "file": "resources/webinars", "title": "Training Webinars", "desc": "Live weekly training for your store staff."},
+        {"path": "/legal/privacy", "name": "LegalPrivacy", "file": "legal/privacy", "title": "Privacy Policy", "desc": "How we protect your customer and store data."},
+        {"path": "/legal/terms", "name": "LegalTerms", "file": "legal/terms", "title": "Terms of Service", "desc": "Rules and regulations of the VyaparSetu platform."},
+        {"path": "/legal/refunds", "name": "LegalRefunds", "file": "legal/refunds", "title": "Refund Policy", "desc": "Subscription cancellation and refund rules."},
+        {"path": "/legal/security", "name": "LegalSecurity", "file": "legal/security", "title": "Security Architecture", "desc": "Bank-grade encryption for your retail data."},
+        {"path": "/legal/gdpr", "name": "LegalGDPR", "file": "legal/gdpr", "title": "Data Compliance", "desc": "Compliance with regional data protection laws."}
     ]
 
-    import_statements = "import Home from './pages/Home';\nimport Pricing from './pages/Pricing';\nimport Contact from './pages/Contact';\n"
+    # Pre-load manual imports
+    import_statements = "import Home from './pages/home/index';\nimport Pricing from './pages/pricing/index';\nimport Contact from './pages/company/contact';\n"
     route_statements = "        <Route index element={<Home />} />\n        <Route path=\"pricing\" element={<Pricing />} />\n        <Route path=\"contact\" element={<Contact />} />\n"
 
     for page in pages:
-        # Create Generic React File 
+        # Create Generic React File in dynamic subfolders
+        # Note: using double {{80}} and {{20}} because this IS an f-string (f""")
         component_code = f"""
 import React from 'react';
 import {{ ArrowRight, CheckCircle2, Store }} from 'lucide-react';
@@ -468,10 +464,10 @@ export default function {page['name']}() {{
   );
 }}
 """
-        create_file(f"{base}/src/pages/{page['name']}.jsx", component_code)
+        create_file(f"{base}/src/pages/{page['file']}.jsx", component_code)
         
-        # Add to App.jsx Router
-        import_statements += f"import {page['name']} from './pages/{page['name']}';\n"
+        # Add to App.jsx Router mapping to subfolders
+        import_statements += f"import {page['name']} from './pages/{page['file']}';\n"
         route_statements += f"        <Route path=\"{page['path'][1:]}\" element={{<{page['name']} />}} />\n"
 
     # ==========================================
@@ -505,11 +501,7 @@ export default function App() {{
     create_file(f"{base}/src/App.jsx", app_jsx)
 
     print("\n" + "="*60)
-    print("🎉 BOOM! ALL 50+ PAGES INJECTED WITH REAL LOGIC!")
-    print("="*60)
-    print("Now run these final commands to start your site:")
-    print("1. cd website")
-    print("2. npm run dev")
+    print("🎉 BOOM! ALL 50+ PAGES INJECTED WITH REAL LOGIC IN SUBFOLDERS!")
     print("="*60)
 
 if __name__ == "__main__":

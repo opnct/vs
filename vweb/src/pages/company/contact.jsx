@@ -18,7 +18,7 @@ export default function Contact() {
 
       {submitted ? (
         <div className="bg-green-50 border border-green-200 rounded-3xl p-12 text-center">
-          <CheckCircle2 size={{64}} className="text-green-500 mx-auto mb-6"/>
+          <CheckCircle2 size={64} className="text-green-500 mx-auto mb-6"/>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Request Received!</h2>
           <p className="text-gray-600">Our team will call you within 24 hours to schedule your demo.</p>
         </div>
