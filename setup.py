@@ -233,7 +233,7 @@ export default function {page['name']}() {{
               <li className="flex gap-3 items-start"><CheckCircle2 className="text-green-500 shrink-0"/> <span className="text-gray-600">24/7 dedicated support via WhatsApp & Call.</span></li>
             </ul>
             <button className="mt-8 bg-gray-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-800 flex items-center gap-2">
-              Start your free trial <ArrowRight size={18}/>
+              Start your free trial <ArrowRight size={{18}}/>
             </button>
           </div>
           <div className="bg-slate-100 p-8 rounded-3xl border border-slate-200 shadow-inner flex items-center justify-center min-h-[300px]">
