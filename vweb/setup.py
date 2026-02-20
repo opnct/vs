@@ -15,7 +15,11 @@ def build_pages():
     # 1. OVERWRITE CONFIGS FOR TAILWIND & VERCEL
     # ==========================================
     create_file(f"{base}/tailwind.config.js", "export default { content: ['./index.html', './src/**/*.{js,jsx}'], theme: { extend: {} }, plugins: [] }")
-    create_file(f"{base}/src/index.css", "@tailwind base;\n@tailwind components;\n@tailwind utilities;\nhtml { scroll-behavior: smooth; }")
+    
+    create_file(f"{base}/src/index.css", """@tailwind base;
+@tailwind components;
+@tailwind utilities;
+html { scroll-behavior: smooth; }""")
     
     vercel_config = { "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }
     create_file(f"{base}/vercel.json", json.dumps(vercel_config, indent=2))
