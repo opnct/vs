@@ -56,15 +56,15 @@ export default function Footer() {
                <div className="flex items-center justify-between">
                  <span className="font-black uppercase tracking-tighter text-white">Arun Ammisetty</span>
                  <div className="flex gap-3">
-                   <a href="https://github.com" className="text-zinc-500 hover:text-white transition-colors"><Github size={16}/></a>
-                   <a href="https://linkedin.com" className="text-zinc-500 hover:text-[#005ea2] transition-colors"><Linkedin size={16}/></a>
+                   <a href="https://github.com/arunammisetty" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-white transition-colors"><Github size={16}/></a>
+                   <a href="https://linkedin.com/in/arunammisetty" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-[#005ea2] transition-colors"><Linkedin size={16}/></a>
                  </div>
                </div>
                <div className="flex items-center justify-between">
                  <span className="font-black uppercase tracking-tighter text-white">Palak Bhosale</span>
                  <div className="flex gap-3">
-                   <a href="https://github.com" className="text-zinc-500 hover:text-white transition-colors"><Github size={16}/></a>
-                   <a href="https://linkedin.com" className="text-zinc-500 hover:text-[#005ea2] transition-colors"><Linkedin size={16}/></a>
+                   <a href="https://github.com/palakbhosale" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-white transition-colors"><Github size={16}/></a>
+                   <a href="https://linkedin.com/in/palakbhosale" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-[#005ea2] transition-colors"><Linkedin size={16}/></a>
                  </div>
                </div>
             </div>
@@ -83,7 +83,7 @@ export default function Footer() {
             <div className="text-zinc-600 text-[10px] leading-loose text-left md:text-right">
                 Looking for government information? Visit <span className="text-zinc-400 underline">VyaparIndia.gov</span> <br />
                 Page last updated: <span className="text-zinc-400 font-bold uppercase tracking-widest">Dec 18, 2025</span> <br />
-                U.S. Earth Information Center Responsible Official: <span className="text-white font-bold underline">VyaparSetu Core</span>
+                VyaparSetu Information Center Responsible Official: <span className="text-white font-bold underline">VyaparSetu Core</span>
             </div>
         </div>
       </div>
