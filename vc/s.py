@@ -4,9 +4,9 @@ import os
 FEATURE_DIR = "src/pages/features"
 HOME_DIR = "src/pages/home"
 CHATBOT_DIR = "src/pages/chatbot"
+COMP_DIR = "src/components"
 SRC_DIR = "src"
 
-# 54 Innovative VyaparSetu Features
 features = [
     ("ai-stock-predictor.jsx", "AI Stock Predictor", "Predictive inventory based on local festivals and weather"),
     ("smart-shelf-mapping.jsx", "Smart Shelf Mapping", "Visual store layout mapping for staff efficiency"),
@@ -41,7 +41,7 @@ features = [
     ("staff-vernacular-training.jsx", "Staff Training", "Voice modules for training shop personnel"),
     ("automated-license-renewal.jsx", "License Vault", "Track FSSAI, Trade, and Fire license expiry"),
     ("hyperlocal-ads-manager.jsx", "Hyperlocal Ads", "Run targeted ads for customers within 2km"),
-    ("udhaar-barter-system.jsx", "Barter Ledger", "Manage non-cash exchanges and credit barters"),
+    ("udhaar-barter-system.jsx", "Barter Ledger", "Manage non-cash exchanges and service barters"),
     ("whatsapp-chatbot-ordering.jsx", "Order Chatbot", "Automated customer ordering via WhatsApp"),
     ("smart-return-management.jsx", "Smart Returns", "Root cause analysis for returns and wastage"),
     ("daily-wage-chhotu-manager.jsx", "Staff Wage Manager", "Attendance and daily payouts for workers"),
@@ -64,186 +64,194 @@ features = [
     ("micro-insurance-portal.jsx", "Micro-Insurance", "Insurance for Kirana workers and property")
 ]
 
-# --- TEMPLATES ---
+# --- GLOBAL COMPONENTS TEMPLATES ---
 
-# Individual Feature Page Template
-feature_template = """import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Activity, ShieldCheck, Zap, Globe2, Layout, Database, Cpu, HardDrive, Lock } from 'lucide-react';
+header_template = """import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ChevronDown, ChevronUp, Menu, X, Globe } from 'lucide-react';
 
-export default function [[COMPONENT_NAME]]() {
-  const [logs, setLogs] = useState([]);
-  const [metrics, setMetrics] = useState({ efficiency: 0, latency: 0, load: 0 });
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setLogs(prev => [{ id: Date.now(), timestamp: new Date().toLocaleTimeString(), message: 'Processing [[TITLE]] data shard...', status: 'SUCCESS' }, ...prev].slice(0, 5));
-      setMetrics({ efficiency: (85 + Math.random() * 10).toFixed(1), latency: (10 + Math.random() * 20).toFixed(0), load: (30 + Math.random() * 40).toFixed(1) });
-    }, 3000);
-    return () => clearInterval(timer);
-  }, []);
+export default function Header() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isThemesOpen, setIsThemesOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans animate-in fade-in duration-700">
-      <section className="relative h-[70vh] flex items-center px-6 md:px-24 border-b border-[#222]">
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/95 to-transparent z-10"></div>
-        <div className="relative z-20 max-w-4xl">
-          <Link to="/" className="inline-flex items-center gap-2 text-[#005ea2] font-bold text-sm mb-10 uppercase tracking-wider">
-            <ArrowLeft size={16} /> RETURN TO COMMAND CENTER
-          </Link>
-          <div className="bg-[#005ea2] text-white text-[10px] font-bold px-3 py-1 rounded-sm inline-block mb-6 uppercase tracking-[0.3em]">Module Active</div>
-          <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-8 uppercase italic italic">[[TITLE]]</h1>
-          <p className="text-xl md:text-2xl text-gray-400 max-w-2xl font-medium leading-relaxed border-l-2 border-[#005ea2] pl-6">[[DESCRIPTION]]. Powered by VyaparSetu AI.</p>
+    <header className="w-full z-[100] sticky top-0">
+      {/* GOV TOP BAR */}
+      <div className="bg-[#f0f0f0] text-[#212121] text-[11px] px-6 py-1.5 flex items-center gap-2 font-medium border-b border-gray-300">
+        <img src="https://upload.wikimedia.org/wikipedia/en/4/41/Flag_of_India.svg" className="h-3 w-auto" alt="IN flag" />
+        An official platform for Indian Retailers. <span className="underline cursor-help ml-1">How you know</span>
+      </div>
+
+      {/* MAIN NAV */}
+      <nav className="h-16 md:h-20 px-6 md:px-12 flex items-center justify-between bg-black border-b border-white/10 relative">
+        <Link to="/" className="text-xl md:text-2xl font-bold tracking-tight text-white">VyaparSetu.ai</Link>
+        
+        {/* DESKTOP MENU */}
+        <div className="hidden md:flex items-center gap-8 text-[13px] font-black tracking-widest uppercase text-white">
+          <Link to="/about" className="hover:text-[#005ea2] transition-colors">About</Link>
+          <Link to="/centers" className="hover:text-[#005ea2] transition-colors">Visit a Center</Link>
+          <button 
+            onClick={() => setIsThemesOpen(!isThemesOpen)}
+            className="flex items-center gap-2 hover:text-[#005ea2] transition-colors group"
+          >
+            Themes {isThemesOpen ? <ChevronUp size={14} className="text-[#005ea2]"/> : <ChevronDown size={14} />}
+          </button>
         </div>
-      </section>
 
-      <section className="py-24 px-6 md:px-24 bg-[#0a0a0a]">
-        <div className="grid lg:grid-cols-12 gap-12 max-w-7xl mx-auto">
-          <div className="lg:col-span-8 bg-[#111] border border-[#222] rounded-sm p-8 shadow-2xl font-mono min-h-[400px]">
-            <div className="grid grid-cols-3 gap-4 mb-10 text-center">
-              <div className="bg-black/50 p-4 border border-[#222] rounded-sm"><p className="text-[10px] text-gray-500 uppercase mb-2">Efficiency</p><p className="text-2xl font-bold text-[#005ea2]">{metrics.efficiency}%</p></div>
-              <div className="bg-black/50 p-4 border border-[#222] rounded-sm"><p className="text-[10px] text-gray-500 uppercase mb-2">Latency</p><p className="text-2xl font-bold text-white">{metrics.latency}ms</p></div>
-              <div className="bg-black/50 p-4 border border-[#222] rounded-sm"><p className="text-[10px] text-gray-500 uppercase mb-2">Load</p><p className="text-2xl font-bold text-gray-400">{metrics.load}%</p></div>
-            </div>
-            <div className="space-y-2">{logs.map(log => (<div key={log.id} className="flex justify-between border-b border-[#222]/30 py-2"><span className="text-gray-500">[{log.timestamp}] {log.message}</span><span className="text-blue-500 font-bold">{log.status}</span></div>))}</div>
-          </div>
-          <div className="lg:col-span-4 bg-[#005ea2] p-8 rounded-sm shadow-xl relative overflow-hidden group">
-            <Zap size={120} className="absolute -right-10 -bottom-10 text-white/10 rotate-12" />
-            <h3 className="text-lg font-black uppercase mb-4 italic italic">Real-Time ROI</h3>
-            <p className="text-sm text-blue-100 mb-8">Deploying [[TITLE]] impacts your monthly savings.</p>
-            <div className="text-5xl font-black italic tracking-tighter text-white">+₹14.2k <span className="text-xs font-normal">/mo avg</span></div>
-          </div>
-        </div>
-      </section>
+        {/* MOBILE TOGGLE */}
+        <button onClick={() => setIsMenuOpen(true)} className="md:hidden text-white p-2">
+          <Menu size={24} />
+        </button>
 
-      <section className="py-24 px-6 md:px-24 bg-white text-black"><div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-16"><div className="text-left"><h2 className="text-5xl font-black uppercase italic tracking-tighter mb-6 leading-none italic italic">Bank-Grade Security</h2><p className="text-gray-500 font-bold text-lg uppercase tracking-widest italic italic">Stateless AES-256 Encryption at source.</p></div><Link to="/pricing" className="bg-[#005ea2] text-white px-12 py-6 font-black uppercase tracking-[0.2em] italic hover:bg-blue-700 transition-all rounded-sm flex items-center gap-6">UPGRADE TO PRO <ArrowRight size={24} /></Link></div></section>
-    </div>
-  );
-}
-"""
-
-# Homepage Template
-home_template = """import React from 'react';
-import { ArrowRight, LayoutGrid, Sparkles, MessageSquare } from 'lucide-react';
-import { Link } from 'react-router-dom';
-
-const modules = [[MODULE_LIST]];
-
-export default function Home() {
-  return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-[#005ea2]">
-      <section className="pt-32 pb-20 px-6 md:px-24 border-b border-[#222]">
-        <div className="max-w-6xl">
-          <Link to="/chatbot" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/10 border border-blue-600/30 text-blue-500 text-sm font-bold mb-8 rounded-full hover:bg-blue-600 hover:text-white transition-all">
-            <Sparkles size={16} /> Open VyaparSetu AI Chatbot
-          </Link>
-          <h1 className="text-6xl md:text-8xl font-black tracking-tighter uppercase italic leading-[0.85] mb-10">THE COMMAND <br /> CENTER</h1>
-          <p className="text-xl text-gray-500 max-w-2xl leading-relaxed">Access 54 enterprise-grade modules designed for the Indian Kirana infrastructure.</p>
-        </div>
-      </section>
-
-      <section className="py-24 px-6 md:px-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1600px] mx-auto">
-          {modules.map((m, i) => (
-            <Link key={i} to={m.path} className="group bg-[#111] border border-[#222] p-8 rounded-sm hover:border-[#005ea2] transition-all hover:shadow-2xl">
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-3 bg-black border border-[#222]"><LayoutGrid size={24} className="text-[#005ea2]" /></div>
-                <ArrowRight size={20} className="text-gray-700 group-hover:text-white group-hover:translate-x-1 transition-all" />
+        {/* THEMES DROPDOWN (DESKTOP) */}
+        {isThemesOpen && (
+          <div className="hidden md:grid grid-cols-3 gap-8 absolute top-full left-0 w-full bg-[#111] border-b border-white/10 p-12 animate-in slide-in-from-top duration-300 shadow-2xl">
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-black text-[#005ea2] tracking-[0.3em] uppercase">Core Engine</h4>
+              <div className="grid gap-2 text-sm text-gray-400 font-bold uppercase tracking-tighter">
+                <Link to="/features/ai-stock-predictor" onClick={() => setIsThemesOpen(false)}>Inventory AI</Link>
+                <Link to="/features/voice-billing-engine" onClick={() => setIsThemesOpen(false)}>Voice POS</Link>
+                <Link to="/features/khata-credit-scoring" onClick={() => setIsThemesOpen(false)}>Udhaar Khata</Link>
               </div>
-              <h3 className="text-xl font-bold uppercase tracking-tight mb-2 group-hover:text-[#005ea2] italic">{m.name}</h3>
-              <p className="text-gray-500 text-sm">{m.desc}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-    </div>
-  );
-}
-"""
-
-# Chatbot Template
-chatbot_template = """import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Plus, MessageSquare, Send, User, Bot, Settings, Loader2, Sparkles, AlertCircle, ShoppingBag, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
-
-export default function Chatbot() {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [error, setError] = useState(null);
-  const messagesEndRef = useRef(null);
-  const textareaRef = useRef(null);
-
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-
-  const scrollToBottom = () => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); };
-  useEffect(() => { scrollToBottom(); }, [messages, isLoading]);
-
-  const handleInput = (e) => {
-    setInput(e.target.value);
-    e.target.style.height = 'auto';
-    e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
-  };
-
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
-    if (!apiKey) { setError("API Key Missing (VITE_OPENAI_API_KEY)"); return; }
-    const userMessage = { role: 'user', content: input.trim() };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages); setInput(''); setIsLoading(true); setError(null);
-    try {
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: [{ role: "system", content: "You are VyaparSetu AI assistant for Indian Kirana stores." }, ...newMessages],
-        })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error?.message || "API Error");
-      setMessages(prev => [...prev, { role: 'assistant', content: data.choices[0].message.content }]);
-    } catch (err) { setError(err.message); } finally { setIsLoading(false); }
-  };
-
-  return (
-    <div className="flex h-screen w-full bg-[#212121] text-[#ececec] overflow-hidden">
-      <div className={`${isSidebarOpen ? 'w-[260px]' : 'w-0'} transition-all duration-300 flex flex-col bg-[#171717] h-full shrink-0 border-r border-[#333] relative`}>
-        <div className="p-3"><button onClick={() => setMessages([])} className="flex items-center gap-3 w-full hover:bg-[#2f2f2f] text-sm text-white px-3 py-3 rounded-md border border-[#333]"><Plus size={16} /> New Chat</button></div>
-        <div className="flex-1 overflow-y-auto px-3 py-2">
-            <Link to="/" className="flex items-center gap-3 w-full hover:bg-[#2f2f2f] text-sm text-white px-3 py-3 rounded-md mb-2 bg-[#2f2f2f]/30"><ArrowLeft size={16} /> Command Center</Link>
-        </div>
-      </div>
-      <div className="flex-1 flex flex-col h-full relative">
-        <header className="h-14 flex items-center justify-between px-4 border-b border-[#333]/50 bg-[#212121]">
-          <div className="flex items-center gap-3"><button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-[#2f2f2f] rounded-md"><Menu size={20} /></button><h1 className="text-lg font-semibold">VyaparSetu AI</h1></div>
-        </header>
-        <div className="flex-1 overflow-y-auto scroll-smooth w-full p-4">
-          {messages.map((msg, i) => (
-            <div key={i} className="max-w-3xl mx-auto py-4 flex gap-4">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${msg.role === 'assistant' ? 'bg-blue-600' : 'bg-gray-600'}`}>{msg.role === 'assistant' ? <Bot size={18}/> : <User size={18}/>}</div>
-              <div className="flex-1 text-[#d1d5db] whitespace-pre-wrap">{msg.content}</div>
             </div>
-          ))}
-          {isLoading && <div className="max-w-3xl mx-auto py-4 flex gap-4"><Loader2 size={18} className="animate-spin" /> VyaparSetu AI is thinking...</div>}
-          <div ref={messagesEndRef} className="h-32" />
-        </div>
-        <div className="absolute bottom-0 w-full bg-gradient-to-t from-[#212121] via-[#212121] to-transparent pb-8 px-4">
-          <div className="max-w-3xl mx-auto relative bg-[#2f2f2f] rounded-xl border border-[#444] p-2 flex items-end">
-            <textarea value={input} onChange={handleInput} placeholder="Message VyaparSetu AI..." className="w-full bg-transparent p-2 outline-none resize-none" rows="1" onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()} />
-            <button onClick={sendMessage} className="p-2 bg-white text-black rounded-lg ml-2"><Send size={18} /></button>
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-black text-[#005ea2] tracking-[0.3em] uppercase">Supply Chain</h4>
+              <div className="grid gap-2 text-sm text-gray-400 font-bold uppercase tracking-tighter">
+                <Link to="/features/supplier-bidding-hub" onClick={() => setIsThemesOpen(false)}>Supplier Bidding</Link>
+                <Link to="/features/direct-to-farmer-sourcing" onClick={() => setIsThemesOpen(false)}>Farm Direct</Link>
+                <Link to="/features/expiry-liquidation-network" onClick={() => setIsThemesOpen(false)}>Liquidation</Link>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-black text-[#005ea2] tracking-[0.3em] uppercase">Connect</h4>
+              <div className="grid gap-2 text-sm text-gray-400 font-bold uppercase tracking-tighter">
+                <Link to="/chatbot" onClick={() => setIsThemesOpen(false)}>AI Assistant</Link>
+                <Link to="/features/whatsapp-catalogs" onClick={() => setIsThemesOpen(false)}>WhatsApp Store</Link>
+              </div>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* MOBILE FULLSCREEN MENU */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 bg-[#111] z-[200] p-8 flex flex-col animate-in slide-in-from-right duration-300">
+          <div className="flex justify-between items-center mb-12">
+            <span className="text-xl font-bold">VyaparSetu.ai</span>
+            <button onClick={() => setIsMenuOpen(false)} className="p-2 bg-white/5 rounded-full"><X size={24}/></button>
+          </div>
+          <div className="flex flex-col gap-6 text-3xl font-black uppercase tracking-tighter italic">
+             <Link to="/" onClick={() => setIsMenuOpen(false)} className="border-b border-white/10 pb-4">Home</Link>
+             <Link to="/about" onClick={() => setIsMenuOpen(false)} className="border-b border-white/10 pb-4">About</Link>
+             <Link to="/chatbot" onClick={() => setIsMenuOpen(false)} className="border-b border-white/10 pb-4">Vyapar AI</Link>
+             <Link to="/centers" onClick={() => setIsMenuOpen(false)} className="border-b border-white/10 pb-4 text-[#005ea2]">Visit Center</Link>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </header>
   );
 }
 """
 
-# App.jsx Template
-app_template = """import React from 'react';
+footer_template = """import React from 'react';
+import { Link } from 'react-router-dom';
+import { Github, Linkedin, Database, ShieldCheck, Mail, Phone, MapPin } from 'lucide-react';
+
+export default function Footer() {
+  return (
+    <footer className="bg-black text-white border-t border-white/10">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-24">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-24">
+          
+          {/* SECTION 1 */}
+          <div className="space-y-8">
+            <h2 className="text-3xl font-black uppercase tracking-tighter">VyaparSetu.ai</h2>
+            <p className="text-zinc-500 text-sm leading-relaxed">
+              Standardizing the unorganized Indian retail sector through satellite data, real-time AI, and unified inventory mesh networking.
+            </p>
+            <div className="flex gap-4">
+              <div className="bg-white/5 p-3 rounded-sm border border-white/10 group hover:border-[#005ea2] transition-colors cursor-help">
+                <Database size={18} className="text-[#005ea2]" />
+              </div>
+              <div className="bg-white/5 p-3 rounded-sm border border-white/10 group hover:border-[#005ea2] transition-colors cursor-help">
+                <ShieldCheck size={18} className="text-[#005ea2]" />
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 2: PORTALS */}
+          <div className="space-y-6 text-sm">
+            <h4 className="font-black uppercase tracking-[0.3em] text-[#005ea2] text-[10px]">Explore Portals</h4>
+            <div className="flex flex-col gap-3 font-bold uppercase tracking-widest text-zinc-400">
+               <Link to="/features/ai-stock-predictor" className="hover:text-white transition-all">Stock Prediction</Link>
+               <Link to="/features/voice-billing-engine" className="hover:text-white transition-all">Voice Billing</Link>
+               <Link to="/features/ocr-inward-billing" className="hover:text-white transition-all">OCR Scan</Link>
+               <Link to="/features/mandi-rate-tracker" className="hover:text-white transition-all">Mandi Index</Link>
+               <Link to="/features/whatsapp-chatbot-ordering" className="hover:text-white transition-all">Order Bot</Link>
+            </div>
+          </div>
+
+          {/* SECTION 3: QUICK LINKS */}
+          <div className="space-y-6 text-sm">
+            <h4 className="font-black uppercase tracking-[0.3em] text-[#005ea2] text-[10px]">Resources</h4>
+            <div className="flex flex-col gap-3 font-bold uppercase tracking-widest text-zinc-400">
+               <Link to="/about" className="hover:text-white transition-all">Mission Earth</Link>
+               <Link to="/pricing" className="hover:text-white transition-all">Pricing Model</Link>
+               <Link to="/compliance" className="hover:text-white transition-all">Shop Act Vault</Link>
+               <Link to="/audit" className="hover:text-white transition-all">Security Audit</Link>
+               <Link to="/contact" className="hover:text-white transition-all">Developer Hub</Link>
+            </div>
+          </div>
+
+          {/* SECTION 4: DEVELOPER CREDITS */}
+          <div className="space-y-6 text-sm bg-zinc-900/40 p-8 border border-white/5 rounded-xl">
+            <h4 className="font-black uppercase tracking-[0.3em] text-[#005ea2] text-[10px]">Architecture Credits</h4>
+            
+            <div className="space-y-6">
+               <div className="flex items-center justify-between">
+                 <span className="font-black uppercase tracking-tighter text-white">Arun Ammisetty</span>
+                 <div className="flex gap-3">
+                   <a href="https://github.com" className="text-zinc-500 hover:text-white transition-colors"><Github size={16}/></a>
+                   <a href="https://linkedin.com" className="text-zinc-500 hover:text-[#005ea2] transition-colors"><Linkedin size={16}/></a>
+                 </div>
+               </div>
+               <div className="flex items-center justify-between">
+                 <span className="font-black uppercase tracking-tighter text-white">Palak Bhosale</span>
+                 <div className="flex gap-3">
+                   <a href="https://github.com" className="text-zinc-500 hover:text-white transition-colors"><Github size={16}/></a>
+                   <a href="https://linkedin.com" className="text-zinc-500 hover:text-[#005ea2] transition-colors"><Linkedin size={16}/></a>
+                 </div>
+               </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* BOTTOM GOV STYLE */}
+        <div className="pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-start gap-8">
+            <div className="flex flex-wrap gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
+              <span className="cursor-help hover:text-zinc-400">Accessibility support</span>
+              <span className="cursor-help hover:text-zinc-400">Privacy Policy</span>
+              <span className="cursor-help hover:text-zinc-400">Performance Reports</span>
+              <span className="cursor-help hover:text-zinc-400">Security Sovereignty</span>
+            </div>
+            <div className="text-zinc-600 text-[10px] leading-loose text-left md:text-right">
+                Looking for government information? Visit <span className="text-zinc-400 underline">VyaparIndia.gov</span> <br />
+                Page last updated: <span className="text-zinc-400 font-bold uppercase tracking-widest">Dec 18, 2025</span> <br />
+                U.S. Earth Information Center Responsible Official: <span className="text-white font-bold underline">VyaparSetu Core</span>
+            </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+"""
+
+# App.jsx wrapping
+app_template_wrapped = """import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import Header from './components/Header';
+import Footer from './components/Footer';
 import Home from './pages/home/index';
 import Chatbot from './pages/chatbot/index';
 
@@ -252,66 +260,166 @@ import Chatbot from './pages/chatbot/index';
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/chatbot" element={<Chatbot />} />
-      [[ROUTES]]
-    </Routes>
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/chatbot" element={<Chatbot />} />
+          [[ROUTES]]
+        </Routes>
+      </main>
+      <Footer />
+    </div>
   );
 }
 """
 
-# main.jsx Template
-main_template = """import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import App from './App.jsx'
-import './index.css'
+# Home page updated
+home_template_clean = """import React from 'react';
+import { ArrowRight, ArrowDown, Sparkles, MessageSquare, Database } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>,
-)
+const modules = [[MODULE_LIST]];
+
+export default function Home() {
+    return (
+        <div className="min-h-screen bg-black text-white font-sans overflow-x-hidden">
+            {/* HERO SECTION MATCHING EARTH.GOV */}
+            <section className="relative w-full h-[85vh] flex items-center px-6 md:px-16 overflow-hidden">
+                <div className="absolute inset-0 bg-black/40 z-10"></div>
+                <img 
+                    src="https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80" 
+                    className="absolute inset-0 w-full h-full object-cover z-0 grayscale opacity-80"
+                    alt="Hero Visual"
+                />
+                <div className="relative z-20 max-w-4xl pt-20">
+                    <h1 className="text-6xl md:text-[7rem] font-bold leading-[0.9] tracking-tighter mb-12 uppercase drop-shadow-2xl">
+                        DATA FOR <br /> RETAIL GROWTH
+                    </h1>
+                    <a href="#explore-themes" className="inline-flex items-center gap-4 bg-[#005ea2] text-white px-10 py-5 text-sm font-black uppercase tracking-widest hover:bg-[#004a80] transition-all">
+                        EXPLORE <ArrowDown size={20} />
+                    </a>
+                </div>
+            </section>
+
+            {/* LEARN ABOUT THEMES SECTION */}
+            <section id="explore-themes" className="py-24 px-6 md:px-12 max-w-[1400px] mx-auto">
+                <h2 className="text-xs font-black uppercase tracking-[0.3em] mb-12 border-b border-white/20 pb-4 inline-block text-[#005ea2]">
+                    LEARN ABOUT RETAIL THEMES
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {modules.slice(0, 3).map((m, i) => (
+                        <Link key={i} to={m.path} className="group relative aspect-[4/5] overflow-hidden rounded-lg">
+                            <img 
+                                src={`https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&sig=${i}`} 
+                                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-60"
+                                alt={m.name}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                            <div className="absolute top-4 left-4 bg-white text-black text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
+                                <Sparkles size={10} /> Smart Feature
+                            </div>
+                            <div className="absolute bottom-8 left-6 right-6">
+                                <h3 className="text-3xl font-bold uppercase tracking-tighter leading-none group-hover:underline underline-offset-8 transition-all">
+                                    {m.name.split(' ')[0]} <br /> {m.name.split(' ').slice(1).join(' ')}
+                                </h3>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            </section>
+
+            {/* INTERACTIVES SECTION */}
+            <section className="py-24 px-6 md:px-12 bg-zinc-950">
+                <div className="max-w-[1400px] mx-auto">
+                    <h2 className="text-xs font-black uppercase tracking-[0.3em] mb-12">INTERACTIVES</h2>
+                    <Link to="/chatbot" className="group block relative w-full h-[50vh] rounded-xl overflow-hidden border border-white/10">
+                        <img 
+                            src="https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80" 
+                            className="absolute inset-0 w-full h-full object-cover opacity-30 grayscale group-hover:grayscale-0 transition-all duration-700"
+                            alt="AI Chatbot"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-black to-transparent"></div>
+                        <div className="absolute top-8 left-8 flex items-center gap-4">
+                            <div className="bg-white text-black p-2 rounded flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                                <MessageSquare size={14} /> Interactive
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500 underline underline-offset-4">GPT-4.0 ACTIVE</span>
+                        </div>
+                        <div className="absolute left-8 bottom-12 max-w-xl">
+                            <h2 className="text-5xl md:text-7xl font-bold uppercase tracking-tighter mb-4 flex items-center gap-6">
+                                VYAPARSETU EYES ON SALES <div className="p-3 bg-[#005ea2] rounded-full group-hover:px-6 transition-all duration-500"><ArrowRight size={24} /></div>
+                            </h2>
+                            <p className="text-zinc-400 text-lg leading-relaxed">Our real-time AI engine identifies wastage, analyzes customer footfall, and suggests stock replenishments instantly.</p>
+                        </div>
+                    </Link>
+                </div>
+            </section>
+
+            {/* PORTALS LIST SECTION */}
+            <section className="py-24 px-6 md:px-12 max-w-[1400px] mx-auto bg-black">
+                <h2 className="text-xs font-black uppercase tracking-[0.3em] mb-12">EXPLORE OUR PORTALS</h2>
+                <div className="space-y-4">
+                    {modules.slice(3).map((m, i) => (
+                        <Link 
+                            key={i} 
+                            to={m.path} 
+                            className="flex flex-col md:flex-row items-center gap-8 bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl hover:bg-zinc-900/80 transition-colors group"
+                        >
+                            <div className="w-full md:w-64 aspect-video rounded-lg overflow-hidden shrink-0">
+                                <img src={`https://images.unsplash.com/photo-1534452203294-45c851ec76f7?auto=format&fit=crop&q=80&sig=${i+10}`} className="w-full h-full object-cover grayscale opacity-50 group-hover:scale-110 transition-transform duration-700" alt={m.name} />
+                            </div>
+                            <div className="flex-1 text-left">
+                                <div className="flex items-center gap-3 mb-2"><div className="bg-white/10 text-zinc-400 p-1 rounded text-[8px] font-black uppercase"><Database size={10} /> Portal</div></div>
+                                <h3 className="text-2xl font-bold uppercase tracking-tighter mb-2 group-hover:text-[#005ea2] transition-colors">{m.name}</h3>
+                                <p className="text-zinc-500 text-sm leading-relaxed mb-4">{m.desc}</p>
+                                <div className="text-[#005ea2] text-[10px] font-black uppercase tracking-widest flex items-center gap-2">Open Portal <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" /></div>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            </section>
+        </div>
+    );
+}
 """
 
 def generate_files():
-    for d in [FEATURE_DIR, HOME_DIR, CHATBOT_DIR]:
+    # Directories
+    for d in [FEATURE_DIR, HOME_DIR, CHATBOT_DIR, COMP_DIR]:
         if not os.path.exists(d): os.makedirs(d)
     
-    print("Initializing project structure...")
-
     module_list = []
     imports = []
     routes = []
 
     # 1. Features
+    from string import Template
     for filename, title, desc in features:
         component_name = "Feature" + "".join(x.capitalize() for x in filename.replace(".jsx", "").split("-"))
         module_list.append(f"{{ name: '{title}', desc: '{desc}', path: '/features/{filename.replace('.jsx', '')}' }}")
         imports.append(f"import {component_name} from './pages/features/{filename.replace('.jsx', '')}';")
         routes.append(f"<Route path=\"/features/{filename.replace('.jsx', '')}\" element={{<{component_name} />}} />")
 
-        content = feature_template.replace("[[COMPONENT_NAME]]", component_name).replace("[[TITLE]]", title).replace("[[DESCRIPTION]]", desc)
-        with open(os.path.join(FEATURE_DIR, filename), "w", encoding="utf-8") as f: f.write(content)
+        # Basic feature page (keeping existing logic style)
+        with open(os.path.join(FEATURE_DIR, filename), "w", encoding="utf-8") as f:
+            f.write("import React from 'react';\nimport { ArrowLeft } from 'lucide-react';\nimport { Link } from 'react-router-dom';\n\n" +
+                    f"export default function {component_name}() {{\n  return (\n    <div className='min-h-screen bg-black text-white p-24'>\n      <Link to='/' className='text-[#005ea2] uppercase font-black text-xs flex items-center gap-2 mb-12'><ArrowLeft size={16}/> Back</Link>\n      <h1 className='text-7xl font-black uppercase tracking-tighter mb-6 italic'>{title}</h1>\n      <p className='text-xl text-zinc-500 max-w-2xl'>{desc}</p>\n    </div>\n  );\n}}")
 
-    # 2. Homepage
-    home_content = home_template.replace("[[MODULE_LIST]]", "[\n    " + ",\n    ".join(module_list) + "\n  ]")
+    # 2. Components
+    with open(os.path.join(COMP_DIR, "Header.jsx"), "w", encoding="utf-8") as f: f.write(header_template)
+    with open(os.path.join(COMP_DIR, "Footer.jsx"), "w", encoding="utf-8") as f: f.write(footer_template)
+
+    # 3. Homepage
+    home_content = home_template_clean.replace("[[MODULE_LIST]]", "[\n    " + ",\n    ".join(module_list) + "\n  ]")
     with open(os.path.join(HOME_DIR, "index.jsx"), "w", encoding="utf-8") as f: f.write(home_content)
 
-    # 3. Chatbot
-    with open(os.path.join(CHATBOT_DIR, "index.jsx"), "w", encoding="utf-8") as f: f.write(chatbot_template)
-
-    # 4. App.jsx
-    app_content = app_template.replace("[[IMPORTS]]", "\n".join(imports)).replace("[[ROUTES]]", "\n      ".join(routes))
+    # 4. App.jsx (Integrated)
+    app_content = app_template_wrapped.replace("[[IMPORTS]]", "\n".join(imports)).replace("[[ROUTES]]", "\n      ".join(routes))
     with open(os.path.join(SRC_DIR, "App.jsx"), "w", encoding="utf-8") as f: f.write(app_content)
 
-    # 5. main.jsx (FIXES THE ERROR)
-    with open(os.path.join(SRC_DIR, "main.jsx"), "w", encoding="utf-8") as f: f.write(main_template)
-
-    print(f"✅ Success: Generated 54 Features, Chatbot UI, Command Center, and Fixed App Routing.")
+    print(f"✅ Success: Architecture Synchronized with Global Header/Footer + Developer Credits.")
 
 if __name__ == "__main__":
     generate_files()

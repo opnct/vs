@@ -1,5 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import Header from './components/Header';
+import Footer from './components/Footer';
 import Home from './pages/home/index';
 import Chatbot from './pages/chatbot/index';
 
@@ -61,10 +63,13 @@ import FeatureMicroInsurancePortal from './pages/features/micro-insurance-portal
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/chatbot" element={<Chatbot />} />
-      <Route path="/features/ai-stock-predictor" element={<FeatureAiStockPredictor />} />
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/chatbot" element={<Chatbot />} />
+          <Route path="/features/ai-stock-predictor" element={<FeatureAiStockPredictor />} />
       <Route path="/features/smart-shelf-mapping" element={<FeatureSmartShelfMapping />} />
       <Route path="/features/voice-billing-engine" element={<FeatureVoiceBillingEngine />} />
       <Route path="/features/whatsapp-catalogs" element={<FeatureWhatsappCatalogs />} />
@@ -118,6 +123,9 @@ export default function App() {
       <Route path="/features/counter-queue-manager" element={<FeatureCounterQueueManager />} />
       <Route path="/features/packaging-cost-calculator" element={<FeaturePackagingCostCalculator />} />
       <Route path="/features/micro-insurance-portal" element={<FeatureMicroInsurancePortal />} />
-    </Routes>
+        </Routes>
+      </main>
+      <Footer />
+    </div>
   );
 }

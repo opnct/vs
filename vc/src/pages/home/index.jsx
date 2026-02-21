@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, LayoutGrid, Sparkles, MessageSquare } from 'lucide-react';
+import { ArrowRight, ArrowDown, Sparkles, MessageSquare, Database } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const modules = [
@@ -36,7 +36,7 @@ const modules = [
     { name: 'Staff Training', desc: 'Voice modules for training shop personnel', path: '/features/staff-vernacular-training' },
     { name: 'License Vault', desc: 'Track FSSAI, Trade, and Fire license expiry', path: '/features/automated-license-renewal' },
     { name: 'Hyperlocal Ads', desc: 'Run targeted ads for customers within 2km', path: '/features/hyperlocal-ads-manager' },
-    { name: 'Barter Ledger', desc: 'Manage non-cash exchanges and credit barters', path: '/features/udhaar-barter-system' },
+    { name: 'Barter Ledger', desc: 'Manage non-cash exchanges and service barters', path: '/features/udhaar-barter-system' },
     { name: 'Order Chatbot', desc: 'Automated customer ordering via WhatsApp', path: '/features/whatsapp-chatbot-ordering' },
     { name: 'Smart Returns', desc: 'Root cause analysis for returns and wastage', path: '/features/smart-return-management' },
     { name: 'Staff Wage Manager', desc: 'Attendance and daily payouts for workers', path: '/features/daily-wage-chhotu-manager' },
@@ -60,32 +60,103 @@ const modules = [
   ];
 
 export default function Home() {
-  return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-[#005ea2]">
-      <section className="pt-32 pb-20 px-6 md:px-24 border-b border-[#222]">
-        <div className="max-w-6xl">
-          <Link to="/chatbot" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/10 border border-blue-600/30 text-blue-500 text-sm font-bold mb-8 rounded-full hover:bg-blue-600 hover:text-white transition-all">
-            <Sparkles size={16} /> Open VyaparSetu AI Chatbot
-          </Link>
-          <h1 className="text-6xl md:text-8xl font-black tracking-tighter uppercase italic leading-[0.85] mb-10">THE COMMAND <br /> CENTER</h1>
-          <p className="text-xl text-gray-500 max-w-2xl leading-relaxed">Access 54 enterprise-grade modules designed for the Indian Kirana infrastructure.</p>
-        </div>
-      </section>
+    return (
+        <div className="min-h-screen bg-black text-white font-sans overflow-x-hidden">
+            {/* HERO SECTION MATCHING EARTH.GOV */}
+            <section className="relative w-full h-[85vh] flex items-center px-6 md:px-16 overflow-hidden">
+                <div className="absolute inset-0 bg-black/40 z-10"></div>
+                <img 
+                    src="https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80" 
+                    className="absolute inset-0 w-full h-full object-cover z-0 grayscale opacity-80"
+                    alt="Hero Visual"
+                />
+                <div className="relative z-20 max-w-4xl pt-20">
+                    <h1 className="text-6xl md:text-[7rem] font-bold leading-[0.9] tracking-tighter mb-12 uppercase drop-shadow-2xl">
+                        DATA FOR <br /> RETAIL GROWTH
+                    </h1>
+                    <a href="#explore-themes" className="inline-flex items-center gap-4 bg-[#005ea2] text-white px-10 py-5 text-sm font-black uppercase tracking-widest hover:bg-[#004a80] transition-all">
+                        EXPLORE <ArrowDown size={20} />
+                    </a>
+                </div>
+            </section>
 
-      <section className="py-24 px-6 md:px-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1600px] mx-auto">
-          {modules.map((m, i) => (
-            <Link key={i} to={m.path} className="group bg-[#111] border border-[#222] p-8 rounded-sm hover:border-[#005ea2] transition-all hover:shadow-2xl">
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-3 bg-black border border-[#222]"><LayoutGrid size={24} className="text-[#005ea2]" /></div>
-                <ArrowRight size={20} className="text-gray-700 group-hover:text-white group-hover:translate-x-1 transition-all" />
-              </div>
-              <h3 className="text-xl font-bold uppercase tracking-tight mb-2 group-hover:text-[#005ea2] italic">{m.name}</h3>
-              <p className="text-gray-500 text-sm">{m.desc}</p>
-            </Link>
-          ))}
+            {/* LEARN ABOUT THEMES SECTION */}
+            <section id="explore-themes" className="py-24 px-6 md:px-12 max-w-[1400px] mx-auto">
+                <h2 className="text-xs font-black uppercase tracking-[0.3em] mb-12 border-b border-white/20 pb-4 inline-block text-[#005ea2]">
+                    LEARN ABOUT RETAIL THEMES
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {modules.slice(0, 3).map((m, i) => (
+                        <Link key={i} to={m.path} className="group relative aspect-[4/5] overflow-hidden rounded-lg">
+                            <img 
+                                src={`https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&sig=${i}`} 
+                                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-60"
+                                alt={m.name}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                            <div className="absolute top-4 left-4 bg-white text-black text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
+                                <Sparkles size={10} /> Smart Feature
+                            </div>
+                            <div className="absolute bottom-8 left-6 right-6">
+                                <h3 className="text-3xl font-bold uppercase tracking-tighter leading-none group-hover:underline underline-offset-8 transition-all">
+                                    {m.name.split(' ')[0]} <br /> {m.name.split(' ').slice(1).join(' ')}
+                                </h3>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            </section>
+
+            {/* INTERACTIVES SECTION */}
+            <section className="py-24 px-6 md:px-12 bg-zinc-950">
+                <div className="max-w-[1400px] mx-auto">
+                    <h2 className="text-xs font-black uppercase tracking-[0.3em] mb-12">INTERACTIVES</h2>
+                    <Link to="/chatbot" className="group block relative w-full h-[50vh] rounded-xl overflow-hidden border border-white/10">
+                        <img 
+                            src="https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80" 
+                            className="absolute inset-0 w-full h-full object-cover opacity-30 grayscale group-hover:grayscale-0 transition-all duration-700"
+                            alt="AI Chatbot"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-black to-transparent"></div>
+                        <div className="absolute top-8 left-8 flex items-center gap-4">
+                            <div className="bg-white text-black p-2 rounded flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                                <MessageSquare size={14} /> Interactive
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500 underline underline-offset-4">GPT-4.0 ACTIVE</span>
+                        </div>
+                        <div className="absolute left-8 bottom-12 max-w-xl">
+                            <h2 className="text-5xl md:text-7xl font-bold uppercase tracking-tighter mb-4 flex items-center gap-6">
+                                VYAPARSETU EYES ON SALES <div className="p-3 bg-[#005ea2] rounded-full group-hover:px-6 transition-all duration-500"><ArrowRight size={24} /></div>
+                            </h2>
+                            <p className="text-zinc-400 text-lg leading-relaxed">Our real-time AI engine identifies wastage, analyzes customer footfall, and suggests stock replenishments instantly.</p>
+                        </div>
+                    </Link>
+                </div>
+            </section>
+
+            {/* PORTALS LIST SECTION */}
+            <section className="py-24 px-6 md:px-12 max-w-[1400px] mx-auto bg-black">
+                <h2 className="text-xs font-black uppercase tracking-[0.3em] mb-12">EXPLORE OUR PORTALS</h2>
+                <div className="space-y-4">
+                    {modules.slice(3).map((m, i) => (
+                        <Link 
+                            key={i} 
+                            to={m.path} 
+                            className="flex flex-col md:flex-row items-center gap-8 bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl hover:bg-zinc-900/80 transition-colors group"
+                        >
+                            <div className="w-full md:w-64 aspect-video rounded-lg overflow-hidden shrink-0">
+                                <img src={`https://images.unsplash.com/photo-1534452203294-45c851ec76f7?auto=format&fit=crop&q=80&sig=${i+10}`} className="w-full h-full object-cover grayscale opacity-50 group-hover:scale-110 transition-transform duration-700" alt={m.name} />
+                            </div>
+                            <div className="flex-1 text-left">
+                                <div className="flex items-center gap-3 mb-2"><div className="bg-white/10 text-zinc-400 p-1 rounded text-[8px] font-black uppercase"><Database size={10} /> Portal</div></div>
+                                <h3 className="text-2xl font-bold uppercase tracking-tighter mb-2 group-hover:text-[#005ea2] transition-colors">{m.name}</h3>
+                                <p className="text-zinc-500 text-sm leading-relaxed mb-4">{m.desc}</p>
+                                <div className="text-[#005ea2] text-[10px] font-black uppercase tracking-widest flex items-center gap-2">Open Portal <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" /></div>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            </section>
         </div>
-      </section>
-    </div>
-  );
+    );
 }
