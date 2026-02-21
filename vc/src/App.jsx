@@ -1,8 +1,9 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Home from './pages/home/index';
+import Chatbot from './pages/chatbot/index';
 
-// DYNAMIC FEATURE IMPORTS
+// FEATURE IMPORTS
 import FeatureAiStockPredictor from './pages/features/ai-stock-predictor';
 import FeatureSmartShelfMapping from './pages/features/smart-shelf-mapping';
 import FeatureVoiceBillingEngine from './pages/features/voice-billing-engine';
@@ -62,8 +63,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      
-      {/* FEATURE ROUTES */}
+      <Route path="/chatbot" element={<Chatbot />} />
       <Route path="/features/ai-stock-predictor" element={<FeatureAiStockPredictor />} />
       <Route path="/features/smart-shelf-mapping" element={<FeatureSmartShelfMapping />} />
       <Route path="/features/voice-billing-engine" element={<FeatureVoiceBillingEngine />} />
@@ -118,12 +118,6 @@ export default function App() {
       <Route path="/features/counter-queue-manager" element={<FeatureCounterQueueManager />} />
       <Route path="/features/packaging-cost-calculator" element={<FeaturePackagingCostCalculator />} />
       <Route path="/features/micro-insurance-portal" element={<FeatureMicroInsurancePortal />} />
-
-      <Route path="*" element={
-        <div className="min-h-screen bg-black flex items-center justify-center text-white font-black text-6xl italic uppercase">
-          404 : Shard Not Found
-        </div>
-      } />
     </Routes>
   );
 }
