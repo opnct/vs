@@ -13,9 +13,8 @@ export default function FeatureVoiceBilling() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
-  // URL of your new Python Backend running in Codespaces
-  // Make sure port 8000 is forwarded and set to "Public" in the Codespaces Ports tab
-  const BACKEND_URL = "http://127.0.0.1:8000/api/transcribe";
+  // Use the Vite Proxy path instead of absolute 127.0.0.1 to avoid browser blocking (ERR_BLOCKED_BY_CLIENT)
+  const BACKEND_URL = "/api/transcribe";
 
   // In-browser mapping logic for Kirana items
   const productCatalog = {
@@ -224,7 +223,7 @@ export default function FeatureVoiceBilling() {
                   <h3 className="text-[18px] font-bold tracking-widest uppercase">Live Cart Terminal</h3>
                 </div>
                 <div className="text-green-500 font-mono text-[11px] font-bold uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-ping"></span> VyaparSetu AI Online
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-ping"></span> VyaparSetu Backend Online
                 </div>
              </div>
 
@@ -269,7 +268,7 @@ export default function FeatureVoiceBilling() {
           <div className="lg:w-1/2 w-full shrink-0">
              <div className="aspect-video bg-black border border-gray-200 p-8 relative flex flex-col justify-center gap-4 rounded-sm shadow-xl">
                 <div className="flex justify-between items-center text-[#005ea2] font-mono text-[10px] tracking-widest uppercase">
-                  <span>Inference_Buffer</span>
+                  <span>Python_Backend</span>
                   <span>AI_Core</span>
                 </div>
                 <div className="h-2 bg-[#111] rounded-full overflow-hidden">
@@ -308,7 +307,7 @@ export default function FeatureVoiceBilling() {
           </p>
       </section>
 
-      {/* SECTION 5: INVENTORY ANALYTICS (NEW) */}
+      {/* SECTION 5: INVENTORY ANALYTICS */}
       <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16">
           <div className="md:w-1/2">
@@ -339,7 +338,7 @@ export default function FeatureVoiceBilling() {
         </div>
       </section>
 
-      {/* SECTION 6: OFFLINE CACHING (NEW) */}
+      {/* SECTION 6: OFFLINE CACHING */}
       <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-[#0a0a0a] text-white border-b border-[#222]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row-reverse items-center gap-16">
           <div className="md:w-1/2">
