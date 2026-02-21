@@ -10,6 +10,8 @@ export default defineConfig({
     strictPort: true,
     // Enable CORS to ensure cross-origin authentication headers are not stripped by proxies
     cors: true,
+    // Allow dynamic hostnames from cloud environments (Codespaces, etc.)
+    allowedHosts: true,
     hmr: {
       clientPort: 443
     }

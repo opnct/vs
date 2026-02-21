@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowDown, ArrowRight, Mic, MicOff, Activity, Cpu, Globe2, Volume2, ShieldCheck, Scale, Trash2, ShoppingCart, Loader2 } from 'lucide-react';
+import { ArrowDown, ArrowRight, Mic, MicOff, Activity, Cpu, Globe2, Volume2, ShieldCheck, Scale, Trash2, ShoppingCart, Loader2, Database, WifiOff, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function FeatureVoiceBilling() {
@@ -112,7 +112,8 @@ export default function FeatureVoiceBilling() {
         reader.readAsDataURL(blob);
       });
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+      // UPDATED TO PUBLIC MODEL: gemini-1.5-flash
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
       
       const payload = {
         contents: [{
@@ -210,7 +211,7 @@ export default function FeatureVoiceBilling() {
             VERNACULAR <br /> VOICE ENGINE
           </h1>
           <p className="text-xl md:text-2xl text-[#cccccc] max-w-2xl font-normal tracking-wide mb-10">
-            Powered by VyaparSetu LPU Inference. Process complex grocery billing instantly by speaking naturally in regional languages. 
+            Powered by VyaparSetu AI Inference. Process complex grocery billing instantly by speaking naturally in regional languages. 
           </p>
           <a 
             href="#live-engine"
@@ -221,16 +222,16 @@ export default function FeatureVoiceBilling() {
         </div>
       </section>
 
-      {/* SECTION 2: LIVE GROQ VOICE ENGINE */}
+      {/* SECTION 2: LIVE VYAPARSETU AI ENGINE */}
       <section id="live-engine" className="w-full py-24 px-6 md:px-12 lg:px-24 bg-[#0a0a0a] text-white border-b border-[#222] scroll-mt-16">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-12 items-start">
           
           <div className="lg:col-span-5 flex flex-col">
             <h2 className="text-[22px] font-bold tracking-widest uppercase mb-4 text-[#005ea2]">
-              WHISPER LPU INFERENCE
+              VYAPARSETU AI INFERENCE
             </h2>
             <p className="text-[#888] mb-8 text-[15px] leading-relaxed font-medium">
-              Hold while speaking. Logic processes via Groq's high-speed Whisper Cloud. Try <strong className="text-white">"Do kilo cheeni"</strong> or <strong className="text-white">"Ek kilo chawal"</strong>.
+              Hold while speaking. Logic processes via VyaparSetu AI's high-speed cloud. Try <strong className="text-white">"Do kilo cheeni"</strong> or <strong className="text-white">"Ek kilo chawal"</strong>.
             </p>
             
             <div className="bg-[#181818] border border-[#333] rounded-sm p-8 flex flex-col items-center justify-center text-center min-h-[300px] relative overflow-hidden shadow-2xl">
@@ -269,7 +270,7 @@ export default function FeatureVoiceBilling() {
                   <h3 className="text-[18px] font-bold tracking-widest uppercase">Live Cart Terminal</h3>
                 </div>
                 <div className="text-green-500 font-mono text-[11px] font-bold uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-ping"></span> Whisper-v3 Online
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-ping"></span> VyaparSetu AI Online
                 </div>
              </div>
 
@@ -308,14 +309,14 @@ export default function FeatureVoiceBilling() {
         </div>
       </section>
 
-      {/* SECTION 3: LPU ARCHITECTURE */}
+      {/* SECTION 3: AI ARCHITECTURE */}
       <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-16 items-center">
           <div className="lg:w-1/2 w-full shrink-0">
              <div className="aspect-video bg-black border border-gray-200 p-8 relative flex flex-col justify-center gap-4 rounded-sm shadow-xl">
                 <div className="flex justify-between items-center text-[#005ea2] font-mono text-[10px] tracking-widest uppercase">
                   <span>Inference_Buffer</span>
-                  <span>v3.0_Large</span>
+                  <span>AI_Core</span>
                 </div>
                 <div className="h-2 bg-[#111] rounded-full overflow-hidden">
                   <div className="h-full bg-[#005ea2] w-[80%] animate-pulse"></div>
@@ -330,10 +331,10 @@ export default function FeatureVoiceBilling() {
           </div>
           <div className="lg:w-1/2 w-full">
             <h2 className="text-[22px] font-bold tracking-widest uppercase mb-6 text-black">
-              LPU INFERENCE ENGINE
+              AI INFERENCE ENGINE
             </h2>
             <p className="text-[17px] leading-[1.65] text-[#333333] mb-6">
-              VyaparSetu leverages Groq's Language Processing Unit (LPU) architecture to achieve zero-latency billing. By bypassing standard cloud CPUs, we can transcribe and parse complex Hinglish commands in milliseconds.
+              VyaparSetu leverages advanced AI architecture to achieve near-zero latency billing. By bypassing standard cloud CPUs, we can transcribe and parse complex Hinglish commands in milliseconds.
             </p>
             <p className="text-[17px] leading-[1.65] text-[#333333]">
               The model identifies context automatically. Whether you say "Aadha kilo sugar" or "500 gram cheeni", it resolves to the same SKU ID with absolute precision.
@@ -353,7 +354,68 @@ export default function FeatureVoiceBilling() {
           </p>
       </section>
 
-      {/* SECTION 5: LANGUAGES */}
+      {/* SECTION 5: INVENTORY ANALYTICS (NEW) */}
+      <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16">
+          <div className="md:w-1/2">
+             <h2 className="text-[22px] font-bold tracking-widest uppercase mb-6 text-black">
+               REAL-TIME INVENTORY DECAY
+             </h2>
+             <p className="text-[17px] leading-[1.65] text-[#333333] mb-6">
+               Every voice command doesn't just generate a bill; it automatically updates your backend inventory. If you sell "2 kilo cheeni" via voice, exactly 2000 grams are deducted from your bulk storage records.
+             </p>
+             <p className="text-[17px] leading-[1.65] text-[#333333]">
+               Our system alerts you precisely when your loose inventory reaches a critical threshold, preventing stockouts during peak hours.
+             </p>
+          </div>
+          <div className="md:w-1/2 flex justify-center">
+             <div className="grid grid-cols-2 gap-4 w-full">
+                <div className="bg-gray-50 border border-gray-200 p-6 rounded-sm text-center">
+                  <Database className="mx-auto mb-4 text-[#005ea2]" size={32} />
+                  <p className="text-3xl font-bold font-mono">142kg</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-2">Sugar Stock</p>
+                </div>
+                <div className="bg-gray-50 border border-gray-200 p-6 rounded-sm text-center">
+                  <Activity className="mx-auto mb-4 text-red-500" size={32} />
+                  <p className="text-3xl font-bold font-mono">-2.5kg</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-2">Last 5 Mins</p>
+                </div>
+             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 6: OFFLINE CACHING (NEW) */}
+      <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-[#0a0a0a] text-white border-b border-[#222]">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row-reverse items-center gap-16">
+          <div className="md:w-1/2">
+             <h2 className="text-[22px] font-bold tracking-widest uppercase mb-6">
+               ASYNCHRONOUS OFFLINE CACHE
+             </h2>
+             <p className="text-[#aaaaaa] leading-relaxed text-[17px] mb-6">
+               Internet connectivity in Indian retail can be unstable. Our application uses a sophisticated Service Worker architecture to cache your voice commands locally if the network drops.
+             </p>
+             <p className="text-[#aaaaaa] leading-relaxed text-[17px]">
+               Once connectivity is restored, the buffer is sequentially transmitted to the VyaparSetu AI engine, ensuring zero data loss and uninterrupted billing operations.
+             </p>
+          </div>
+          <div className="md:w-1/2 bg-[#111] border border-[#333] p-12 flex flex-col items-center justify-center rounded-sm">
+             <WifiOff size={64} className="text-[#005ea2] mb-6 opacity-80" strokeWidth={1.5} />
+             <div className="w-full max-w-xs space-y-3">
+               <div className="w-full h-12 border border-[#333] rounded-sm flex items-center px-4 justify-between bg-black">
+                 <span className="text-xs font-mono text-gray-500">Payload_1 (0.8s)</span>
+                 <span className="text-xs font-bold text-yellow-600 uppercase tracking-widest">Queued</span>
+               </div>
+               <div className="w-full h-12 border border-[#333] rounded-sm flex items-center px-4 justify-between bg-black">
+                 <span className="text-xs font-mono text-gray-500">Payload_2 (1.2s)</span>
+                 <span className="text-xs font-bold text-yellow-600 uppercase tracking-widest">Queued</span>
+               </div>
+             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 7: LANGUAGES */}
       <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto text-center">
           <Globe2 className="text-[#005ea2] mx-auto mb-12" size={48} />
@@ -370,7 +432,7 @@ export default function FeatureVoiceBilling() {
         </div>
       </section>
 
-      {/* SECTION 6: NOISE LOGIC */}
+      {/* SECTION 8: NOISE LOGIC */}
       <section className="relative w-full bg-[#181818] py-24 px-6 md:px-12 lg:px-24 overflow-hidden border-b border-[#333]">
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(circle_at_center,_transparent_0,_transparent_10px,_white_11px,_white_12px)] [background-size:60px_60px]"></div>
         <div className="relative z-10 max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16">
@@ -391,18 +453,28 @@ export default function FeatureVoiceBilling() {
         </div>
       </section>
 
-      {/* SECTION 7: DATA SAFETY */}
-      <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-white border-b border-gray-200 text-center flex flex-col items-center">
-          <ShieldCheck className="text-green-600 mb-6" size={56} strokeWidth={1.5}/>
-          <h2 className="text-[22px] font-bold tracking-widest uppercase mb-6 text-black">
-            STATELESS AUDIO ENCRYPTION
-          </h2>
-          <p className="text-[17px] leading-[1.65] text-[#555555] max-w-3xl mb-8">
-            Your audio is never persisted. It is held in a volatile RAM buffer, transmitted via encrypted SSL to VyaparSetu, and purged immediately after resolution. We maintain a zero-knowledge architecture regarding your voice data.
-          </p>
+      {/* SECTION 9: DATA SAFETY (EXPANDED) */}
+      <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-12">
+            <div className="text-center flex flex-col items-center">
+              <ShieldCheck className="text-green-600 mb-6" size={48} strokeWidth={1.5}/>
+              <h3 className="text-lg font-bold tracking-widest uppercase mb-4 text-black">Stateless Processing</h3>
+              <p className="text-[15px] leading-relaxed text-gray-600">Your audio is never persisted. It is held in a volatile RAM buffer and purged immediately after resolution.</p>
+            </div>
+            <div className="text-center flex flex-col items-center">
+              <Lock className="text-[#005ea2] mb-6" size={48} strokeWidth={1.5}/>
+              <h3 className="text-lg font-bold tracking-widest uppercase mb-4 text-black">End-to-End TLS</h3>
+              <p className="text-[15px] leading-relaxed text-gray-600">All voice data is transmitted via a secure 256-bit encrypted TLS 1.3 tunnel directly to the AI core.</p>
+            </div>
+            <div className="text-center flex flex-col items-center">
+              <Cpu className="text-gray-800 mb-6" size={48} strokeWidth={1.5}/>
+              <h3 className="text-lg font-bold tracking-widest uppercase mb-4 text-black">Zero Training Policy</h3>
+              <p className="text-[15px] leading-relaxed text-gray-600">We maintain a strict zero-knowledge architecture. Your proprietary voice data is never used to train generalized models.</p>
+            </div>
+          </div>
       </section>
 
-      {/* SECTION 8: FOOTER CTA */}
+      {/* SECTION 10: FOOTER CTA */}
       <section className="w-full bg-[#0a0a0a] py-24 px-6 md:px-12 lg:px-24 border-t border-[#333]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-end gap-12">
           <div className="max-w-2xl">
@@ -410,7 +482,7 @@ export default function FeatureVoiceBilling() {
               GO <br className="hidden md:block" /> HANDS-FREE.
             </h2>
             <p className="text-[#888] text-xl leading-relaxed mb-6">
-              Processing 3x more customers per hour is now a reality. Integrate the Whisper-v3 engine into your Kirana infrastructure today.
+              Processing 3x more customers per hour is now a reality. Integrate the VyaparSetu AI engine into your Kirana infrastructure today.
             </p>
           </div>
           <Link 
