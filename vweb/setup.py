@@ -167,7 +167,7 @@ export default function Layout() {
     # 3. INTERACTIVE CUSTOM PAGES (Home, Pricing, Contact)
     # ==========================================
     
-    # HOME PAGE - Note: using single {20} because this is a raw python string (""") not an f-string (f""")
+    # HOME PAGE - Safe regular string """ (uses single {20} naturally)
     create_file(f"{base}/src/pages/home/index.jsx", """
 import React from 'react';
 import { ArrowRight, ShieldCheck, TrendingUp, Store, Users, CheckCircle2 } from 'lucide-react';
@@ -307,7 +307,7 @@ export default function Pricing() {
 }
 """)
 
-    # CONTACT PAGE - Note: using single {64} because this is a raw python string (""") not an f-string (f""")
+    # CONTACT PAGE - Safe regular string """ (uses single {64} naturally)
     create_file(f"{base}/src/pages/company/contact.jsx", """
 import React, { useState } from 'react';
 import { Store, CheckCircle2 } from 'lucide-react';
@@ -423,13 +423,13 @@ export default function Contact() {
         {"path": "/legal/gdpr", "name": "LegalGDPR", "file": "legal/gdpr", "title": "Data Compliance", "desc": "Compliance with regional data protection laws."}
     ]
 
-    # Pre-load manual imports
+    # Pre-load manual imports mapped to the new folder structure
     import_statements = "import Home from './pages/home/index';\nimport Pricing from './pages/pricing/index';\nimport Contact from './pages/company/contact';\n"
     route_statements = "        <Route index element={<Home />} />\n        <Route path=\"pricing\" element={<Pricing />} />\n        <Route path=\"contact\" element={<Contact />} />\n"
 
     for page in pages:
         # Create Generic React File in dynamic subfolders
-        # Note: using double {{80}} and {{20}} because this IS an f-string (f""")
+        # Note: using double {{80}} and {{20}} because this IS an f-string (f""") escaping for React props
         component_code = f"""
 import React from 'react';
 import {{ ArrowRight, CheckCircle2, Store }} from 'lucide-react';
