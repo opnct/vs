@@ -56,7 +56,7 @@ export default function FeaturePOS() {
       <section className="relative w-full h-[60vh] min-h-[500px] flex items-center justify-start px-6 md:px-12 lg:px-24 overflow-hidden border-b border-[#333]">
         <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/80 to-black/40 z-10"></div>
         <img 
-          src="https://images.unsplash.com/photo-1556742044-f3d4ca0c9afa?auto=format&fit=crop&q=80" 
+          src="https://plus.unsplash.com/premium_photo-1683746792239-6ce8cdd3ac78?auto=format&fit=crop&q=80" 
           alt="Retail Checkout" 
           className="absolute inset-0 w-full h-full object-cover z-0 object-center opacity-40 grayscale"
         />
