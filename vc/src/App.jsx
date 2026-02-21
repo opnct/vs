@@ -1,326 +1,129 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Menu, Plus, MessageSquare, Send, User, Bot, 
-  Settings, Loader2, Sparkles, AlertCircle, ShoppingBag 
-} from 'lucide-react';
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import Home from './pages/home/index';
+
+// DYNAMIC FEATURE IMPORTS
+import FeatureAiStockPredictor from './pages/features/ai-stock-predictor';
+import FeatureSmartShelfMapping from './pages/features/smart-shelf-mapping';
+import FeatureVoiceBillingEngine from './pages/features/voice-billing-engine';
+import FeatureWhatsappCatalogs from './pages/features/whatsapp-catalogs';
+import FeatureDynamicPricingEngine from './pages/features/dynamic-pricing-engine';
+import FeatureSupplierBiddingHub from './pages/features/supplier-bidding-hub';
+import FeatureStaffFraudDetector from './pages/features/staff-fraud-detector';
+import FeatureMicroLendingConnect from './pages/features/micro-lending-connect';
+import FeatureCommunityGroupBuy from './pages/features/community-group-buy';
+import FeatureExpiryLiquidationNetwork from './pages/features/expiry-liquidation-network';
+import FeatureOcrInwardBilling from './pages/features/ocr-inward-billing';
+import FeatureUpiReconciliationEngine from './pages/features/upi-reconciliation-engine';
+import FeatureDigitalGoldChange from './pages/features/digital-gold-change';
+import FeatureOfflineMeshSync from './pages/features/offline-mesh-sync';
+import FeatureKiranaBrandMonetization from './pages/features/kirana-brand-monetization';
+import FeatureOmnichannelQcomBridge from './pages/features/omnichannel-qcom-bridge';
+import FeatureCashDenominationTracker from './pages/features/cash-denomination-tracker';
+import FeatureLocalDeliveryPooling from './pages/features/local-delivery-pooling';
+import FeatureKhataCreditScoring from './pages/features/khata-credit-scoring';
+import FeatureAutoGstCategorization from './pages/features/auto-gst-categorization';
+import FeatureLoyaltyGamificationWhatsapp from './pages/features/loyalty-gamification-whatsapp';
+import FeatureMandiRateTracker from './pages/features/mandi-rate-tracker';
+import FeatureFmcgSchemeTracker from './pages/features/fmcg-scheme-tracker';
+import FeaturePowerOutageMode from './pages/features/power-outage-mode';
+import FeatureLooseItemCataloging from './pages/features/loose-item-cataloging';
+import FeatureStoreHealthDashboard from './pages/features/store-health-dashboard';
+import FeatureMultiLingualReceipts from './pages/features/multi-lingual-receipts';
+import FeatureAiCctvIntegration from './pages/features/ai-cctv-integration';
+import FeatureCommunityPriceIndex from './pages/features/community-price-index';
+import FeatureDirectToFarmerSourcing from './pages/features/direct-to-farmer-sourcing';
+import FeatureStaffVernacularTraining from './pages/features/staff-vernacular-training';
+import FeatureAutomatedLicenseRenewal from './pages/features/automated-license-renewal';
+import FeatureHyperlocalAdsManager from './pages/features/hyperlocal-ads-manager';
+import FeatureUdhaarBarterSystem from './pages/features/udhaar-barter-system';
+import FeatureWhatsappChatbotOrdering from './pages/features/whatsapp-chatbot-ordering';
+import FeatureSmartReturnManagement from './pages/features/smart-return-management';
+import FeatureDailyWageChhotuManager from './pages/features/daily-wage-chhotu-manager';
+import FeatureRegionalFestivalPromos from './pages/features/regional-festival-promos';
+import FeatureCustomerFaceRecognition from './pages/features/customer-face-recognition';
+import FeatureSmartWeighingIot from './pages/features/smart-weighing-iot';
+import FeatureSupplierPaymentScheduler from './pages/features/supplier-payment-scheduler';
+import FeatureCustomerDietaryAlerts from './pages/features/customer-dietary-alerts';
+import FeaturePlasticWasteTracker from './pages/features/plastic-waste-tracker';
+import FeatureHardwareRentalPortal from './pages/features/hardware-rental-portal';
+import FeatureWholesaleSplitBilling from './pages/features/wholesale-split-billing';
+import FeatureB2bTaxCreditOptimizer from './pages/features/b2b-tax-credit-optimizer';
+import FeatureSeasonalDeadStockAlerts from './pages/features/seasonal-dead-stock-alerts';
+import FeatureQrAudioBoxIntegration from './pages/features/qr-audio-box-integration';
+import FeatureSmsMarketingEngine from './pages/features/sms-marketing-engine';
+import FeatureShopActComplianceVault from './pages/features/shop-act-compliance-vault';
+import FeatureDistributorRoutePlanner from './pages/features/distributor-route-planner';
+import FeatureCounterQueueManager from './pages/features/counter-queue-manager';
+import FeaturePackagingCostCalculator from './pages/features/packaging-cost-calculator';
+import FeatureMicroInsurancePortal from './pages/features/micro-insurance-portal';
 
 export default function App() {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [error, setError] = useState(null);
-  
-  const messagesEndRef = useRef(null);
-  const textareaRef = useRef(null);
-
-  // Uses Vite's environment variable syntax
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-
-  // Auto-scroll to bottom when messages update
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading]);
-
-  // Auto-resize textarea
-  const handleInput = (e) => {
-    setInput(e.target.value);
-    e.target.style.height = 'auto';
-    e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
-
-    if (!apiKey) {
-      setError("API Key is missing. Please add VITE_OPENAI_API_KEY to your .env file.");
-      return;
-    }
-
-    const userMessage = { role: 'user', content: input.trim() };
-    const newMessages = [...messages, userMessage];
-    
-    setMessages(newMessages);
-    setInput('');
-    setIsLoading(true);
-    setError(null);
-    
-    // Reset textarea height
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-    }
-
-    try {
-      // REAL LOGIC: Standard OpenAI API Call
-      // To use a free API like Groq, change this URL to: "https://api.groq.com/openai/v1/chat/completions"
-      // and change the model below to "llama3-8b-8192"
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: "llama3-8b-8192", // Or "gpt-4o"
-          messages: [
-            { 
-              role: "system", 
-              content: "You are VyaparSetu AI, an expert digital assistant for retail and Kirana store owners in India. You help with billing software, inventory management, taxation, and business growth strategies. Always be concise, professional, and helpful." 
-            },
-            // Map our state to the API format
-            ...newMessages.map(m => ({ role: m.role, content: m.content }))
-          ],
-          temperature: 0.7,
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error?.message || `API Error: ${response.status}`);
-      }
-
-      const assistantMessage = {
-        role: 'assistant',
-        content: data.choices[0].message.content
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
-
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <div className="flex h-screen w-full bg-[#212121] text-[#ececec] font-sans overflow-hidden">
+    <Routes>
+      <Route path="/" element={<Home />} />
       
-      {/* SIDEBAR */}
-      <div className={`
-        ${isSidebarOpen ? 'w-[260px] translate-x-0' : 'w-0 -translate-x-full'} 
-        transition-all duration-300 ease-in-out flex flex-col bg-[#171717] h-full shrink-0 border-r border-[#333] z-20 absolute md:relative
-      `}>
-        <div className="p-3">
-          <button 
-            onClick={() => setMessages([])}
-            className="flex items-center gap-3 w-full hover:bg-[#2f2f2f] text-sm text-white px-3 py-3 rounded-md transition-colors border border-[#333]"
-          >
-            <Plus size={16} />
-            New Chat
-          </button>
+      {/* FEATURE ROUTES */}
+      <Route path="/features/ai-stock-predictor" element={<FeatureAiStockPredictor />} />
+      <Route path="/features/smart-shelf-mapping" element={<FeatureSmartShelfMapping />} />
+      <Route path="/features/voice-billing-engine" element={<FeatureVoiceBillingEngine />} />
+      <Route path="/features/whatsapp-catalogs" element={<FeatureWhatsappCatalogs />} />
+      <Route path="/features/dynamic-pricing-engine" element={<FeatureDynamicPricingEngine />} />
+      <Route path="/features/supplier-bidding-hub" element={<FeatureSupplierBiddingHub />} />
+      <Route path="/features/staff-fraud-detector" element={<FeatureStaffFraudDetector />} />
+      <Route path="/features/micro-lending-connect" element={<FeatureMicroLendingConnect />} />
+      <Route path="/features/community-group-buy" element={<FeatureCommunityGroupBuy />} />
+      <Route path="/features/expiry-liquidation-network" element={<FeatureExpiryLiquidationNetwork />} />
+      <Route path="/features/ocr-inward-billing" element={<FeatureOcrInwardBilling />} />
+      <Route path="/features/upi-reconciliation-engine" element={<FeatureUpiReconciliationEngine />} />
+      <Route path="/features/digital-gold-change" element={<FeatureDigitalGoldChange />} />
+      <Route path="/features/offline-mesh-sync" element={<FeatureOfflineMeshSync />} />
+      <Route path="/features/kirana-brand-monetization" element={<FeatureKiranaBrandMonetization />} />
+      <Route path="/features/omnichannel-qcom-bridge" element={<FeatureOmnichannelQcomBridge />} />
+      <Route path="/features/cash-denomination-tracker" element={<FeatureCashDenominationTracker />} />
+      <Route path="/features/local-delivery-pooling" element={<FeatureLocalDeliveryPooling />} />
+      <Route path="/features/khata-credit-scoring" element={<FeatureKhataCreditScoring />} />
+      <Route path="/features/auto-gst-categorization" element={<FeatureAutoGstCategorization />} />
+      <Route path="/features/loyalty-gamification-whatsapp" element={<FeatureLoyaltyGamificationWhatsapp />} />
+      <Route path="/features/mandi-rate-tracker" element={<FeatureMandiRateTracker />} />
+      <Route path="/features/fmcg-scheme-tracker" element={<FeatureFmcgSchemeTracker />} />
+      <Route path="/features/power-outage-mode" element={<FeaturePowerOutageMode />} />
+      <Route path="/features/loose-item-cataloging" element={<FeatureLooseItemCataloging />} />
+      <Route path="/features/store-health-dashboard" element={<FeatureStoreHealthDashboard />} />
+      <Route path="/features/multi-lingual-receipts" element={<FeatureMultiLingualReceipts />} />
+      <Route path="/features/ai-cctv-integration" element={<FeatureAiCctvIntegration />} />
+      <Route path="/features/community-price-index" element={<FeatureCommunityPriceIndex />} />
+      <Route path="/features/direct-to-farmer-sourcing" element={<FeatureDirectToFarmerSourcing />} />
+      <Route path="/features/staff-vernacular-training" element={<FeatureStaffVernacularTraining />} />
+      <Route path="/features/automated-license-renewal" element={<FeatureAutomatedLicenseRenewal />} />
+      <Route path="/features/hyperlocal-ads-manager" element={<FeatureHyperlocalAdsManager />} />
+      <Route path="/features/udhaar-barter-system" element={<FeatureUdhaarBarterSystem />} />
+      <Route path="/features/whatsapp-chatbot-ordering" element={<FeatureWhatsappChatbotOrdering />} />
+      <Route path="/features/smart-return-management" element={<FeatureSmartReturnManagement />} />
+      <Route path="/features/daily-wage-chhotu-manager" element={<FeatureDailyWageChhotuManager />} />
+      <Route path="/features/regional-festival-promos" element={<FeatureRegionalFestivalPromos />} />
+      <Route path="/features/customer-face-recognition" element={<FeatureCustomerFaceRecognition />} />
+      <Route path="/features/smart-weighing-iot" element={<FeatureSmartWeighingIot />} />
+      <Route path="/features/supplier-payment-scheduler" element={<FeatureSupplierPaymentScheduler />} />
+      <Route path="/features/customer-dietary-alerts" element={<FeatureCustomerDietaryAlerts />} />
+      <Route path="/features/plastic-waste-tracker" element={<FeaturePlasticWasteTracker />} />
+      <Route path="/features/hardware-rental-portal" element={<FeatureHardwareRentalPortal />} />
+      <Route path="/features/wholesale-split-billing" element={<FeatureWholesaleSplitBilling />} />
+      <Route path="/features/b2b-tax-credit-optimizer" element={<FeatureB2bTaxCreditOptimizer />} />
+      <Route path="/features/seasonal-dead-stock-alerts" element={<FeatureSeasonalDeadStockAlerts />} />
+      <Route path="/features/qr-audio-box-integration" element={<FeatureQrAudioBoxIntegration />} />
+      <Route path="/features/sms-marketing-engine" element={<FeatureSmsMarketingEngine />} />
+      <Route path="/features/shop-act-compliance-vault" element={<FeatureShopActComplianceVault />} />
+      <Route path="/features/distributor-route-planner" element={<FeatureDistributorRoutePlanner />} />
+      <Route path="/features/counter-queue-manager" element={<FeatureCounterQueueManager />} />
+      <Route path="/features/packaging-cost-calculator" element={<FeaturePackagingCostCalculator />} />
+      <Route path="/features/micro-insurance-portal" element={<FeatureMicroInsurancePortal />} />
+
+      <Route path="*" element={
+        <div className="min-h-screen bg-black flex items-center justify-center text-white font-black text-6xl italic uppercase">
+          404 : Shard Not Found
         </div>
-
-        <div className="flex-1 overflow-y-auto px-3 py-2 custom-scrollbar">
-          <div className="text-xs font-semibold text-[#888] mb-3 mt-2 px-2">Today</div>
-          {messages.length > 0 ? (
-            <button className="flex items-center gap-3 w-full bg-[#2f2f2f] text-sm text-white px-3 py-3 rounded-md transition-colors truncate">
-              <MessageSquare size={16} className="shrink-0" />
-              <span className="truncate">{messages[0].content.substring(0, 25)}...</span>
-            </button>
-          ) : (
-            <div className="text-xs text-[#555] px-2 italic">No recent chats</div>
-          )}
-        </div>
-
-        <div className="p-3 border-t border-[#333]">
-          <button className="flex items-center gap-3 w-full hover:bg-[#2f2f2f] text-sm text-white px-3 py-3 rounded-md transition-colors">
-            <ShoppingBag size={16} />
-            VyaparSetu Dashboard
-          </button>
-          <button className="flex items-center gap-3 w-full hover:bg-[#2f2f2f] text-sm text-white px-3 py-3 rounded-md transition-colors mt-1">
-            <Settings size={16} />
-            Settings
-          </button>
-        </div>
-      </div>
-
-      {/* MAIN CHAT AREA */}
-      <div className="flex-1 flex flex-col h-full relative w-full">
-        
-        {/* HEADER */}
-        <header className="h-14 flex items-center justify-between px-4 border-b border-[#333]/50 bg-[#212121] z-10 sticky top-0">
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 hover:bg-[#2f2f2f] rounded-md transition-colors text-[#ececec]"
-            >
-              <Menu size={20} />
-            </button>
-            <h1 className="text-lg font-semibold tracking-wide flex items-center gap-2 text-white">
-              VyaparSetu <span className="text-[#005ea2] font-bold">AI</span>
-            </h1>
-          </div>
-        </header>
-
-        {/* CHAT MESSAGES */}
-        <div className="flex-1 overflow-y-auto scroll-smooth w-full">
-          {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center p-8">
-              <div className="w-16 h-16 bg-[#005ea2]/10 rounded-2xl flex items-center justify-center mb-6 border border-[#005ea2]/20">
-                <Sparkles size={32} className="text-[#005ea2]" />
-              </div>
-              <h2 className="text-3xl font-bold mb-2 text-white">How can I help you today?</h2>
-              <p className="text-[#888] mb-8 text-center max-w-md">
-                I am your VyaparSetu retail assistant. Ask me about your inventory, daily billing, or business growth.
-              </p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl">
-                {[
-                  "How do I generate a GST invoice?",
-                  "Analyze my daily sugar inventory.",
-                  "What is the current stock for refined oil?",
-                  "How can I set up the Voice Billing Engine?"
-                ].map((suggestion, idx) => (
-                  <button 
-                    key={idx}
-                    onClick={() => setInput(suggestion)}
-                    className="p-4 border border-[#333] hover:bg-[#2f2f2f] rounded-xl text-left text-sm transition-colors text-[#ececec]"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col w-full">
-              {messages.map((msg, index) => (
-                <div 
-                  key={index} 
-                  className={`w-full py-6 ${msg.role === 'assistant' ? 'bg-[#212121]' : 'bg-[#212121]'}`}
-                >
-                  <div className="max-w-3xl mx-auto flex gap-6 px-4 md:px-6">
-                    {/* AVATAR */}
-                    <div className="w-8 h-8 rounded-sm shrink-0 flex items-center justify-center mt-1">
-                      {msg.role === 'assistant' ? (
-                        <div className="w-8 h-8 bg-[#005ea2] rounded-full flex items-center justify-center text-white">
-                          <Bot size={18} />
-                        </div>
-                      ) : (
-                        <div className="w-8 h-8 bg-[#444] rounded-full flex items-center justify-center text-white">
-                          <User size={18} />
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* MESSAGE CONTENT */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-start pt-1">
-                      <div className="font-semibold text-white mb-1">
-                        {msg.role === 'assistant' ? 'VyaparSetu AI' : 'You'}
-                      </div>
-                      <div className="text-[15px] leading-relaxed text-[#d1d5db] whitespace-pre-wrap">
-                        {msg.content}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {isLoading && (
-                <div className="w-full py-6 bg-[#212121]">
-                  <div className="max-w-3xl mx-auto flex gap-6 px-4 md:px-6">
-                    <div className="w-8 h-8 bg-[#005ea2] rounded-full flex items-center justify-center shrink-0 mt-1">
-                      <Bot size={18} className="text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0 flex items-center pt-2">
-                      <div className="flex gap-1">
-                        <span className="w-2 h-2 bg-[#888] rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                        <span className="w-2 h-2 bg-[#888] rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                        <span className="w-2 h-2 bg-[#888] rounded-full animate-bounce"></span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {error && (
-                <div className="w-full py-6 bg-[#212121]">
-                  <div className="max-w-3xl mx-auto flex gap-6 px-4 md:px-6">
-                    <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center shrink-0 mt-1">
-                      <AlertCircle size={18} className="text-red-500" />
-                    </div>
-                    <div className="flex-1 min-w-0 pt-1">
-                      <p className="text-red-400 text-[15px]">{error}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Invisible div to scroll to */}
-              <div ref={messagesEndRef} className="h-24 w-full" />
-            </div>
-          )}
-        </div>
-
-        {/* INPUT AREA */}
-        <div className="absolute bottom-0 w-full bg-gradient-to-t from-[#212121] via-[#212121] to-transparent pt-6 pb-6 px-4 md:px-6">
-          <div className="max-w-3xl mx-auto relative">
-            <div className="bg-[#2f2f2f] rounded-2xl border border-[#444] shadow-[0_0_15px_rgba(0,0,0,0.1)] flex items-end p-2 focus-within:border-[#666] transition-colors">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={handleInput}
-                onKeyDown={handleKeyDown}
-                placeholder="Message VyaparSetu AI..."
-                className="w-full max-h-[200px] bg-transparent text-[#ececec] placeholder-[#888] px-3 py-2 border-none focus:ring-0 resize-none outline-none text-[15px] leading-relaxed custom-scrollbar"
-                rows="1"
-              />
-              <button 
-                onClick={sendMessage}
-                disabled={!input.trim() || isLoading}
-                className={`p-2 mb-1 mr-1 rounded-lg shrink-0 transition-all ${
-                  input.trim() && !isLoading 
-                    ? 'bg-white text-black hover:bg-[#ddd]' 
-                    : 'bg-[#444] text-[#888] cursor-not-allowed'
-                }`}
-              >
-                {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-              </button>
-            </div>
-            <div className="text-center text-xs text-[#666] mt-3">
-              VyaparSetu AI can make mistakes. Check important billing data.
-            </div>
-          </div>
-        </div>
-
-      </div>
-      
-      {/* Mobile overlay */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-10 md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      <style dangerouslySetContent={{__html: `
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: #444;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background-color: #555;
-        }
-      `}} />
-    </div>
+      } />
+    </Routes>
   );
 }
