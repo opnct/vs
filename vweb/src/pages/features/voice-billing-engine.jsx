@@ -3,7 +3,7 @@ import { ArrowDown, ArrowRight, Mic, MicOff, Activity, Cpu, Globe2, Volume2, Shi
 import { Link } from 'react-router-dom';
 
 export default function FeatureVoiceBilling() {
-  // --- REAL-TIME LOGIC: MediaDevices + Gemini API ---
+  // --- REAL-TIME LOGIC: MediaDevices + Groq Whisper API ---
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -13,7 +13,37 @@ export default function FeatureVoiceBilling() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
-  const apiKey = ""; // Environment provided
+  // Consuming the API key from the .env file (Vite standard)
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY; 
+
+  // --- ROBUST FETCH WITH RETRY & EXPONENTIAL BACKOFF ---
+  const fetchWithRetry = async (url, options, retries = 5, delay = 1000) => {
+    try {
+      const response = await fetch(url, options);
+      
+      if (response.ok) return await response.json();
+      
+      // If unauthorized (401), stop immediately as retries won't help
+      if (response.status === 401) {
+        throw new Error("Invalid API Key. Please check your .env file.");
+      }
+
+      // Retry for rate limits (429) or server errors (5xx)
+      if (retries > 0 && (response.status === 429 || response.status >= 500)) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return fetchWithRetry(url, options, retries - 1, delay * 2);
+      }
+
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error?.message || `Inference error: ${response.status}`);
+    } catch (err) {
+      if (retries > 0 && err.message.includes("fetch")) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return fetchWithRetry(url, options, retries - 1, delay * 2);
+      }
+      throw err;
+    }
+  };
 
   // In-browser mapping logic for Kirana items
   const productCatalog = {
@@ -41,20 +71,21 @@ export default function FeatureVoiceBilling() {
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        processAudioWithGemini(audioBlob);
+        processAudioWithGroq(audioBlob);
         stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorder.start();
       setIsRecording(true);
       setErrorMsg('');
+      setTranscript('');
     } catch (err) {
-      setErrorMsg('Microphone access failed. Please ensure you are on a secure (HTTPS) connection.');
+      setErrorMsg('Microphone access failed. Ensure you are on HTTPS and have granted permissions.');
     }
   };
 
@@ -65,35 +96,35 @@ export default function FeatureVoiceBilling() {
     }
   };
 
-  const processAudioWithGemini = async (blob) => {
+  const processAudioWithGroq = async (blob) => {
+    if (!apiKey) {
+      setErrorMsg("API Configuration Missing: VITE_GROQ_API_KEY is not set.");
+      return;
+    }
+
     setIsProcessing(true);
     try {
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-      reader.onloadend = async () => {
-        const base64Data = reader.result.split(',')[1];
-        
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: "Transcribe this retail audio accurately. It contains a mix of Hindi and English (Hinglish) regarding grocery quantities. Return ONLY the transcribed text." },
-                { inlineData: { mimeType: "audio/webm", data: base64Data } }
-              ]
-            }]
-          })
-        });
+      // Create Multipart FormData for Groq's OpenAI-compatible Whisper endpoint
+      const formData = new FormData();
+      formData.append("file", blob, "audio.webm");
+      formData.append("model", "whisper-large-v3");
+      formData.append("language", "hi"); // Optimization for Hindi/Hinglish
 
-        const result = await response.json();
-        const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        setTranscript(text);
-        parseSpeechToCart(text);
-        setIsProcessing(false);
-      };
+      const result = await fetchWithRetry("https://api.groq.com/openai/v1/audio/transcriptions", {
+        method: "POST", // Strictly defined to prevent GET errors
+        headers: {
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: formData
+      });
+
+      // Groq returns the transcribed text in the 'text' property
+      const text = result.text || "";
+      setTranscript(text);
+      parseSpeechToCart(text);
     } catch (err) {
-      setErrorMsg('Transcription engine failed to connect.');
+      setErrorMsg(err.message);
+    } finally {
       setIsProcessing(false);
     }
   };
@@ -166,30 +197,30 @@ export default function FeatureVoiceBilling() {
             VERNACULAR <br /> VOICE ENGINE
           </h1>
           <p className="text-xl md:text-2xl text-[#cccccc] max-w-2xl font-normal tracking-wide mb-10">
-            Ditch the browser-restricted speech APIs. Our new engine uses raw audio capture and Gemini AI for industry-leading precision.
+            Powered by Groq LPU Inference. Process complex grocery billing instantly by speaking naturally in regional languages. 
           </p>
           <a 
             href="#live-engine"
             className="inline-flex items-center gap-3 bg-[#005ea2] hover:bg-[#0b4774] text-white px-8 py-4 font-bold tracking-wider transition-colors text-[13px] uppercase rounded-sm mb-20 md:mb-28"
           >
-            Access Live Interface <ArrowDown size={18} strokeWidth={2.5}/>
+            Access Live Terminal <ArrowDown size={18} strokeWidth={2.5}/>
           </a>
         </div>
       </section>
 
-      {/* SECTION 2: LIVE GEMINI VOICE ENGINE */}
+      {/* SECTION 2: LIVE GROQ VOICE ENGINE */}
       <section id="live-engine" className="w-full py-24 px-6 md:px-12 lg:px-24 bg-[#0a0a0a] text-white border-b border-[#222] scroll-mt-16">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-12 items-start">
           
           <div className="lg:col-span-5 flex flex-col">
-            <h2 className="text-[22px] font-bold tracking-widest uppercase mb-4">
-              AI VOICE RECOGNITION
+            <h2 className="text-[22px] font-bold tracking-widest uppercase mb-4 text-[#005ea2]">
+              WHISPER LPU INFERENCE
             </h2>
-            <p className="text-[#888] mb-8 text-[15px] leading-relaxed">
-              Press and hold to record your command. Try saying <strong className="text-white">"Do kilo cheeni"</strong> or <strong className="text-white">"Half kg dal"</strong>. Logic processes via secure audio buffer.
+            <p className="text-[#888] mb-8 text-[15px] leading-relaxed font-medium">
+              Hold while speaking. Logic processes via Groq's high-speed Whisper Cloud. Try <strong className="text-white">"Do kilo cheeni"</strong> or <strong className="text-white">"Ek kilo chawal"</strong>.
             </p>
             
-            <div className="bg-[#181818] border border-[#333] rounded-sm p-8 flex flex-col items-center justify-center text-center min-h-[300px] relative overflow-hidden">
+            <div className="bg-[#181818] border border-[#333] rounded-sm p-8 flex flex-col items-center justify-center text-center min-h-[300px] relative overflow-hidden shadow-2xl">
               {isRecording && (
                 <div className="absolute inset-0 bg-[#005ea2] opacity-10 animate-pulse pointer-events-none"></div>
               )}
@@ -199,54 +230,54 @@ export default function FeatureVoiceBilling() {
                 onMouseUp={stopRecording}
                 onTouchStart={startRecording}
                 onTouchEnd={stopRecording}
-                className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 transition-all shadow-2xl ${
-                  isRecording ? 'bg-red-600 scale-110 shadow-red-900/50' : 'bg-[#005ea2] hover:bg-[#0b4774]'
+                className={`w-28 h-28 rounded-full flex items-center justify-center mb-6 transition-all shadow-2xl ${
+                  isRecording ? 'bg-red-600 scale-110 shadow-red-900/40' : 'bg-[#005ea2] hover:bg-[#0b4774]'
                 }`}
               >
-                {isProcessing ? <Loader2 size={32} className="animate-spin" /> : <Mic size={32} />}
+                {isProcessing ? <Loader2 size={36} className="animate-spin text-white" /> : <Mic size={36} className="text-white" />}
               </button>
               
               <h3 className="text-lg font-bold uppercase tracking-widest mb-2">
-                {isRecording ? 'Recording...' : isProcessing ? 'Analyzing AI...' : 'Hold to Speak'}
+                {isRecording ? 'Capturing...' : isProcessing ? 'Processing...' : 'Hold to Speak'}
               </h3>
               
               <div className="w-full h-20 bg-black border border-[#222] rounded-sm p-3 mt-4 text-left overflow-y-auto text-sm text-[#00ff00] font-mono">
-                {transcript || (isRecording ? <span className="text-gray-600">Capturing audio...</span> : <span className="text-gray-600">Awaiting input.</span>)}
+                {transcript || (isRecording ? <span className="text-gray-600">PCM_STREAM_ACTIVE...</span> : <span className="text-gray-600">Awaiting audio payload.</span>)}
               </div>
               
-              {errorMsg && <p className="text-red-500 text-xs mt-4 font-bold uppercase tracking-tighter">{errorMsg}</p>}
+              {errorMsg && <p className="text-red-500 text-[10px] mt-4 font-bold uppercase tracking-widest leading-tight">{errorMsg}</p>}
             </div>
           </div>
 
-          <div className="lg:col-span-7 bg-[#111111] border border-[#333] rounded-sm p-8 flex flex-col h-full min-h-[450px]">
+          <div className="lg:col-span-7 bg-[#111111] border border-[#333] rounded-sm p-8 flex flex-col h-full min-h-[450px] shadow-2xl">
              <div className="flex items-center justify-between border-b border-[#222] pb-6 mb-6">
                 <div className="flex items-center gap-3">
                   <ShoppingCart size={24} className="text-[#005ea2]"/>
-                  <h3 className="text-[18px] font-bold tracking-widest uppercase">Live Terminal</h3>
+                  <h3 className="text-[18px] font-bold tracking-widest uppercase">Live Cart Terminal</h3>
                 </div>
-                <div className="text-[#888] font-mono text-sm uppercase tracking-wider">
-                  <span className="text-green-500 mr-2">●</span> Gemini API: Connected
+                <div className="text-green-500 font-mono text-[11px] font-bold uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-ping"></span> Whisper-v3 Online
                 </div>
              </div>
 
              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
                 {cart.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-[#444] text-sm uppercase tracking-widest font-mono">
-                    Cart is empty. Use voice to add items.
+                  <div className="h-full flex items-center justify-center text-[#333] text-sm uppercase tracking-[0.3em] font-black">
+                    Cart Empty
                   </div>
                 ) : (
                   cart.map((item, idx) => (
                     <div key={item.cartId} className="flex justify-between items-center bg-[#1a1a1a] border border-[#222] p-4 rounded-sm animate-in slide-in-from-right-4">
                       <div className="flex gap-4 items-center">
-                        <span className="text-[#555] font-mono text-xs w-4">{idx + 1}.</span>
+                        <div className="w-1 h-8 bg-[#005ea2]"></div>
                         <div>
-                          <p className="font-bold text-[15px]">{item.name}</p>
-                          <p className="text-xs text-[#888] font-mono mt-1">{item.quantity} {item.unit} @ ₹{item.price}/{item.unit}</p>
+                          <p className="font-bold text-[15px] text-white uppercase">{item.name}</p>
+                          <p className="text-xs text-[#888] font-mono mt-1">{item.quantity} Unit(s) @ ₹{item.price}/unit</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-6">
-                        <span className="font-bold font-mono">₹{item.total.toFixed(2)}</span>
-                        <button onClick={() => removeFromCart(item.cartId)} className="text-[#555] hover:text-red-500 transition-colors">
+                        <span className="font-bold font-mono text-xl text-white">₹{item.total.toFixed(2)}</span>
+                        <button onClick={() => removeFromCart(item.cartId)} className="text-[#444] hover:text-red-500 transition-colors">
                           <Trash2 size={18}/>
                         </button>
                       </div>
@@ -256,73 +287,69 @@ export default function FeatureVoiceBilling() {
              </div>
 
              <div className="border-t border-[#222] mt-6 pt-6 flex justify-between items-center">
-                <span className="text-[#888] uppercase tracking-widest text-sm font-bold">Gross Total</span>
-                <span className="text-3xl font-bold font-mono">₹{subtotal.toFixed(2)}</span>
+                <span className="text-[#888] uppercase tracking-widest text-[13px] font-black">Grand Total</span>
+                <span className="text-4xl font-bold font-mono text-white">₹{subtotal.toFixed(2)}</span>
              </div>
           </div>
 
         </div>
       </section>
 
-      {/* SECTION 3: NLP ARCHITECTURE */}
+      {/* SECTION 3: LPU ARCHITECTURE */}
       <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-16 items-center">
           <div className="lg:w-1/2 w-full shrink-0">
-             <div className="aspect-square bg-gray-50 border border-gray-200 p-12 relative flex items-center justify-center rounded-sm">
-                <Cpu size={120} className="text-[#005ea2] absolute opacity-10"/>
-                <div className="space-y-6 w-full relative z-10">
-                  <div className="bg-white p-4 border border-gray-200 shadow-sm rounded-sm flex justify-between items-center text-sm font-mono text-gray-500">
-                    <span>INPUT: "Do kilo cheeni"</span> <ArrowRight size={16}/>
-                  </div>
-                  <div className="bg-[#111] p-4 border border-[#333] shadow-sm rounded-sm flex justify-between items-center text-sm font-mono text-white">
-                    <span>GEMINI FLASH 2.5</span> <Activity size={16} className="text-[#005ea2]"/>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-[#f0f8ff] p-4 border border-[#b3dcf2] text-center text-[#005ea2] font-bold text-sm uppercase rounded-sm">ITEM: Sugar</div>
-                    <div className="bg-[#f0f8ff] p-4 border border-[#b3dcf2] text-center text-[#005ea2] font-bold text-sm uppercase rounded-sm">QTY: 2.0 KG</div>
-                  </div>
+             <div className="aspect-video bg-black border border-gray-200 p-8 relative flex flex-col justify-center gap-4 rounded-sm shadow-xl">
+                <div className="flex justify-between items-center text-[#005ea2] font-mono text-[10px] tracking-widest uppercase">
+                  <span>Inference_Buffer</span>
+                  <span>v3.0_Large</span>
+                </div>
+                <div className="h-2 bg-[#111] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#005ea2] w-[80%] animate-pulse"></div>
+                </div>
+                <div className="h-2 bg-[#111] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#005ea2] w-[45%]"></div>
+                </div>
+                <div className="h-2 bg-[#111] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#005ea2] w-[95%] animate-pulse"></div>
                 </div>
              </div>
           </div>
           <div className="lg:w-1/2 w-full">
             <h2 className="text-[22px] font-bold tracking-widest uppercase mb-6 text-black">
-              HINGLISH NLP ARCHITECTURE
+              LPU INFERENCE ENGINE
             </h2>
             <p className="text-[17px] leading-[1.65] text-[#333333] mb-6">
-              Unlike standard browser APIs, our Gemini-powered engine understands Indian retail dialects perfectly. It manages the linguistic complexity of mixing Hindi and English in a single sentence.
+              VyaparSetu leverages Groq's Language Processing Unit (LPU) architecture to achieve zero-latency billing. By bypassing standard cloud CPUs, we can transcribe and parse complex Hinglish commands in milliseconds.
             </p>
             <p className="text-[17px] leading-[1.65] text-[#333333]">
-              The model identifies context automatically. Whether you say "Aadha kilo sugar" or "500 gram cheeni", it resolves to the same SKU with 99.8% accuracy.
+              The model identifies context automatically. Whether you say "Aadha kilo sugar" or "500 gram cheeni", it resolves to the same SKU ID with absolute precision.
             </p>
           </div>
         </div>
       </section>
 
-      {/* SECTION 4: IOT SYNC */}
-      <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-[#f9f9f9] border-b border-gray-200">
-        <div className="max-w-7xl mx-auto text-center flex flex-col items-center">
-          <Scale size={48} className="text-[#005ea2] mb-8" strokeWidth={1.5}/>
+      {/* SECTION 4: IOT BRIDGE */}
+      <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-[#f9f9f9] border-b border-gray-200 text-center">
+          <Scale size={48} className="text-[#005ea2] mb-8 mx-auto" strokeWidth={1.5}/>
           <h2 className="text-[22px] font-bold tracking-widest uppercase mb-6 text-black">
             IOT WEIGHING SCALE SYNC
           </h2>
-          <p className="text-[17px] leading-[1.65] text-[#555555] max-w-3xl mb-12">
-            Voice billing becomes exponentially faster when paired with our IoT integrations. Simply place the item on the connected digital scale and speak the item name. The weight is fetched in real-time.
+          <p className="text-[17px] leading-[1.65] text-[#555555] max-w-3xl mx-auto">
+            Voice billing becomes exponentially faster when paired with our IoT integrations. Place the item on the scale and speak its name. VyaparSetu fetches the live weight and generates the bill entry instantly.
           </p>
-        </div>
       </section>
 
       {/* SECTION 5: LANGUAGES */}
       <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-4 mb-12">
-            <Globe2 className="text-[#005ea2]" size={32} />
-            <h2 className="text-[22px] font-bold tracking-widest uppercase text-black">
-              SUPPORTED REGIONAL LANGUAGES
-            </h2>
-          </div>
+        <div className="max-w-7xl mx-auto text-center">
+          <Globe2 className="text-[#005ea2] mx-auto mb-12" size={48} />
+          <h2 className="text-[22px] font-bold tracking-widest uppercase text-black mb-12">
+            14+ SUPPORTED INDIAN DIALECTS
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
             {['Hindi', 'Marathi', 'Gujarati', 'Tamil', 'Telugu', 'Kannada', 'Bengali', 'Punjabi', 'Malayalam', 'Odia', 'Assamese', 'Urdu', 'English', 'Hinglish'].map(lang => (
-              <div key={lang} className="bg-white border border-gray-300 p-4 text-center font-bold tracking-wide uppercase text-[13px] rounded-sm shadow-sm hover:border-black transition-colors">
+              <div key={lang} className="bg-white border border-gray-300 p-4 text-center font-bold tracking-wide uppercase text-[11px] rounded-sm shadow-sm">
                 {lang}
               </div>
             ))}
@@ -330,58 +357,54 @@ export default function FeatureVoiceBilling() {
         </div>
       </section>
 
-      {/* SECTION 6: NOISE ISOLATION */}
+      {/* SECTION 6: NOISE LOGIC */}
       <section className="relative w-full bg-[#181818] py-24 px-6 md:px-12 lg:px-24 overflow-hidden border-b border-[#333]">
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(circle_at_center,_transparent_0,_transparent_10px,_white_11px,_white_12px)] [background-size:60px_60px]"></div>
-        <div className="relative z-10 max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-16 items-center">
-            <div>
+        <div className="relative z-10 max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16">
+            <div className="md:w-1/2">
               <h2 className="text-[22px] font-bold tracking-widest uppercase mb-8 text-white">
                 ACOUSTIC NOISE ISOLATION
               </h2>
-              <p className="text-[#aaaaaa] leading-relaxed text-[17px] mb-6">
-                Kirana stores are loud. We filter out the hum of ceiling fans and traffic before the audio leaves your device.
+              <p className="text-[#aaaaaa] leading-relaxed text-[17px]">
+                Kirana stores are loud. Our audio logic filters out background frequencies from ceiling fans and street traffic before transmission, ensuring high transcription accuracy even during peak store hours.
               </p>
             </div>
-            <div className="bg-[#222222] border border-[#333] p-12 rounded-sm flex items-center justify-center relative">
-              <div className="flex items-center gap-2 h-24">
-                 {[...Array(12)].map((_, i) => (
-                   <div key={i} className="w-3 bg-[#005ea2] rounded-full animate-pulse" style={{ height: `${Math.max(20, Math.random() * 100)}%`, animationDelay: `${i * 0.1}s` }}></div>
+            <div className="md:w-1/2 flex items-center justify-center gap-2 h-24">
+                 {[...Array(16)].map((_, i) => (
+                   <div key={i} className="w-2 bg-[#005ea2] rounded-full animate-pulse" style={{ height: `${Math.max(10, Math.random() * 100)}%`, animationDelay: `${i * 0.05}s` }}></div>
                  ))}
-                 <Volume2 className="text-white ml-6 opacity-50" size={32}/>
-              </div>
+                 <Volume2 className="text-white ml-6 opacity-30" size={40}/>
             </div>
-          </div>
         </div>
       </section>
 
-      {/* SECTION 7: EDGE SECURITY */}
-      <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
-          <ShieldCheck className="text-[#005ea2] mb-6" size={56} strokeWidth={1.5}/>
+      {/* SECTION 7: DATA SAFETY */}
+      <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-white border-b border-gray-200 text-center flex flex-col items-center">
+          <ShieldCheck className="text-green-600 mb-6" size={56} strokeWidth={1.5}/>
           <h2 className="text-[22px] font-bold tracking-widest uppercase mb-6 text-black">
-            SECURE AUDIO ARCHITECTURE
+            STATELESS AUDIO ENCRYPTION
           </h2>
           <p className="text-[17px] leading-[1.65] text-[#555555] max-w-3xl mb-8">
-            Your store's audio never exists on persistent storage. It is captured in a memory buffer, transmitted via encrypted SSL to the Gemini AI endpoint, processed, and immediately purged.
+            Your audio is never persisted. It is held in a volatile RAM buffer, transmitted via encrypted SSL to Groq, and purged immediately after resolution. We maintain a zero-knowledge architecture regarding your voice data.
           </p>
-        </div>
       </section>
 
       {/* SECTION 8: FOOTER CTA */}
       <section className="w-full bg-[#0a0a0a] py-24 px-6 md:px-12 lg:px-24 border-t border-[#333]">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-[3.5rem] md:text-[5rem] font-bold tracking-tight text-white mb-8 uppercase leading-[1.05]">
-            SPEAK. <br className="hidden md:block" /> BILL. DONE.
-          </h2>
-          <p className="text-[#aaaaaa] text-lg md:text-xl max-w-3xl leading-relaxed mb-12">
-            The future of Kirana is hands-free. Implement the VyaparSetu Voice Engine and process 3x more customers per hour.
-          </p>
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-end gap-12">
+          <div className="max-w-2xl">
+            <h2 className="text-[3.5rem] md:text-[5.5rem] font-bold tracking-tight text-white mb-8 uppercase leading-[1]">
+              GO <br className="hidden md:block" /> HANDS-FREE.
+            </h2>
+            <p className="text-[#888] text-xl leading-relaxed mb-6">
+              Processing 3x more customers per hour is now a reality. Integrate the Whisper-v3 engine into your Kirana infrastructure today.
+            </p>
+          </div>
           <Link 
             to="/pricing" 
-            className="inline-flex items-center gap-3 bg-white hover:bg-gray-200 text-black px-8 py-4 font-bold tracking-wider uppercase transition-colors text-[13px] rounded-sm"
+            className="inline-flex items-center gap-4 bg-[#005ea2] hover:bg-[#0b4774] text-white px-10 py-5 font-bold tracking-[0.2em] uppercase transition-all text-[13px] rounded-sm shadow-2xl"
           >
-            Deploy Voice Engine <ArrowRight size={18} strokeWidth={2.5}/>
+            Deploy Voice Engine <ArrowRight size={20}/>
           </Link>
         </div>
       </section>
