@@ -64,12 +64,21 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-6 text-white font-sans relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-white font-sans relative overflow-hidden animate-in fade-in duration-700">
       
-      {/* Background ambient lighting */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#005ea2]/5 rounded-full blur-[120px] pointer-events-none"></div>
+      {/* Background Image & Overlay Matching the Home Aesthetic */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/95 via-black/80 to-black/60 z-10"></div>
+      <img 
+        src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80" 
+        alt="Retail Store Background" 
+        className="absolute inset-0 w-full h-full object-cover z-0 object-center opacity-60 grayscale"
+      />
+      
+      {/* Ambient lighting to make the card pop */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#005ea2]/10 rounded-full blur-[120px] pointer-events-none z-10"></div>
 
-      <div className="w-full max-w-md bg-[#111] p-8 md:p-10 rounded-3xl border border-white/10 shadow-2xl relative z-10">
+      {/* Login Card with Glassmorphism */}
+      <div className="w-full max-w-md bg-black/60 backdrop-blur-xl p-8 md:p-10 rounded-3xl border border-white/10 shadow-2xl relative z-20">
         
         {/* Navigation & Status Header */}
         <div className="flex justify-between items-start mb-10">
@@ -117,8 +126,8 @@ export default function Login() {
                   if (error) setError(''); // Clear error on typing
                 }}
                 placeholder="retailer@vyapar.com"
-                className={`w-full bg-[#1a1a1a] border rounded-xl py-4 pl-12 pr-4 text-white text-sm focus:outline-none transition-all ${
-                  error ? 'border-red-500/50 focus:border-red-500' : 'border-white/5 focus:border-[#005ea2] focus:bg-[#111]'
+                className={`w-full bg-[#1a1a1a]/80 backdrop-blur-md border rounded-xl py-4 pl-12 pr-4 text-white text-sm focus:outline-none transition-all ${
+                  error ? 'border-red-500/50 focus:border-red-500' : 'border-white/10 focus:border-[#005ea2] focus:bg-[#111]'
                 }`}
                 autoComplete="email"
                 required
@@ -150,7 +159,7 @@ export default function Login() {
         </form>
 
         {/* Footer Meta */}
-        <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-center gap-2 text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
+        <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-center gap-2 text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
           <Activity size={12} />
           Secured via EmailJS Protocol
         </div>

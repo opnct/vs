@@ -3,7 +3,10 @@ import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/home/index';
-import Chatbot from './pages/chatbot/index';\nimport Login from './pages/auth/Login';\nimport VerifyOTP from './pages/auth/VerifyOTP';
+import Chatbot from './pages/chatbot/index';
+import Login from './pages/auth/Login';
+import VerifyOTP from './pages/auth/VerifyOTP';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // FEATURE IMPORTS
 import FeatureAiStockPredictor from './pages/features/ai-stock-predictor';
@@ -67,62 +70,76 @@ export default function App() {
       <Header />
       <main className="flex-1">
         <Routes>
-          <Route path="/" element={<Home />} />\n          <Route path="/login" element={<Login />} />\n          <Route path="/verify-otp" element={<VerifyOTP />} />
-          <Route path="/chatbot" element={<Chatbot />} />
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/verify-otp" element={<VerifyOTP />} />
+          
+          {/* Protected Routes */}
+          <Route 
+            path="/chatbot" 
+            element={
+              <ProtectedRoute>
+                <Chatbot />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Feature Routes */}
           <Route path="/features/ai-stock-predictor" element={<FeatureAiStockPredictor />} />
-      <Route path="/features/smart-shelf-mapping" element={<FeatureSmartShelfMapping />} />
-      <Route path="/features/voice-billing-engine" element={<FeatureVoiceBillingEngine />} />
-      <Route path="/features/whatsapp-catalogs" element={<FeatureWhatsappCatalogs />} />
-      <Route path="/features/dynamic-pricing-engine" element={<FeatureDynamicPricingEngine />} />
-      <Route path="/features/supplier-bidding-hub" element={<FeatureSupplierBiddingHub />} />
-      <Route path="/features/staff-fraud-detector" element={<FeatureStaffFraudDetector />} />
-      <Route path="/features/micro-lending-connect" element={<FeatureMicroLendingConnect />} />
-      <Route path="/features/community-group-buy" element={<FeatureCommunityGroupBuy />} />
-      <Route path="/features/expiry-liquidation-network" element={<FeatureExpiryLiquidationNetwork />} />
-      <Route path="/features/ocr-inward-billing" element={<FeatureOcrInwardBilling />} />
-      <Route path="/features/upi-reconciliation-engine" element={<FeatureUpiReconciliationEngine />} />
-      <Route path="/features/digital-gold-change" element={<FeatureDigitalGoldChange />} />
-      <Route path="/features/offline-mesh-sync" element={<FeatureOfflineMeshSync />} />
-      <Route path="/features/kirana-brand-monetization" element={<FeatureKiranaBrandMonetization />} />
-      <Route path="/features/omnichannel-qcom-bridge" element={<FeatureOmnichannelQcomBridge />} />
-      <Route path="/features/cash-denomination-tracker" element={<FeatureCashDenominationTracker />} />
-      <Route path="/features/local-delivery-pooling" element={<FeatureLocalDeliveryPooling />} />
-      <Route path="/features/khata-credit-scoring" element={<FeatureKhataCreditScoring />} />
-      <Route path="/features/auto-gst-categorization" element={<FeatureAutoGstCategorization />} />
-      <Route path="/features/loyalty-gamification-whatsapp" element={<FeatureLoyaltyGamificationWhatsapp />} />
-      <Route path="/features/mandi-rate-tracker" element={<FeatureMandiRateTracker />} />
-      <Route path="/features/fmcg-scheme-tracker" element={<FeatureFmcgSchemeTracker />} />
-      <Route path="/features/power-outage-mode" element={<FeaturePowerOutageMode />} />
-      <Route path="/features/loose-item-cataloging" element={<FeatureLooseItemCataloging />} />
-      <Route path="/features/store-health-dashboard" element={<FeatureStoreHealthDashboard />} />
-      <Route path="/features/multi-lingual-receipts" element={<FeatureMultiLingualReceipts />} />
-      <Route path="/features/ai-cctv-integration" element={<FeatureAiCctvIntegration />} />
-      <Route path="/features/community-price-index" element={<FeatureCommunityPriceIndex />} />
-      <Route path="/features/direct-to-farmer-sourcing" element={<FeatureDirectToFarmerSourcing />} />
-      <Route path="/features/staff-vernacular-training" element={<FeatureStaffVernacularTraining />} />
-      <Route path="/features/automated-license-renewal" element={<FeatureAutomatedLicenseRenewal />} />
-      <Route path="/features/hyperlocal-ads-manager" element={<FeatureHyperlocalAdsManager />} />
-      <Route path="/features/udhaar-barter-system" element={<FeatureUdhaarBarterSystem />} />
-      <Route path="/features/whatsapp-chatbot-ordering" element={<FeatureWhatsappChatbotOrdering />} />
-      <Route path="/features/smart-return-management" element={<FeatureSmartReturnManagement />} />
-      <Route path="/features/daily-wage-chhotu-manager" element={<FeatureDailyWageChhotuManager />} />
-      <Route path="/features/regional-festival-promos" element={<FeatureRegionalFestivalPromos />} />
-      <Route path="/features/customer-face-recognition" element={<FeatureCustomerFaceRecognition />} />
-      <Route path="/features/smart-weighing-iot" element={<FeatureSmartWeighingIot />} />
-      <Route path="/features/supplier-payment-scheduler" element={<FeatureSupplierPaymentScheduler />} />
-      <Route path="/features/customer-dietary-alerts" element={<FeatureCustomerDietaryAlerts />} />
-      <Route path="/features/plastic-waste-tracker" element={<FeaturePlasticWasteTracker />} />
-      <Route path="/features/hardware-rental-portal" element={<FeatureHardwareRentalPortal />} />
-      <Route path="/features/wholesale-split-billing" element={<FeatureWholesaleSplitBilling />} />
-      <Route path="/features/b2b-tax-credit-optimizer" element={<FeatureB2bTaxCreditOptimizer />} />
-      <Route path="/features/seasonal-dead-stock-alerts" element={<FeatureSeasonalDeadStockAlerts />} />
-      <Route path="/features/qr-audio-box-integration" element={<FeatureQrAudioBoxIntegration />} />
-      <Route path="/features/sms-marketing-engine" element={<FeatureSmsMarketingEngine />} />
-      <Route path="/features/shop-act-compliance-vault" element={<FeatureShopActComplianceVault />} />
-      <Route path="/features/distributor-route-planner" element={<FeatureDistributorRoutePlanner />} />
-      <Route path="/features/counter-queue-manager" element={<FeatureCounterQueueManager />} />
-      <Route path="/features/packaging-cost-calculator" element={<FeaturePackagingCostCalculator />} />
-      <Route path="/features/micro-insurance-portal" element={<FeatureMicroInsurancePortal />} />
+          <Route path="/features/smart-shelf-mapping" element={<FeatureSmartShelfMapping />} />
+          <Route path="/features/voice-billing-engine" element={<FeatureVoiceBillingEngine />} />
+          <Route path="/features/whatsapp-catalogs" element={<FeatureWhatsappCatalogs />} />
+          <Route path="/features/dynamic-pricing-engine" element={<FeatureDynamicPricingEngine />} />
+          <Route path="/features/supplier-bidding-hub" element={<FeatureSupplierBiddingHub />} />
+          <Route path="/features/staff-fraud-detector" element={<FeatureStaffFraudDetector />} />
+          <Route path="/features/micro-lending-connect" element={<FeatureMicroLendingConnect />} />
+          <Route path="/features/community-group-buy" element={<FeatureCommunityGroupBuy />} />
+          <Route path="/features/expiry-liquidation-network" element={<FeatureExpiryLiquidationNetwork />} />
+          <Route path="/features/ocr-inward-billing" element={<FeatureOcrInwardBilling />} />
+          <Route path="/features/upi-reconciliation-engine" element={<FeatureUpiReconciliationEngine />} />
+          <Route path="/features/digital-gold-change" element={<FeatureDigitalGoldChange />} />
+          <Route path="/features/offline-mesh-sync" element={<FeatureOfflineMeshSync />} />
+          <Route path="/features/kirana-brand-monetization" element={<FeatureKiranaBrandMonetization />} />
+          <Route path="/features/omnichannel-qcom-bridge" element={<FeatureOmnichannelQcomBridge />} />
+          <Route path="/features/cash-denomination-tracker" element={<FeatureCashDenominationTracker />} />
+          <Route path="/features/local-delivery-pooling" element={<FeatureLocalDeliveryPooling />} />
+          <Route path="/features/khata-credit-scoring" element={<FeatureKhataCreditScoring />} />
+          <Route path="/features/auto-gst-categorization" element={<FeatureAutoGstCategorization />} />
+          <Route path="/features/loyalty-gamification-whatsapp" element={<FeatureLoyaltyGamificationWhatsapp />} />
+          <Route path="/features/mandi-rate-tracker" element={<FeatureMandiRateTracker />} />
+          <Route path="/features/fmcg-scheme-tracker" element={<FeatureFmcgSchemeTracker />} />
+          <Route path="/features/power-outage-mode" element={<FeaturePowerOutageMode />} />
+          <Route path="/features/loose-item-cataloging" element={<FeatureLooseItemCataloging />} />
+          <Route path="/features/store-health-dashboard" element={<FeatureStoreHealthDashboard />} />
+          <Route path="/features/multi-lingual-receipts" element={<FeatureMultiLingualReceipts />} />
+          <Route path="/features/ai-cctv-integration" element={<FeatureAiCctvIntegration />} />
+          <Route path="/features/community-price-index" element={<FeatureCommunityPriceIndex />} />
+          <Route path="/features/direct-to-farmer-sourcing" element={<FeatureDirectToFarmerSourcing />} />
+          <Route path="/features/staff-vernacular-training" element={<FeatureStaffVernacularTraining />} />
+          <Route path="/features/automated-license-renewal" element={<FeatureAutomatedLicenseRenewal />} />
+          <Route path="/features/hyperlocal-ads-manager" element={<FeatureHyperlocalAdsManager />} />
+          <Route path="/features/udhaar-barter-system" element={<FeatureUdhaarBarterSystem />} />
+          <Route path="/features/whatsapp-chatbot-ordering" element={<FeatureWhatsappChatbotOrdering />} />
+          <Route path="/features/smart-return-management" element={<FeatureSmartReturnManagement />} />
+          <Route path="/features/daily-wage-chhotu-manager" element={<FeatureDailyWageChhotuManager />} />
+          <Route path="/features/regional-festival-promos" element={<FeatureRegionalFestivalPromos />} />
+          <Route path="/features/customer-face-recognition" element={<FeatureCustomerFaceRecognition />} />
+          <Route path="/features/smart-weighing-iot" element={<FeatureSmartWeighingIot />} />
+          <Route path="/features/supplier-payment-scheduler" element={<FeatureSupplierPaymentScheduler />} />
+          <Route path="/features/customer-dietary-alerts" element={<FeatureCustomerDietaryAlerts />} />
+          <Route path="/features/plastic-waste-tracker" element={<FeaturePlasticWasteTracker />} />
+          <Route path="/features/hardware-rental-portal" element={<FeatureHardwareRentalPortal />} />
+          <Route path="/features/wholesale-split-billing" element={<FeatureWholesaleSplitBilling />} />
+          <Route path="/features/b2b-tax-credit-optimizer" element={<FeatureB2bTaxCreditOptimizer />} />
+          <Route path="/features/seasonal-dead-stock-alerts" element={<FeatureSeasonalDeadStockAlerts />} />
+          <Route path="/features/qr-audio-box-integration" element={<FeatureQrAudioBoxIntegration />} />
+          <Route path="/features/sms-marketing-engine" element={<FeatureSmsMarketingEngine />} />
+          <Route path="/features/shop-act-compliance-vault" element={<FeatureShopActComplianceVault />} />
+          <Route path="/features/distributor-route-planner" element={<FeatureDistributorRoutePlanner />} />
+          <Route path="/features/counter-queue-manager" element={<FeatureCounterQueueManager />} />
+          <Route path="/features/packaging-cost-calculator" element={<FeaturePackagingCostCalculator />} />
+          <Route path="/features/micro-insurance-portal" element={<FeatureMicroInsurancePortal />} />
         </Routes>
       </main>
       <Footer />

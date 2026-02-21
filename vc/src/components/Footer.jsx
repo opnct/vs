@@ -1,91 +1,81 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Github, Linkedin, Database, ShieldCheck, Mail, Phone, MapPin } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="bg-black text-white border-t border-white/10">
-      <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-24">
+    <footer className="bg-black text-white pt-16 pb-8 px-6 md:px-12 w-full border-t border-white/10 mt-auto">
+      <div className="max-w-[1400px] mx-auto">
+        
+        {/* Top section of footer */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-8 md:gap-0">
+          <div className="flex flex-col gap-4">
+            <div className="text-[22px] font-bold tracking-tight">
+              VyaparSetu
+            </div>
+            <div className="flex items-center gap-4 text-gray-400">
+              <a href="#" className="hover:text-white transition-colors" aria-label="LinkedIn">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+              </a>
+              <a href="#" className="hover:text-white transition-colors" aria-label="Facebook">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+              </a>
+              <a href="#" className="hover:text-white transition-colors" aria-label="Telegram">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              </a>
+            </div>
+          </div>
           
-          {/* SECTION 1 */}
-          <div className="space-y-8">
-            <h2 className="text-3xl font-black uppercase tracking-tighter">VyaparSetu.ai</h2>
-            <p className="text-zinc-500 text-sm leading-relaxed">
-              Standardizing the unorganized Indian retail sector through satellite data, real-time AI, and unified inventory mesh networking.
-            </p>
-            <div className="flex gap-4">
-              <div className="bg-white/5 p-3 rounded-sm border border-white/10 group hover:border-[#005ea2] transition-colors cursor-help">
-                <Database size={18} className="text-[#005ea2]" />
-              </div>
-              <div className="bg-white/5 p-3 rounded-sm border border-white/10 group hover:border-[#005ea2] transition-colors cursor-help">
-                <ShieldCheck size={18} className="text-[#005ea2]" />
-              </div>
-            </div>
+          <div className="flex flex-col md:flex-row gap-6 md:gap-8 text-[15px]">
+            <Link to="/about" className="hover:underline hover:text-gray-300">About</Link>
+            <Link to="/pricing" className="hover:underline hover:text-gray-300">Pricing & Plans</Link>
+            <Link to="/contact" className="hover:underline hover:text-gray-300">Contact Us</Link>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <hr className="border-[#333333] mb-8" />
+
+        {/* Bottom section of footer */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 text-[13px] text-[#cccccc]">
+          <div className="flex flex-wrap gap-x-6 gap-y-4">
+            <Link to="/legal/accessibility" className="hover:underline hover:text-white transition-colors">Accessibility support</Link>
+            <Link to="/legal/terms" className="hover:underline hover:text-white transition-colors">Terms of Service</Link>
+            <Link to="/legal/privacy" className="hover:underline hover:text-white transition-colors">Privacy policy</Link>
+            <Link to="/legal/refunds" className="hover:underline hover:text-white transition-colors">Refunds</Link>
+            <Link to="/contact" className="hover:underline hover:text-white transition-colors">Support Requests</Link>
           </div>
 
-          {/* SECTION 2: PORTALS */}
-          <div className="space-y-6 text-sm">
-            <h4 className="font-black uppercase tracking-[0.3em] text-[#005ea2] text-[10px]">Explore Portals</h4>
-            <div className="flex flex-col gap-3 font-bold uppercase tracking-widest text-zinc-400">
-               <Link to="/features/ai-stock-predictor" className="hover:text-white transition-all">Stock Prediction</Link>
-               <Link to="/features/voice-billing-engine" className="hover:text-white transition-all">Voice Billing</Link>
-               <Link to="/features/ocr-inward-billing" className="hover:text-white transition-all">OCR Scan</Link>
-               <Link to="/features/mandi-rate-tracker" className="hover:text-white transition-all">Mandi Index</Link>
-               <Link to="/features/whatsapp-chatbot-ordering" className="hover:text-white transition-all">Order Bot</Link>
-            </div>
-          </div>
-
-          {/* SECTION 3: QUICK LINKS */}
-          <div className="space-y-6 text-sm">
-            <h4 className="font-black uppercase tracking-[0.3em] text-[#005ea2] text-[10px]">Resources</h4>
-            <div className="flex flex-col gap-3 font-bold uppercase tracking-widest text-zinc-400">
-               <Link to="/about" className="hover:text-white transition-all">Mission Earth</Link>
-               <Link to="/pricing" className="hover:text-white transition-all">Pricing Model</Link>
-               <Link to="/compliance" className="hover:text-white transition-all">Shop Act Vault</Link>
-               <Link to="/audit" className="hover:text-white transition-all">Security Audit</Link>
-               <Link to="/contact" className="hover:text-white transition-all">Developer Hub</Link>
-            </div>
-          </div>
-
-          {/* SECTION 4: DEVELOPER CREDITS */}
-          <div className="space-y-6 text-sm bg-zinc-900/40 p-8 border border-white/5 rounded-xl">
-            <h4 className="font-black uppercase tracking-[0.3em] text-[#005ea2] text-[10px]">Architecture Credits</h4>
+          <div className="flex flex-col lg:flex-row gap-4 lg:gap-12 w-full lg:w-auto">
+            <p>Looking for support documentation? <a href="#" className="text-white hover:underline">Visit Help Center</a></p>
+            <p>Page last updated: <strong className="text-white">Feb 21, 2026</strong></p>
             
-            <div className="space-y-6">
-               <div className="flex items-center justify-between">
-                 <span className="font-black uppercase tracking-tighter text-white">Arun Ammisetty</span>
-                 <div className="flex gap-3">
-                   <a href="https://github.com/arunammisetty" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-white transition-colors"><Github size={16}/></a>
-                   <a href="https://linkedin.com/in/arunammisetty" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-[#005ea2] transition-colors"><Linkedin size={16}/></a>
-                 </div>
-               </div>
-               <div className="flex items-center justify-between">
-                 <span className="font-black uppercase tracking-tighter text-white">Palak Bhosale</span>
-                 <div className="flex gap-3">
-                   <a href="https://github.com/palakbhosale" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-white transition-colors"><Github size={16}/></a>
-                   <a href="https://linkedin.com/in/palakbhosale" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-[#005ea2] transition-colors"><Linkedin size={16}/></a>
-                 </div>
-               </div>
+            <div className="flex flex-col items-start lg:items-end gap-2">
+              <p>Architecture by <strong className="text-white">Arun Ammisetty</strong> & <strong className="text-white">Palak Bhosale</strong></p>
+              
+              <div className="flex items-center gap-3 ml-1">
+                {/* Arun Socials */}
+                <a href="https://github.com/arunammisetty" target="_blank" rel="noopener noreferrer" className="text-[#cccccc] hover:text-white transition-colors" aria-label="GitHub Arun">
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                </a>
+                <a href="https://linkedin.com/in/arunammisetty" target="_blank" rel="noopener noreferrer" className="text-[#cccccc] hover:text-[#005ea2] transition-colors" aria-label="LinkedIn Arun">
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                </a>
+                
+                <span className="text-zinc-700 px-1">|</span>
+                
+                {/* Palak Socials */}
+                <a href="https://github.com/palakbhosale" target="_blank" rel="noopener noreferrer" className="text-[#cccccc] hover:text-white transition-colors" aria-label="GitHub Palak">
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                </a>
+                <a href="https://linkedin.com/in/palakbhosale" target="_blank" rel="noopener noreferrer" className="text-[#cccccc] hover:text-[#005ea2] transition-colors" aria-label="LinkedIn Palak">
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                </a>
+              </div>
             </div>
+
           </div>
-
         </div>
 
-        {/* BOTTOM GOV STYLE */}
-        <div className="pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-start gap-8">
-            <div className="flex flex-wrap gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
-              <span className="cursor-help hover:text-zinc-400">Accessibility support</span>
-              <span className="cursor-help hover:text-zinc-400">Privacy Policy</span>
-              <span className="cursor-help hover:text-zinc-400">Performance Reports</span>
-              <span className="cursor-help hover:text-zinc-400">Security Sovereignty</span>
-            </div>
-            <div className="text-zinc-600 text-[10px] leading-loose text-left md:text-right">
-                Looking for government information? Visit <span className="text-zinc-400 underline">VyaparIndia.gov</span> <br />
-                Page last updated: <span className="text-zinc-400 font-bold uppercase tracking-widest">Dec 18, 2025</span> <br />
-                VyaparSetu Information Center Responsible Official: <span className="text-white font-bold underline">VyaparSetu Core</span>
-            </div>
-        </div>
       </div>
     </footer>
   );
