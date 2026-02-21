@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/home/index';
-import Chatbot from './pages/chatbot/index';
+import Chatbot from './pages/chatbot/index';\nimport Login from './pages/auth/Login';\nimport VerifyOTP from './pages/auth/VerifyOTP';
 
 // FEATURE IMPORTS
 import FeatureAiStockPredictor from './pages/features/ai-stock-predictor';
@@ -67,7 +67,7 @@ export default function App() {
       <Header />
       <main className="flex-1">
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Home />} />\n          <Route path="/login" element={<Login />} />\n          <Route path="/verify-otp" element={<VerifyOTP />} />
           <Route path="/chatbot" element={<Chatbot />} />
           <Route path="/features/ai-stock-predictor" element={<FeatureAiStockPredictor />} />
       <Route path="/features/smart-shelf-mapping" element={<FeatureSmartShelfMapping />} />
