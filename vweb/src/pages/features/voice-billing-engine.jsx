@@ -3,7 +3,7 @@ import { ArrowDown, ArrowRight, Mic, MicOff, Activity, Cpu, Globe2, Volume2, Shi
 import { Link } from 'react-router-dom';
 
 export default function FeatureVoiceBilling() {
-  // --- REAL-TIME LOGIC: MediaDevices + Groq Whisper API ---
+  // --- REAL-TIME LOGIC: MediaDevices + Gemini API ---
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -14,7 +14,7 @@ export default function FeatureVoiceBilling() {
   const audioChunksRef = useRef([]);
 
   // Consuming the API key from the .env file (Vite standard)
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY; 
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY; 
 
   // --- ROBUST FETCH WITH RETRY & EXPONENTIAL BACKOFF ---
   const fetchWithRetry = async (url, options, retries = 5, delay = 1000) => {
@@ -23,8 +23,8 @@ export default function FeatureVoiceBilling() {
       
       if (response.ok) return await response.json();
       
-      // If unauthorized (401), stop immediately as retries won't help
-      if (response.status === 401) {
+      // If unauthorized (401/403), stop immediately as retries won't help
+      if (response.status === 401 || response.status === 403) {
         throw new Error("Invalid API Key. Please check your .env file.");
       }
 
@@ -76,7 +76,7 @@ export default function FeatureVoiceBilling() {
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        processAudioWithGroq(audioBlob);
+        processAudioWithGemini(audioBlob);
         stream.getTracks().forEach(track => track.stop());
       };
 
@@ -96,34 +96,47 @@ export default function FeatureVoiceBilling() {
     }
   };
 
-  const processAudioWithGroq = async (blob) => {
+  const processAudioWithGemini = async (blob) => {
     if (!apiKey) {
-      setErrorMsg("API Configuration Missing: VITE_GROQ_API_KEY is not set.");
+      setErrorMsg("API Configuration Missing: VITE_GEMINI_API_KEY is not set.");
       return;
     }
 
     setIsProcessing(true);
     try {
-      // Create Multipart FormData for Groq's OpenAI-compatible Whisper endpoint
-      const formData = new FormData();
-      formData.append("file", blob, "audio.webm");
-      formData.append("model", "whisper-large-v3");
-      formData.append("language", "hi"); // Optimization for Hindi/Hinglish
-
-      const result = await fetchWithRetry("https://api.groq.com/openai/v1/audio/transcriptions", {
-        method: "POST", // Strictly defined to prevent GET errors
-        headers: {
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: formData
+      // Logic: Convert Blob to Base64 for Gemini JSON payload
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
       });
 
-      // Groq returns the transcribed text in the 'text' property
-      const text = result.text || "";
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+      
+      const payload = {
+        contents: [{
+          parts: [
+            { text: "Transcribe this retail audio accurately. It contains a mix of Hindi and English (Hinglish) regarding grocery quantities. Return ONLY the transcribed text." },
+            { inlineData: { mimeType: "audio/webm", data: base64Data } }
+          ]
+        }]
+      };
+
+      const result = await fetchWithRetry(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      // Parsing: Gemini returns text in a deeply nested structure
+      const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
       setTranscript(text);
       parseSpeechToCart(text);
     } catch (err) {
-      setErrorMsg(err.message);
+      setErrorMsg(err.message || 'Transcription engine unavailable.');
     } finally {
       setIsProcessing(false);
     }
@@ -197,7 +210,7 @@ export default function FeatureVoiceBilling() {
             VERNACULAR <br /> VOICE ENGINE
           </h1>
           <p className="text-xl md:text-2xl text-[#cccccc] max-w-2xl font-normal tracking-wide mb-10">
-            Powered by Groq LPU Inference. Process complex grocery billing instantly by speaking naturally in regional languages. 
+            Powered by VyaparSetu LPU Inference. Process complex grocery billing instantly by speaking naturally in regional languages. 
           </p>
           <a 
             href="#live-engine"
@@ -385,7 +398,7 @@ export default function FeatureVoiceBilling() {
             STATELESS AUDIO ENCRYPTION
           </h2>
           <p className="text-[17px] leading-[1.65] text-[#555555] max-w-3xl mb-8">
-            Your audio is never persisted. It is held in a volatile RAM buffer, transmitted via encrypted SSL to Groq, and purged immediately after resolution. We maintain a zero-knowledge architecture regarding your voice data.
+            Your audio is never persisted. It is held in a volatile RAM buffer, transmitted via encrypted SSL to VyaparSetu, and purged immediately after resolution. We maintain a zero-knowledge architecture regarding your voice data.
           </p>
       </section>
 
