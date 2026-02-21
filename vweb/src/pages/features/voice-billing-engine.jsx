@@ -3,7 +3,7 @@ import { ArrowDown, ArrowRight, Mic, MicOff, Activity, Cpu, Globe2, Volume2, Shi
 import { Link } from 'react-router-dom';
 
 export default function FeatureVoiceBilling() {
-  // --- REAL-TIME LOGIC: MediaDevices + Gemini API ---
+  // --- REAL-TIME LOGIC: MediaDevices + Python Backend ---
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -13,37 +13,9 @@ export default function FeatureVoiceBilling() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
-  // Consuming the API key from the .env file (Vite standard)
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY; 
-
-  // --- ROBUST FETCH WITH RETRY & EXPONENTIAL BACKOFF ---
-  const fetchWithRetry = async (url, options, retries = 5, delay = 1000) => {
-    try {
-      const response = await fetch(url, options);
-      
-      if (response.ok) return await response.json();
-      
-      // If unauthorized (401/403), stop immediately as retries won't help
-      if (response.status === 401 || response.status === 403) {
-        throw new Error("Invalid API Key. Please check your .env file.");
-      }
-
-      // Retry for rate limits (429) or server errors (5xx)
-      if (retries > 0 && (response.status === 429 || response.status >= 500)) {
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return fetchWithRetry(url, options, retries - 1, delay * 2);
-      }
-
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.error?.message || `Inference error: ${response.status}`);
-    } catch (err) {
-      if (retries > 0 && err.message.includes("fetch")) {
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return fetchWithRetry(url, options, retries - 1, delay * 2);
-      }
-      throw err;
-    }
-  };
+  // URL of your new Python Backend running in Codespaces
+  // Make sure port 8000 is forwarded and set to "Public" in the Codespaces Ports tab
+  const BACKEND_URL = "http://127.0.0.1:8000/api/transcribe";
 
   // In-browser mapping logic for Kirana items
   const productCatalog = {
@@ -76,7 +48,7 @@ export default function FeatureVoiceBilling() {
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        processAudioWithGemini(audioBlob);
+        processAudioWithBackend(audioBlob);
         stream.getTracks().forEach(track => track.stop());
       };
 
@@ -96,48 +68,30 @@ export default function FeatureVoiceBilling() {
     }
   };
 
-  const processAudioWithGemini = async (blob) => {
-    if (!apiKey) {
-      setErrorMsg("API Configuration Missing: VITE_GEMINI_API_KEY is not set.");
-      return;
-    }
-
+  const processAudioWithBackend = async (blob) => {
     setIsProcessing(true);
     try {
-      // Logic: Convert Blob to Base64 for Gemini JSON payload
-      const base64Data = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      // Logic: Create FormData to send the audio file securely to the Python Backend
+      const formData = new FormData();
+      formData.append("audio", blob, "recording.webm");
 
-      // UPDATED TO PUBLIC MODEL: gemini-1.5-flash
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-      
-      const payload = {
-        contents: [{
-          parts: [
-            { text: "Transcribe this retail audio accurately. It contains a mix of Hindi and English (Hinglish) regarding grocery quantities. Return ONLY the transcribed text." },
-            { inlineData: { mimeType: "audio/webm", data: base64Data } }
-          ]
-        }]
-      };
-
-      const result = await fetchWithRetry(url, {
+      const response = await fetch(BACKEND_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
+        body: formData, // Sending multipart/form-data directly to your API
       });
 
-      // Parsing: Gemini returns text in a deeply nested structure
-      const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      if (!response.ok) {
+        throw new Error(`Backend API Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Parsing: Backend returns text in a simple {"text": "..."} structure
+      const text = data.text || "";
       setTranscript(text);
       parseSpeechToCart(text);
     } catch (err) {
-      setErrorMsg(err.message || 'Transcription engine unavailable.');
+      setErrorMsg('Failed to connect to Python backend. Ensure the FastAPI server is running on port 8000 and the port is Public.');
     } finally {
       setIsProcessing(false);
     }

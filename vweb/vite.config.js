@@ -14,6 +14,14 @@ export default defineConfig({
     allowedHosts: true,
     hmr: {
       clientPort: 443
+    },
+    // Proxy API requests to the Python backend
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+      }
     }
   }
 });
