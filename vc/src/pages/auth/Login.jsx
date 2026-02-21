@@ -1,24 +1,50 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Mail, ArrowRight, Loader2, AlertCircle, ArrowLeft, Activity } from 'lucide-react';
+import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const navigate = useNavigate();
+  const { initiateLogin } = useAuth();
+  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { initiateLogin } = useAuth();
-  const navigate = useNavigate();
-  const inputRef = useRef(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Auto-focus the input field on mount for better UX
+  const emailRef = useRef(null);
+
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+    middleInitial: '',
+    email: '',
+    country: '',
+    affiliation: '',
+    studyArea: '',
+    userType: '',
+    organization: '',
+    agreements: true
+  });
+
+  // Auto-focus logic gracefully applied to the first input
   useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+    const firstInput = document.getElementById('username');
+    if (firstInput) firstInput.focus();
   }, []);
 
-  // Standard Real-World Email Regex Validation
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+    if (error) setError('');
+  };
+
   const validateEmail = (email) => {
     return String(email)
       .toLowerCase()
@@ -29,21 +55,29 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const trimmedEmail = email.trim();
-
-    // 1. Check if empty
-    if (!trimmedEmail) {
-      setError('Email address is required to proceed.');
+    
+    // Real-time production validations mimicking the exact UI requirements
+    if (!formData.username || !formData.password || !formData.confirmPassword || !formData.firstName || !formData.lastName || !formData.email || !formData.country || !formData.affiliation) {
+      setError('Please fill in all required fields marked with a red dot.');
       return;
     }
 
-    // 2. Validate format
-    if (!validateEmail(trimmedEmail)) {
-      setError('Invalid format. Please enter a valid business email address.');
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match.');
       return;
     }
 
-    // 3. Check network connectivity
+    if (formData.password.length < 12) {
+      setError('Password must contain a minimum of 12 characters.');
+      return;
+    }
+
+    if (!validateEmail(formData.email.trim())) {
+      setError('Please enter a valid e-mail address.');
+      if (emailRef.current) emailRef.current.focus();
+      return;
+    }
+
     if (!navigator.onLine) {
       setError('Network offline. Please check your internet connection.');
       return;
@@ -53,117 +87,259 @@ export default function Login() {
     setError('');
 
     try {
-      // 4. Execute Real Auth Context Logic (Triggers EmailJS OTP)
-      await initiateLogin(trimmedEmail);
+      // Execute Real Auth Context Logic (Triggers EmailJS OTP)
+      await initiateLogin(formData.email.trim());
       navigate('/verify-otp');
     } catch (err) {
-      setError(err.message || 'Failed to dispatch secure code. Please try again.');
+      setError(err.message || 'Failed to dispatch secure verification code. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-white font-sans relative overflow-hidden animate-in fade-in duration-700">
+    /* FIXED OVERLAY: Strictly covers the Header and Footer from App.jsx */
+    <div className="fixed inset-0 z-[9999] bg-white overflow-y-auto font-sans text-[#333333] flex flex-col">
       
-      {/* Background Image & Overlay Matching the Home Aesthetic */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/95 via-black/80 to-black/60 z-10"></div>
-      <img 
-        src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80" 
-        alt="Retail Store Background" 
-        className="absolute inset-0 w-full h-full object-cover z-0 object-center opacity-60 grayscale"
-      />
-      
-      {/* Ambient lighting to make the card pop */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#005ea2]/10 rounded-full blur-[120px] pointer-events-none z-10"></div>
+      {/* Blue Feedback Side-Tab */}
+      <div className="fixed left-0 top-1/2 -translate-y-1/2 -rotate-90 origin-bottom-left translate-x-12 bg-[#337ab7] text-white px-3 py-1.5 rounded-t cursor-pointer font-bold text-xs tracking-wider z-50 shadow-md">
+        Feedback
+      </div>
 
-      {/* Login Card with Glassmorphism */}
-      <div className="w-full max-w-md bg-black/60 backdrop-blur-xl p-8 md:p-10 rounded-3xl border border-white/10 shadow-2xl relative z-20">
-        
-        {/* Navigation & Status Header */}
-        <div className="flex justify-between items-start mb-10">
-          <Link to="/" className="text-zinc-500 hover:text-white transition-colors p-2 -ml-2 rounded-lg hover:bg-white/5">
-            <ArrowLeft size={20} />
-          </Link>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
-            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></span>
-            <span className="text-[9px] font-black text-green-500 uppercase tracking-widest">Auth_Online</span>
-          </div>
-        </div>
-
-        {/* Branding & Titles */}
-        <div className="w-14 h-14 bg-[#005ea2] rounded-2xl flex items-center justify-center font-black italic text-2xl mb-8 shadow-[0_0_30px_rgba(0,94,162,0.4)] border border-[#0077cc]">
-          VS
-        </div>
-        <h1 className="text-3xl font-black uppercase tracking-tighter mb-3 leading-tight">Command Center <br/> Login</h1>
-        <p className="text-zinc-400 text-sm mb-8 font-medium leading-relaxed">
-          Enter your registered retail email. We will dispatch a 6-digit cryptographic code to verify your identity.
-        </p>
-
-        {/* Error State Display */}
-        {error && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold uppercase tracking-widest rounded-xl mb-6 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
-            <AlertCircle size={16} className="shrink-0 mt-0.5" />
-            <span className="leading-relaxed">{error}</span>
-          </div>
-        )}
-
-        {/* Form Logic */}
-        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-          <div className="space-y-2">
-            <label htmlFor="emailInput" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 pl-1">
-              Retailer Email Address
-            </label>
-            <div className="relative group">
-              <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${error ? 'text-red-500' : 'text-zinc-500 group-focus-within:text-[#005ea2]'}`} size={18} />
-              <input
-                id="emailInput"
-                ref={inputRef}
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (error) setError(''); // Clear error on typing
-                }}
-                placeholder="retailer@vyapar.com"
-                className={`w-full bg-[#1a1a1a]/80 backdrop-blur-md border rounded-xl py-4 pl-12 pr-4 text-white text-sm focus:outline-none transition-all ${
-                  error ? 'border-red-500/50 focus:border-red-500' : 'border-white/10 focus:border-[#005ea2] focus:bg-[#111]'
-                }`}
-                autoComplete="email"
-                required
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading || !email.trim()}
-            className={`w-full font-black uppercase tracking-[0.2em] py-4 rounded-xl transition-all flex items-center justify-center gap-3 text-xs
-              ${isLoading || !email.trim() 
-                ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-transparent' 
-                : 'bg-[#005ea2] hover:bg-[#004a80] text-white shadow-lg shadow-blue-900/30 border border-[#0077cc] hover:scale-[0.98] active:scale-95'
-              }`}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="animate-spin" size={18} /> 
-                <span>Generating Code...</span>
-              </>
-            ) : (
-              <>
-                <span>Send Access Code</span> 
-                <ArrowRight size={18} />
-              </>
-            )}
-          </button>
-        </form>
-
-        {/* Footer Meta */}
-        <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-center gap-2 text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
-          <Activity size={12} />
-          Secured via EmailJS Protocol
+      {/* Solid Black Header Bar */}
+      <div className="bg-black text-white px-6 md:px-12 py-5 w-full shrink-0">
+        <div className="max-w-[1200px] mx-auto">
+          <h1 className="text-3xl font-bold tracking-tight">Register for a VyaparSetu Login Profile</h1>
         </div>
       </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 w-full max-w-[1200px] mx-auto px-6 md:px-12 py-8 flex flex-col lg:flex-row gap-12 lg:gap-16">
+        
+        {/* Left Column: Form */}
+        <div className="flex-1 max-w-3xl pb-16">
+          
+          {error && (
+            <div className="bg-[#f2dede] border border-[#ebccd1] text-[#a94442] px-4 py-3 rounded-sm mb-6 flex items-start gap-2 shadow-sm">
+              <AlertCircle size={18} className="shrink-0 mt-0.5" />
+              <span className="font-medium text-[14px]">{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-12">
+            
+            {/* Section: Profile Information */}
+            <div className="space-y-6">
+              <h2 className="text-[22px] text-[#2c3e50] border-b border-gray-100 pb-2 mb-6">Profile Information</h2>
+              
+              <div className="max-w-md space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="username" className="font-bold text-[15px] flex items-center gap-1">
+                    Username: <span className="text-[#c9302c] text-lg leading-none">&#8226;</span>
+                  </label>
+                  <input id="username" name="username" type="text" value={formData.username} onChange={handleChange} className="w-full border border-[#ccc] rounded-[3px] h-10 px-3 focus:outline-none focus:border-[#66afe9] focus:ring-1 focus:ring-[#66afe9] transition-shadow shadow-inner" />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="password" className="font-bold text-[15px] flex items-center gap-1">
+                    Password: <span className="text-[#c9302c] text-lg leading-none">&#8226;</span>
+                  </label>
+                  <div className="relative">
+                    <input id="password" name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleChange} className="w-full border border-[#ccc] rounded-[3px] h-10 pl-3 pr-10 focus:outline-none focus:border-[#66afe9] focus:ring-1 focus:ring-[#66afe9] transition-shadow shadow-inner" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#337ab7]">
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="confirmPassword" className="font-bold text-[15px] flex items-center gap-1">
+                    Password Confirmation: <span className="text-[#c9302c] text-lg leading-none">&#8226;</span>
+                  </label>
+                  <div className="relative">
+                    <input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? "text" : "password"} value={formData.confirmPassword} onChange={handleChange} className="w-full border border-[#ccc] rounded-[3px] h-10 pl-3 pr-10 focus:outline-none focus:border-[#66afe9] focus:ring-1 focus:ring-[#66afe9] transition-shadow shadow-inner" />
+                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#337ab7]">
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section: User Information */}
+            <div className="space-y-6">
+              <h2 className="text-[22px] text-[#2c3e50] border-b border-gray-100 pb-2 mb-6 mt-8">User Information</h2>
+              
+              <div className="max-w-md space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="firstName" className="font-bold text-[15px] flex items-center gap-1">
+                    First Name: <span className="text-[#c9302c] text-lg leading-none">&#8226;</span>
+                  </label>
+                  <input id="firstName" name="firstName" type="text" value={formData.firstName} onChange={handleChange} className="w-full border border-[#ccc] rounded-[3px] h-10 px-3 focus:outline-none focus:border-[#66afe9] focus:ring-1 focus:ring-[#66afe9] shadow-inner" />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="lastName" className="font-bold text-[15px] flex items-center gap-1">
+                    Last Name: <span className="text-[#c9302c] text-lg leading-none">&#8226;</span>
+                  </label>
+                  <input id="lastName" name="lastName" type="text" value={formData.lastName} onChange={handleChange} className="w-full border border-[#ccc] rounded-[3px] h-10 px-3 focus:outline-none focus:border-[#66afe9] focus:ring-1 focus:ring-[#66afe9] shadow-inner" />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="middleInitial" className="font-bold text-[15px]">Middle Initial:</label>
+                  <input id="middleInitial" name="middleInitial" type="text" maxLength="1" value={formData.middleInitial} onChange={handleChange} className="w-full border border-[#ccc] rounded-[3px] h-10 px-3 focus:outline-none focus:border-[#66afe9] focus:ring-1 focus:ring-[#66afe9] shadow-inner" />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="email" className="font-bold text-[15px] flex items-center gap-1">
+                    E-mail: <span className="text-[#c9302c] text-lg leading-none">&#8226;</span>
+                  </label>
+                  <input id="email" name="email" ref={emailRef} type="email" value={formData.email} onChange={handleChange} className="w-full border border-[#ccc] rounded-[3px] h-10 px-3 focus:outline-none focus:border-[#66afe9] focus:ring-1 focus:ring-[#66afe9] shadow-inner" />
+                </div>
+              </div>
+            </div>
+
+            {/* Section: Country Information */}
+            <div className="space-y-6">
+              <h2 className="text-[22px] text-[#2c3e50] border-b border-gray-100 pb-2 mb-6 mt-8">Country Information</h2>
+              
+              <div className="max-w-md space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="country" className="font-bold text-[15px] flex items-center gap-1">
+                    Country: <span className="text-[#c9302c] text-lg leading-none">&#8226;</span>
+                  </label>
+                  <select id="country" name="country" value={formData.country} onChange={handleChange} className="w-full border border-[#ccc] rounded-[3px] h-10 px-3 bg-white focus:outline-none focus:border-[#66afe9] focus:ring-1 focus:ring-[#66afe9] text-[15px]">
+                    <option value="" disabled>Select a Country</option>
+                    <option value="India">India</option>
+                    <option value="United States">United States</option>
+                    <option value="United Kingdom">United Kingdom</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Section: Affiliations */}
+            <div className="space-y-6">
+              <h2 className="text-[22px] text-[#2c3e50] border-b border-gray-100 pb-2 mb-6 mt-8">Affiliations</h2>
+              
+              <div className="max-w-md space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="affiliation" className="font-bold text-[15px] flex items-center gap-1">
+                    Affiliation: <span className="text-[#c9302c] text-lg leading-none">&#8226;</span>
+                  </label>
+                  <select id="affiliation" name="affiliation" value={formData.affiliation} onChange={handleChange} className="w-full border border-[#ccc] rounded-[3px] h-10 px-3 bg-white focus:outline-none focus:border-[#66afe9] focus:ring-1 focus:ring-[#66afe9] text-[15px]">
+                    <option value="" disabled>Select an Affiliation</option>
+                    <option value="Retailer">Retail Store Owner</option>
+                    <option value="Distributor">Distributor / Supplier</option>
+                    <option value="Enterprise">Enterprise Brand</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="studyArea" className="font-bold text-[15px]">Study Area:</label>
+                  <select id="studyArea" name="studyArea" value={formData.studyArea} onChange={handleChange} className="w-full border border-[#ccc] rounded-[3px] h-10 px-3 bg-white focus:outline-none focus:border-[#66afe9] focus:ring-1 focus:ring-[#66afe9] text-[15px]">
+                    <option value="" disabled>Select a Study Area</option>
+                    <option value="FMCG">FMCG Dynamics</option>
+                    <option value="Inventory Management">Inventory Management</option>
+                    <option value="Agri-Tech">Agri-Tech</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="userType" className="font-bold text-[15px]">User Type:</label>
+                  <select id="userType" name="userType" value={formData.userType} onChange={handleChange} className="w-full border border-[#ccc] rounded-[3px] h-10 px-3 bg-white focus:outline-none focus:border-[#66afe9] focus:ring-1 focus:ring-[#66afe9] text-[15px]">
+                    <option value="" disabled>Select a User Type</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Staff">Staff</option>
+                    <option value="Partner">Partner</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="organization" className="font-bold text-[15px]">Organization:</label>
+                  <input id="organization" name="organization" type="text" value={formData.organization} onChange={handleChange} className="w-full border border-[#ccc] rounded-[3px] h-10 px-3 focus:outline-none focus:border-[#66afe9] focus:ring-1 focus:ring-[#66afe9] shadow-inner" />
+                </div>
+              </div>
+            </div>
+
+            {/* Section: Agreements */}
+            <div className="space-y-6">
+              <h2 className="text-[22px] text-[#2c3e50] border-b border-gray-100 pb-2 mb-6 mt-8">Agreements</h2>
+              
+              <div className="bg-[#f4f7f9] p-4 rounded-sm border border-[#e1e8ed] flex items-start gap-3 shadow-sm mb-6">
+                <input 
+                  type="checkbox" 
+                  id="agreements" 
+                  name="agreements" 
+                  checked={formData.agreements} 
+                  onChange={handleChange} 
+                  className="mt-1 shrink-0 w-4 h-4 cursor-pointer"
+                />
+                <label htmlFor="agreements" className="text-[14px] text-[#333] cursor-pointer leading-relaxed">
+                  Please notify me via email with important information about VyaparSetu science data products (e.g. updates, new data releases, quality issues), VyaparSetu applications/tools (e.g. updates, service outages), and other relevant information for users.
+                </label>
+              </div>
+
+              {/* Action Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="bg-[#2ecc71] hover:bg-[#27ae60] text-white font-medium text-[15px] px-6 py-2.5 rounded-[3px] transition-colors shadow-sm disabled:opacity-70 flex items-center justify-center min-w-[120px]"
+              >
+                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'CONTINUE'}
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+        {/* Right Column: Rules Box */}
+        <div className="w-full lg:w-[380px] shrink-0 pt-10">
+          <div className="bg-[#f4f7f9] p-6 rounded-sm text-[14px] text-[#2c3e50] shadow-sm border border-[#e1e8ed]">
+            
+            <div className="flex items-center gap-1 font-medium mb-6">
+              <span className="text-[#c9302c] text-lg leading-none">&#8226;</span> Required field
+            </div>
+
+            <div className="font-bold mb-3 text-[15px]">Username must:</div>
+            <ul className="list-disc pl-5 space-y-1.5 mb-6 text-[#444] marker:text-gray-500">
+              <li>Be a Minimum of 4 characters</li>
+              <li>Be a Maximum of 30 characters</li>
+              <li>Contain at least one letter</li>
+              <li>Use only lowercase letters, numbers, periods and underscores</li>
+              <li>Not contain any blank spaces</li>
+              <li>Not begin, end or contain two consecutive special characters( . _ )</li>
+            </ul>
+
+            <div className="font-bold mb-3 text-[15px]">Password must contain:</div>
+            <ul className="list-disc pl-5 space-y-1.5 text-[#444] marker:text-gray-500">
+              <li>Minimum of 12 characters</li>
+              <li>One Uppercase letter</li>
+              <li>One Lowercase letter</li>
+              <li>One Number</li>
+              <li>One Special Character</li>
+            </ul>
+
+          </div>
+        </div>
+
+      </div>
+
+      {/* Solid Black Footer Bar mimicking the image */}
+      <div className="bg-black text-white text-center py-6 text-[13px] w-full shrink-0">
+        <p className="mb-4">Protection and maintenance of user profile information is described in <a href="#" className="font-bold hover:underline">VyaparSetu's Web Privacy Policy &#x2197;</a></p>
+        <p className="mb-6">For questions regarding the VyaparSetu Login, please contact <a href="#" className="font-bold hover:underline">VyaparSetu Support</a></p>
+        <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6 font-bold tracking-wide">
+          <span>V URSFOUR-2609-4</span>
+          <a href="#" className="hover:underline">Home</a>
+          <a href="#" className="hover:underline">VyaparSetu</a>
+          <a href="#" className="hover:underline">Accessibility</a>
+        </div>
+        <p className="mt-4 opacity-80 text-xs">VyaparSetu Official: Arun Ammisetty & Palak Bhosale</p>
+      </div>
+
     </div>
   );
 }
