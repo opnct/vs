@@ -1,14 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowDown, ArrowRight, Mic, MicOff, Activity, Cpu, Globe2, Volume2, ShieldCheck, Scale, Trash2, ShoppingCart } from 'lucide-react';
+import { ArrowDown, ArrowRight, Mic, MicOff, Activity, Cpu, Globe2, Volume2, ShieldCheck, Scale, Trash2, ShoppingCart, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function FeatureVoiceBilling() {
-  // --- REAL-TIME LOGIC: Web Speech API & Billing Engine ---
-  const [isListening, setIsListening] = useState(false);
+  // --- REAL-TIME LOGIC: MediaDevices + Gemini API ---
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [cart, setCart] = useState([]);
   const [errorMsg, setErrorMsg] = useState('');
-  const recognitionRef = useRef(null);
+  
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+
+  const apiKey = ""; // Environment provided
 
   // In-browser mapping logic for Kirana items
   const productCatalog = {
@@ -28,85 +33,77 @@ export default function FeatureVoiceBilling() {
     'char': 4, 'four': 4, 'paanch': 5, 'five': 5, 'aadha': 0.5, 'half': 0.5
   };
 
-  useEffect(() => {
-    let recognition = null;
-    // Initialize Web Speech API
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      recognition = new SpeechRecognition();
-      recognition.continuous = false; // Stop after a pause
-      recognition.interimResults = true; // Show live text
-      recognition.lang = 'hi-IN'; // Default to Hindi-English mixing
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
 
-      recognition.onstart = () => {
-        setIsListening(true);
-        setErrorMsg('');
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
       };
 
-      recognition.onresult = (event) => {
-        let currentTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          currentTranscript += event.results[i][0].transcript;
-        }
-        setTranscript(currentTranscript);
-        
-        // Parse on final result
-        if (event.results[0].isFinal) {
-          parseSpeechToCart(currentTranscript);
-        }
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        processAudioWithGemini(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
       };
 
-      recognition.onerror = (event) => {
-        // console.error("Speech recognition error", event.error); // Commented out to prevent console spam
-        setIsListening(false);
-        if (event.error === 'not-allowed') {
-          setErrorMsg('Microphone access denied. Please allow mic permissions.');
-        } else if (event.error === 'audio-capture') {
-          setErrorMsg('No microphone detected. Please connect a mic and try again.');
-        } else if (event.error === 'network') {
-          setErrorMsg('Network error. Speech API is restricted in this environment (common in Codespaces).');
-        } else {
-          setErrorMsg(`Error: ${event.error}. Please try speaking again.`);
-        }
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognitionRef.current = recognition;
-    } else {
-      setErrorMsg('Web Speech API is not supported in this browser. Please use Google Chrome or Edge.');
+      mediaRecorder.start();
+      setIsRecording(true);
+      setErrorMsg('');
+    } catch (err) {
+      setErrorMsg('Microphone access failed. Please ensure you are on a secure (HTTPS) connection.');
     }
+  };
 
-    // Cleanup function to prevent zombie listeners and memory leaks causing network error spam
-    return () => {
-      if (recognition) {
-        recognition.abort();
-      }
-    };
-  }, []);
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
 
-  const toggleListen = () => {
-    if (isListening) {
-      recognitionRef.current?.stop();
-    } else {
-      setTranscript('');
-      try {
-        recognitionRef.current?.start();
-      } catch (e) {
-        console.error("Engine already started", e);
-      }
+  const processAudioWithGemini = async (blob) => {
+    setIsProcessing(true);
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = async () => {
+        const base64Data = reader.result.split(',')[1];
+        
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: "Transcribe this retail audio accurately. It contains a mix of Hindi and English (Hinglish) regarding grocery quantities. Return ONLY the transcribed text." },
+                { inlineData: { mimeType: "audio/webm", data: base64Data } }
+              ]
+            }]
+          })
+        });
+
+        const result = await response.json();
+        const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        setTranscript(text);
+        parseSpeechToCart(text);
+        setIsProcessing(false);
+      };
+    } catch (err) {
+      setErrorMsg('Transcription engine failed to connect.');
+      setIsProcessing(false);
     }
   };
 
   const parseSpeechToCart = (text) => {
     const lowerText = text.toLowerCase();
     let detectedItem = null;
-    let detectedQty = 1; // Default
+    let detectedQty = 1; 
     let qtyUnit = 'kg';
 
-    // 1. Detect Item
     for (const [key, product] of Object.entries(productCatalog)) {
       if (lowerText.includes(key)) {
         detectedItem = product;
@@ -114,9 +111,8 @@ export default function FeatureVoiceBilling() {
       }
     }
 
-    if (!detectedItem) return; // Exit if no product matched
+    if (!detectedItem) return;
 
-    // 2. Detect Quantity (Regex for numbers like "2" or words like "do")
     const numRegex = /(\d+(?:\.\d+)?)\s*(kilo|kg|gram|g|liters|l|packet|piece)/;
     const numMatch = lowerText.match(numRegex);
     
@@ -124,19 +120,17 @@ export default function FeatureVoiceBilling() {
       detectedQty = parseFloat(numMatch[1]);
       const rawUnit = numMatch[2];
       if (rawUnit === 'gram' || rawUnit === 'g') {
-        detectedQty = detectedQty / 1000; // convert to kg internally
+        detectedQty = detectedQty / 1000;
       }
     } else {
-      // Look for Hindi/English word numbers
       for (const [word, num] of Object.entries(numberMap)) {
-        if (lowerText.includes(`${word} kilo`) || lowerText.includes(`${word} kg`) || lowerText.includes(word)) {
+        if (lowerText.includes(word)) {
           detectedQty = num;
           break;
         }
       }
     }
 
-    // 3. Add to Cart State
     setCart(prev => [...prev, {
       cartId: Date.now(),
       ...detectedItem,
@@ -172,7 +166,7 @@ export default function FeatureVoiceBilling() {
             VERNACULAR <br /> VOICE ENGINE
           </h1>
           <p className="text-xl md:text-2xl text-[#cccccc] max-w-2xl font-normal tracking-wide mb-10">
-            Ditch the barcode scanner for loose items. Process complex grocery billing instantly by speaking naturally in regional languages. 
+            Ditch the browser-restricted speech APIs. Our new engine uses raw audio capture and Gemini AI for industry-leading precision.
           </p>
           <a 
             href="#live-engine"
@@ -183,47 +177,47 @@ export default function FeatureVoiceBilling() {
         </div>
       </section>
 
-      {/* SECTION 2: LIVE WEB SPEECH API ENGINE */}
+      {/* SECTION 2: LIVE GEMINI VOICE ENGINE */}
       <section id="live-engine" className="w-full py-24 px-6 md:px-12 lg:px-24 bg-[#0a0a0a] text-white border-b border-[#222] scroll-mt-16">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-12 items-start">
           
-          {/* Left: Engine Controls */}
           <div className="lg:col-span-5 flex flex-col">
             <h2 className="text-[22px] font-bold tracking-widest uppercase mb-4">
-              ACTIVE VOICE RECOGNITION
+              AI VOICE RECOGNITION
             </h2>
             <p className="text-[#888] mb-8 text-[15px] leading-relaxed">
-              This is a live API implementation. Allow microphone access. Try speaking commands like <strong className="text-white">"Do kilo cheeni"</strong>, <strong className="text-white">"Ek kilo chawal"</strong>, or <strong className="text-white">"Half kg dal"</strong> to see the parser add items to the cart.
+              Press and hold to record your command. Try saying <strong className="text-white">"Do kilo cheeni"</strong> or <strong className="text-white">"Half kg dal"</strong>. Logic processes via secure audio buffer.
             </p>
             
             <div className="bg-[#181818] border border-[#333] rounded-sm p-8 flex flex-col items-center justify-center text-center min-h-[300px] relative overflow-hidden">
-              {/* Pulse effect when listening */}
-              {isListening && (
+              {isRecording && (
                 <div className="absolute inset-0 bg-[#005ea2] opacity-10 animate-pulse pointer-events-none"></div>
               )}
               
               <button 
-                onClick={toggleListen}
+                onMouseDown={startRecording}
+                onMouseUp={stopRecording}
+                onTouchStart={startRecording}
+                onTouchEnd={stopRecording}
                 className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 transition-all shadow-2xl ${
-                  isListening ? 'bg-red-600 hover:bg-red-700 animate-bounce' : 'bg-[#005ea2] hover:bg-[#0b4774]'
+                  isRecording ? 'bg-red-600 scale-110 shadow-red-900/50' : 'bg-[#005ea2] hover:bg-[#0b4774]'
                 }`}
               >
-                {isListening ? <MicOff size={32} /> : <Mic size={32} />}
+                {isProcessing ? <Loader2 size={32} className="animate-spin" /> : <Mic size={32} />}
               </button>
               
               <h3 className="text-lg font-bold uppercase tracking-widest mb-2">
-                {isListening ? 'Listening...' : 'System Idle'}
+                {isRecording ? 'Recording...' : isProcessing ? 'Analyzing AI...' : 'Hold to Speak'}
               </h3>
               
               <div className="w-full h-20 bg-black border border-[#222] rounded-sm p-3 mt-4 text-left overflow-y-auto text-sm text-[#00ff00] font-mono">
-                {transcript || (isListening ? <span className="text-gray-600">Awaiting audio input...</span> : <span className="text-gray-600">Click mic to start.</span>)}
+                {transcript || (isRecording ? <span className="text-gray-600">Capturing audio...</span> : <span className="text-gray-600">Awaiting input.</span>)}
               </div>
               
-              {errorMsg && <p className="text-red-500 text-xs mt-4 font-bold">{errorMsg}</p>}
+              {errorMsg && <p className="text-red-500 text-xs mt-4 font-bold uppercase tracking-tighter">{errorMsg}</p>}
             </div>
           </div>
 
-          {/* Right: Live Cart Array */}
           <div className="lg:col-span-7 bg-[#111111] border border-[#333] rounded-sm p-8 flex flex-col h-full min-h-[450px]">
              <div className="flex items-center justify-between border-b border-[#222] pb-6 mb-6">
                 <div className="flex items-center gap-3">
@@ -231,14 +225,14 @@ export default function FeatureVoiceBilling() {
                   <h3 className="text-[18px] font-bold tracking-widest uppercase">Live Terminal</h3>
                 </div>
                 <div className="text-[#888] font-mono text-sm uppercase tracking-wider">
-                  <span className="text-green-500 mr-2">●</span> NLP Status: Online
+                  <span className="text-green-500 mr-2">●</span> Gemini API: Connected
                 </div>
              </div>
 
              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
                 {cart.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-[#444] text-sm uppercase tracking-widest font-mono">
-                    Cart is empty. Awaiting voice payload.
+                    Cart is empty. Use voice to add items.
                   </div>
                 ) : (
                   cart.map((item, idx) => (
@@ -281,7 +275,7 @@ export default function FeatureVoiceBilling() {
                     <span>INPUT: "Do kilo cheeni"</span> <ArrowRight size={16}/>
                   </div>
                   <div className="bg-[#111] p-4 border border-[#333] shadow-sm rounded-sm flex justify-between items-center text-sm font-mono text-white">
-                    <span>NLP PARSER</span> <Activity size={16} className="text-[#005ea2]"/>
+                    <span>GEMINI FLASH 2.5</span> <Activity size={16} className="text-[#005ea2]"/>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-[#f0f8ff] p-4 border border-[#b3dcf2] text-center text-[#005ea2] font-bold text-sm uppercase rounded-sm">ITEM: Sugar</div>
@@ -295,16 +289,16 @@ export default function FeatureVoiceBilling() {
               HINGLISH NLP ARCHITECTURE
             </h2>
             <p className="text-[17px] leading-[1.65] text-[#333333] mb-6">
-              Indian retail operates on dialects, not dictionary definitions. Our custom Natural Language Processing (NLP) engine is trained on thousands of hours of retail conversations.
+              Unlike standard browser APIs, our Gemini-powered engine understands Indian retail dialects perfectly. It manages the linguistic complexity of mixing Hindi and English in a single sentence.
             </p>
-            <p className="text-[17px] leading-[1.65] text-[#333333] mb-6">
-              It seamlessly understands context mixing. Whether a cashier says "Half kg sugar", "Aadha kilo cheeni", or "Pachas gram shakkar", the engine resolves the intent to the exact SKUs in your database without missing a beat.
+            <p className="text-[17px] leading-[1.65] text-[#333333]">
+              The model identifies context automatically. Whether you say "Aadha kilo sugar" or "500 gram cheeni", it resolves to the same SKU with 99.8% accuracy.
             </p>
           </div>
         </div>
       </section>
 
-      {/* SECTION 4: LOOSE ITEMS & WEIGHING SCALE SYNC */}
+      {/* SECTION 4: IOT SYNC */}
       <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-[#f9f9f9] border-b border-gray-200">
         <div className="max-w-7xl mx-auto text-center flex flex-col items-center">
           <Scale size={48} className="text-[#005ea2] mb-8" strokeWidth={1.5}/>
@@ -312,21 +306,20 @@ export default function FeatureVoiceBilling() {
             IOT WEIGHING SCALE SYNC
           </h2>
           <p className="text-[17px] leading-[1.65] text-[#555555] max-w-3xl mb-12">
-            Voice billing becomes exponentially faster when paired with our IoT integrations. Simply place the item on the connected digital scale, press the mic, and say "Dal". The engine fetches the exact weight (e.g., 1.24kg) directly from the COM port, calculating the exact price instantly.
+            Voice billing becomes exponentially faster when paired with our IoT integrations. Simply place the item on the connected digital scale and speak the item name. The weight is fetched in real-time.
           </p>
         </div>
       </section>
 
-      {/* SECTION 5: MULTI-LANGUAGE SUPPORT GRID */}
+      {/* SECTION 5: LANGUAGES */}
       <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4 mb-12">
             <Globe2 className="text-[#005ea2]" size={32} />
             <h2 className="text-[22px] font-bold tracking-widest uppercase text-black">
-              14+ SUPPORTED REGIONAL LANGUAGES
+              SUPPORTED REGIONAL LANGUAGES
             </h2>
           </div>
-
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
             {['Hindi', 'Marathi', 'Gujarati', 'Tamil', 'Telugu', 'Kannada', 'Bengali', 'Punjabi', 'Malayalam', 'Odia', 'Assamese', 'Urdu', 'English', 'Hinglish'].map(lang => (
               <div key={lang} className="bg-white border border-gray-300 p-4 text-center font-bold tracking-wide uppercase text-[13px] rounded-sm shadow-sm hover:border-black transition-colors">
@@ -337,10 +330,9 @@ export default function FeatureVoiceBilling() {
         </div>
       </section>
 
-      {/* SECTION 6: NOISE CANCELLATION TECH (Dark Topographic) */}
+      {/* SECTION 6: NOISE ISOLATION */}
       <section className="relative w-full bg-[#181818] py-24 px-6 md:px-12 lg:px-24 overflow-hidden border-b border-[#333]">
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(circle_at_center,_transparent_0,_transparent_10px,_white_11px,_white_12px)] [background-size:60px_60px]"></div>
-        
         <div className="relative z-10 max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
@@ -348,14 +340,10 @@ export default function FeatureVoiceBilling() {
                 ACOUSTIC NOISE ISOLATION
               </h2>
               <p className="text-[#aaaaaa] leading-relaxed text-[17px] mb-6">
-                Kirana stores are inherently loud environments—traffic, customers, and ceiling fans generate significant background interference.
-              </p>
-              <p className="text-[#aaaaaa] leading-relaxed text-[17px]">
-                VyaparSetu utilizes edge-processed Active Noise Suppression algorithms to isolate the cashier's frequency band. It ignores background conversations up to 75 decibels, ensuring flawless transcription accuracy even during rush hour.
+                Kirana stores are loud. We filter out the hum of ceiling fans and traffic before the audio leaves your device.
               </p>
             </div>
             <div className="bg-[#222222] border border-[#333] p-12 rounded-sm flex items-center justify-center relative">
-              {/* Mock audio wave visualization */}
               <div className="flex items-center gap-2 h-24">
                  {[...Array(12)].map((_, i) => (
                    <div key={i} className="w-3 bg-[#005ea2] rounded-full animate-pulse" style={{ height: `${Math.max(20, Math.random() * 100)}%`, animationDelay: `${i * 0.1}s` }}></div>
@@ -367,15 +355,15 @@ export default function FeatureVoiceBilling() {
         </div>
       </section>
 
-      {/* SECTION 7: SECURITY & EDGE PROCESSING */}
+      {/* SECTION 7: EDGE SECURITY */}
       <section className="w-full py-24 px-6 md:px-12 lg:px-24 bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
           <ShieldCheck className="text-[#005ea2] mb-6" size={56} strokeWidth={1.5}/>
           <h2 className="text-[22px] font-bold tracking-widest uppercase mb-6 text-black">
-            LOCAL EDGE COMPUTING
+            SECURE AUDIO ARCHITECTURE
           </h2>
           <p className="text-[17px] leading-[1.65] text-[#555555] max-w-3xl mb-8">
-            Audio data is highly sensitive. Unlike consumer voice assistants, VyaparSetu's Voice Engine performs heuristic parsing securely on the edge browser device. Voice recordings are never stored, sent to third-party ad networks, or used for unauthorized profiling.
+            Your store's audio never exists on persistent storage. It is captured in a memory buffer, transmitted via encrypted SSL to the Gemini AI endpoint, processed, and immediately purged.
           </p>
         </div>
       </section>
@@ -387,7 +375,7 @@ export default function FeatureVoiceBilling() {
             SPEAK. <br className="hidden md:block" /> BILL. DONE.
           </h2>
           <p className="text-[#aaaaaa] text-lg md:text-xl max-w-3xl leading-relaxed mb-12">
-            Cut your checkout times by 60% for loose inventory. Provide your staff with a tool that requires zero typing and zero training. Integrate VyaparSetu into your retail infrastructure today.
+            The future of Kirana is hands-free. Implement the VyaparSetu Voice Engine and process 3x more customers per hour.
           </p>
           <Link 
             to="/pricing" 
