@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function Layout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -44,7 +44,7 @@ export default function Layout() {
             <button 
               className={`flex items-center gap-1 hover:text-gray-300 transition-colors py-2 ${isModulesOpen ? 'text-gray-300' : ''}`}
             >
-              MODULES {isModulesOpen ? <span className="text-xs">∧</span> : <ChevronDown size={14} strokeWidth={3}/>}
+              MODULES {isModulesOpen ? <ChevronUp size={14} strokeWidth={3}/> : <ChevronDown size={14} strokeWidth={3}/>}
             </button>
             
             {/* Desktop Dropdown */}
