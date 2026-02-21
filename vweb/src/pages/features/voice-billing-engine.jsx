@@ -29,10 +29,11 @@ export default function FeatureVoiceBilling() {
   };
 
   useEffect(() => {
+    let recognition = null;
     // Initialize Web Speech API
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
+      recognition = new SpeechRecognition();
       recognition.continuous = false; // Stop after a pause
       recognition.interimResults = true; // Show live text
       recognition.lang = 'hi-IN'; // Default to Hindi-English mixing
@@ -56,10 +57,14 @@ export default function FeatureVoiceBilling() {
       };
 
       recognition.onerror = (event) => {
-        console.error("Speech recognition error", event.error);
+        // console.error("Speech recognition error", event.error); // Commented out to prevent console spam
         setIsListening(false);
         if (event.error === 'not-allowed') {
           setErrorMsg('Microphone access denied. Please allow mic permissions.');
+        } else if (event.error === 'audio-capture') {
+          setErrorMsg('No microphone detected. Please connect a mic and try again.');
+        } else if (event.error === 'network') {
+          setErrorMsg('Network error. Speech API is restricted in this environment (common in Codespaces).');
         } else {
           setErrorMsg(`Error: ${event.error}. Please try speaking again.`);
         }
@@ -73,6 +78,13 @@ export default function FeatureVoiceBilling() {
     } else {
       setErrorMsg('Web Speech API is not supported in this browser. Please use Google Chrome or Edge.');
     }
+
+    // Cleanup function to prevent zombie listeners and memory leaks causing network error spam
+    return () => {
+      if (recognition) {
+        recognition.abort();
+      }
+    };
   }, []);
 
   const toggleListen = () => {
@@ -83,7 +95,7 @@ export default function FeatureVoiceBilling() {
       try {
         recognitionRef.current?.start();
       } catch (e) {
-        console.error(e);
+        console.error("Engine already started", e);
       }
     }
   };
