@@ -39,9 +39,9 @@ async def transcribe_audio(audio: UploadFile = File(...)):
         # Define the system prompt for the AI
         prompt = "Transcribe this retail audio accurately. It contains a mix of Hindi and English (Hinglish) regarding grocery quantities. Return ONLY the transcribed text string."
 
-        # Call the Gemini model using the new SDK syntax
+        # Call the Gemini model using the stable 2.5 Flash model
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.5-flash',
             contents=[
                 prompt,
                 types.Part.from_bytes(
