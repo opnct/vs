@@ -12,12 +12,15 @@ export const sendOTP = async (email, otp) => {
 
   try {
     // REAL LOGIC: Dispatch actual email via EmailJS network request
+    // We pass multiple variable variations to prevent 422 template mismatch errors.
     const response = await emailjs.send(
       serviceId, 
       templateId, 
       {
-        user_email: email,
-        otp_code: otp,
+        user_email: email, // Matches {{user_email}} if you set it up manually
+        otp_code: otp,     // Matches {{otp_code}} if you set it up manually
+        to_email: email,   // Standard EmailJS fallback for {{to_email}}
+        message: otp       // Standard EmailJS fallback for {{message}}
       }, 
       publicKey
     );

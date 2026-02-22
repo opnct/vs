@@ -1,25 +1,52 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { sendOTP } from '../services/emailService';
+import { initializeApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+
+// Initialize Firebase securely utilizing environment variables
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('vyapar_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch (error) {
-      console.error("Failed to parse user session:", error);
-      return null;
-    }
-  });
-  
+  // User state is now strictly initialized as null. 
+  // Firebase listener will act as the Single Source of Truth.
+  const [user, setUser] = useState(null);
   const [tempEmail, setTempEmail] = useState(null);
   
   // Storing OTP as an object containing the code and an strict expiration timestamp
   const [otpData, setOtpData] = useState(null);
+
+  // Securely listen for server-side auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        // Sync Firebase session to local context
+        setUser({
+          email: firebaseUser.email,
+          uid: firebaseUser.uid,
+          authenticatedAt: new Date().toISOString()
+        });
+      } else {
+        setUser(null);
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
 
   const initiateLogin = async (email) => {
     // Generate a strictly random 6-digit cryptographic code
@@ -50,16 +77,7 @@ export const AuthProvider = ({ children }) => {
 
     // 3. Strict Equality Check
     if (enteredOTP === otpData.code) {
-      // Build authenticated user object
-      const newUser = { 
-        email: tempEmail,
-        authenticatedAt: new Date().toISOString()
-      };
-      
-      // Persist to local state & browser storage
-      setUser(newUser);
-      localStorage.setItem('vyapar_user', JSON.stringify(newUser));
-      
+      // We no longer set localStorage here. Firebase onAuthStateChanged handles the session.
       // Security: Purge sensitive temporary data from memory immediately after success
       setTempEmail(null);
       setOtpData(null);
@@ -71,12 +89,18 @@ export const AuthProvider = ({ children }) => {
     throw new Error('Invalid access code. Please verify and try again.');
   };
 
-  const logout = () => {
-    // Destroy all memory and persistent storage traces
-    setUser(null);
-    setTempEmail(null);
-    setOtpData(null);
-    localStorage.removeItem('vyapar_user');
+  const logout = async () => {
+    try {
+      // Execute official Firebase server-side session termination
+      await signOut(auth);
+      
+      // Destroy all memory traces
+      setUser(null);
+      setTempEmail(null);
+      setOtpData(null);
+    } catch (error) {
+      console.error("Failed to execute secure logout:", error);
+    }
   };
 
   return (
