@@ -10,6 +10,7 @@ import Login2 from './pages/auth/Login2';
 import Pricing from './pages/pricing/index';
 import PaymentGateway from './pages/payment/index';
 import SuperAdminDashboard from './pages/sa/index';
+import VyaparAIPortal from './pages/vai/index';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // FEATURE IMPORTS
@@ -82,6 +83,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/verify-otp" element={<VerifyOTP />} />
           <Route path="/login2" element={<Login2 />} />
+          <Route path="/vai" element={<VyaparAIPortal />} />
           
           {/* Protected Routes */}
           <Route 

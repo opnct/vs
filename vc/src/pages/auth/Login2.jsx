@@ -266,7 +266,8 @@ export default function Login2() {
 
               <div className="text-[14px]">
                 <span className="text-[#555]">Need an account? </span>
-                <Link to="/login" className="text-[#337ab7] hover:underline font-medium">
+                {/* Changed destination from /login to /pricing */}
+                <Link to="/pricing" className="text-[#337ab7] hover:underline font-medium">
                   Register here
                 </Link>
               </div>
