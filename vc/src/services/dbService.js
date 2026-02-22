@@ -14,11 +14,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
+// Helper function to dynamically generate secure, rule-compliant paths
+const getChatCollectionPath = (userEmail) => {
+  const safeEmail = userEmail.trim().toLowerCase();
+  // Adaptive path generation (Ensures it works locally via Vite AND embedded Canvas)
+  return typeof __app_id !== 'undefined' 
+    ? `artifacts/${__app_id}/public/data/vyapar_chats/${safeEmail}/messages` 
+    : `vyapar_chats/${safeEmail}/messages`;
+};
+
 export const saveChatMessage = async (userEmail, message) => {
   if (!userEmail) return;
   try {
-    const collectionName = `chats_${userEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
-    await addDoc(collection(db, collectionName), {
+    const collectionPath = getChatCollectionPath(userEmail);
+    
+    await addDoc(collection(db, collectionPath), {
       ...message,
       timestamp: serverTimestamp()
     });
@@ -29,8 +39,9 @@ export const saveChatMessage = async (userEmail, message) => {
 
 export const subscribeToChatHistory = (userEmail, callback) => {
   if (!userEmail) return () => {};
-  const collectionName = `chats_${userEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
-  const q = query(collection(db, collectionName), orderBy('timestamp', 'asc'));
+  
+  const collectionPath = getChatCollectionPath(userEmail);
+  const q = query(collection(db, collectionPath), orderBy('timestamp', 'asc'));
 
   return onSnapshot(q, (snapshot) => {
     const messages = snapshot.docs.map(doc => doc.data());

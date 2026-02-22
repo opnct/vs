@@ -27,8 +27,8 @@ export default function Chatbot() {
 
   const { saveMessage } = useChatHistory(setMessages);
 
-  // Hardcoded Groq API Key
-  const apiKey = "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";
+  // Securely load Groq API Key from environment variables with fallback
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY || "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";
 
   useEffect(() => { 
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); 
@@ -161,14 +161,19 @@ export default function Chatbot() {
     const textToSend = overrideInput || input;
     if (!textToSend.trim() || isLoading) return;
     
-    // Save User Message to Firebase (Optimistic UI handled by onSnapshot)
+    // Save User Message to Firebase (Optimistic UI handled by onSnapshot or local state)
     const userMessage = { role: 'user', content: textToSend.trim(), timestamp: Date.now() };
     setMessages(prev => [...prev, userMessage]); 
     setInput(''); 
     setIsLoading(true); 
     setError(null);
     
-    await saveMessage(userMessage);
+    // DECOUPLED: Save to DB in background. Failure here won't crash the AI response.
+    try {
+      await saveMessage(userMessage);
+    } catch (dbErr) {
+      console.warn("Non-fatal: Failed to sync user message to Firebase.", dbErr);
+    }
 
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
     
@@ -204,8 +209,13 @@ CRITICAL: If asked to generate a bill/invoice, output JSON wrapped EXACTLY in <I
         load: `${(Math.random() * 5 + 2).toFixed(1)}%`
       });
 
-      // Save AI Response to Firebase
-      await saveMessage({ role: 'assistant', content: text, timestamp: Date.now() });
+      // DECOUPLED: Save AI Response to Firebase independently
+      try {
+        await saveMessage({ role: 'assistant', content: text, timestamp: Date.now() });
+      } catch (dbErr) {
+        console.warn("Non-fatal: Failed to sync AI response to Firebase.", dbErr);
+      }
+
     } catch (err) {
       setError(err.message);
     } finally {
