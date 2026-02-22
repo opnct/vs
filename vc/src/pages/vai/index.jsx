@@ -9,7 +9,6 @@ import {
 export default function VyaparAIPortal() {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('overview');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Real-world sections mapping
   const sections = [
@@ -66,52 +65,6 @@ export default function VyaparAIPortal() {
   return (
     <div className="min-h-screen bg-white text-[#1b1b1b] font-sans selection:bg-[#005ea2] selection:text-white flex flex-col">
       
-      {/* 1. OFFICIAL TOP BANNER */}
-      <div className="bg-[#f0f0f0] text-[#333333] text-xs py-1.5 px-4 md:px-8 flex items-center gap-2 relative z-[60] border-b border-zinc-200">
-        <img src="https://upload.wikimedia.org/wikipedia/en/4/41/Flag_of_India.svg" className="h-3 w-auto border border-zinc-300" alt="Indian flag" />
-        <span>An official technology of VyaparSetu.</span>
-        <button className="text-[#005ea2] hover:underline flex items-center gap-0.5 ml-1 font-medium">
-          Here's how you know <ChevronDown size={12} />
-        </button>
-      </div>
-
-      {/* 2. INSTITUTIONAL HEADER */}
-      <header className="bg-black text-white px-6 md:px-8 py-5 flex justify-between items-center sticky top-0 z-50">
-        <Link to="/" className="text-[22px] font-bold tracking-tight z-50">
-          VyaparSetu
-        </Link>
-        
-        {/* Desktop Links */}
-        <nav className="hidden md:flex gap-8 items-center text-[13px] font-bold tracking-widest">
-          <Link to="/about" className="hover:text-gray-300 transition-colors">ABOUT</Link>
-          <Link to="/pricing" className="hover:text-gray-300 transition-colors">PRICING</Link>
-          <Link to="/vai" className="text-white hover:text-gray-300 transition-colors">VYAPAR AI</Link>
-          
-          <div className="flex items-center gap-6 ml-4 pl-6 border-l border-white/20">
-            <Link to="/login2" className="hover:text-gray-300 transition-colors">LOGIN</Link>
-            <Link to="/pricing" className="bg-[#005ea2] hover:bg-[#0b4774] text-white px-5 py-2.5 transition-colors shadow-sm">GET STARTED</Link>
-          </div>
-        </nav>
-
-        {/* Mobile Toggle */}
-        <button className="md:hidden text-white z-50" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-          {isMobileMenuOpen ? <X size={32} strokeWidth={1.5}/> : <Menu size={32} strokeWidth={1.5} />}
-        </button>
-      </header>
-
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 bg-[#111] z-40 flex flex-col pt-24 px-6 md:hidden overflow-y-auto">
-          <div className="flex flex-col text-[17px] font-normal tracking-wide text-gray-300">
-            <Link to="/about" className="py-4 border-b border-[#333] hover:text-white">ABOUT</Link>
-            <Link to="/pricing" className="py-4 border-b border-[#333] hover:text-white">PRICING</Link>
-            <Link to="/vai" className="py-4 border-b border-[#333] text-white font-bold">VYAPAR AI</Link>
-            <Link to="/login2" className="py-4 border-b border-[#333] hover:text-white">LOGIN</Link>
-            <Link to="/pricing" className="py-4 font-bold text-[#005ea2] hover:text-[#4da8ec]">GET STARTED</Link>
-          </div>
-        </div>
-      )}
-
       {/* 3. MAIN DOCUMENT CONTENT */}
       <main className="flex-1 w-full max-w-[1400px] mx-auto px-6 md:px-12 py-16 lg:py-24">
         
@@ -307,52 +260,6 @@ export default function VyaparAIPortal() {
           </div>
         </div>
       </main>
-
-      {/* 6. INSTITUTIONAL FOOTER */}
-      <footer className="bg-black text-white pt-16 pb-8 px-6 md:px-12 w-full border-t border-white/10 mt-auto">
-        <div className="max-w-[1400px] mx-auto">
-          
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-8 md:gap-0">
-            <div className="flex flex-col gap-4">
-              <div className="text-[22px] font-bold tracking-tight">
-                VyaparSetu
-              </div>
-              <div className="flex items-center gap-4 text-gray-400">
-                <a href="#" className="hover:text-white transition-colors" aria-label="LinkedIn">
-                  <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-                </a>
-                <a href="#" className="hover:text-white transition-colors" aria-label="Facebook">
-                  <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
-                </a>
-              </div>
-            </div>
-            
-            <div className="flex flex-col md:flex-row gap-6 md:gap-8 text-[15px]">
-              <Link to="/about" className="hover:underline hover:text-gray-300">About</Link>
-              <Link to="/pricing" className="hover:underline hover:text-gray-300">Pricing & Plans</Link>
-              <Link to="/contact" className="hover:underline hover:text-gray-300">Contact Us</Link>
-            </div>
-          </div>
-
-          <hr className="border-[#333333] mb-8" />
-
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 text-[13px] text-[#cccccc]">
-            <div className="flex flex-wrap gap-x-6 gap-y-4">
-              <Link to="/legal/accessibility" className="hover:underline hover:text-white transition-colors">Accessibility support</Link>
-              <Link to="/legal/terms" className="hover:underline hover:text-white transition-colors">Terms of Service</Link>
-              <Link to="/legal/privacy" className="hover:underline hover:text-white transition-colors">Privacy policy</Link>
-            </div>
-
-            <div className="flex flex-col lg:flex-row gap-4 lg:gap-12 w-full lg:w-auto">
-              <p>Looking for support documentation? <a href="#" className="text-white hover:underline">Visit Help Center</a></p>
-              <div className="flex flex-col items-start lg:items-end gap-1">
-                <p>Architecture by <strong className="text-white">Arun Ammisetty</strong> & <strong className="text-white">Palak Bhosale</strong></p>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </footer>
 
     </div>
   );
