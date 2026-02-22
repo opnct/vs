@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Eye, EyeOff, Loader2, AlertCircle, X, CheckCircle2 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, collection, addDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, collection, addDoc, getDoc } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 
 // Initialize Firebase securely utilizing environment variables
@@ -145,6 +145,18 @@ export default function Login() {
     setError('');
 
     try {
+      // 0. Pre-Registration Verification Check (Check Super Admin Approvals)
+      const approvalPath = typeof __app_id !== 'undefined'
+        ? `artifacts/${__app_id}/public/data/vyapar_approvals`
+        : 'vyapar_approvals';
+      
+      const approvalRef = doc(db, approvalPath, formData.email.trim().toLowerCase());
+      const approvalSnap = await getDoc(approvalRef);
+
+      if (!approvalSnap.exists()) {
+        throw new Error("Registration blocked. Payment pending Super Admin approval.");
+      }
+
       // 1. Authenticate formally with Email/Password (Strictly Registration Only)
       await createUserWithEmailAndPassword(auth, formData.email.trim(), formData.password);
 
@@ -182,6 +194,8 @@ export default function Login() {
       // Clearly catch existing users and prompt them to use the Login2 gateway
       if (err.code === 'auth/email-already-in-use') {
         errorMessage = 'This email is already registered. Please click the login link below to access your account.';
+      } else if (err.message === "Registration blocked. Payment pending Super Admin approval.") {
+        errorMessage = err.message;
       }
       
       setError(errorMessage);
@@ -481,7 +495,7 @@ export default function Login() {
 
       {/* Solid Black Footer Bar mimicking the image */}
       <div className="bg-black text-white text-center py-6 text-[13px] w-full shrink-0">
-        <p className="mb-4">Protection and maintenance of user profile information is described in <a href="#" className="font-bold hover:underline">VyaparSetu's Web Privacy Policy &#x2197;</a></p>
+        <p className="mb-4">Protection and maintenance of user profile information is described in <a href="#" className="font-bold hover:underline">VyaparSetu's Web Privacy Policy</a></p>
         <p className="mb-6">For questions regarding the VyaparSetu Login, please contact <a href="#" className="font-bold hover:underline">VyaparSetu Support</a></p>
         <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6 font-bold tracking-wide">
           <span>V URSFOUR-2609-4</span>
