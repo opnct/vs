@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { 
   ShieldCheck, AlertCircle, Loader2, CheckCircle2, 
-  CreditCard, QrCode, Building, ArrowLeft, Info
+  CreditCard, QrCode, Building, ArrowLeft, Info,
+  Globe, Shield, Cpu, Activity, ExternalLink,
+  Lock, Phone, Mail, HelpCircle, UserCheck
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -37,12 +39,14 @@ export default function PaymentGateway() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [activeMethod, setActiveMethod] = useState('upi'); // upi | bank
 
   // Security Guard: If accessed directly without selecting a plan, kick back to pricing
   useEffect(() => {
     if (!selectedPlan) {
       navigate('/pricing', { replace: true });
     }
+    window.scrollTo(0, 0);
   }, [selectedPlan, navigate]);
 
   const handleChange = (e) => {
@@ -52,29 +56,19 @@ export default function PaymentGateway() {
   };
 
   const validateEmail = (email) => {
-    return String(email)
-      .toLowerCase()
-      .match(
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-      );
+    return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Strict Input Validation
     if (!formData.fullName.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.utrNumber.trim()) {
-      setError('All fields are strictly required to process manual verification.');
+      setError('All fields are strictly required for security clearance.');
       return;
     }
 
     if (!validateEmail(formData.email.trim())) {
-      setError('Please provide a valid email address. This will become your Login ID.');
-      return;
-    }
-
-    if (formData.utrNumber.length < 8) {
-      setError('Please enter a valid Transaction ID / UTR Number (minimum 8 characters).');
+      setError('Invalid Email format. This email will be your platform UID.');
       return;
     }
 
@@ -82,12 +76,10 @@ export default function PaymentGateway() {
     setError('');
 
     try {
-      // Adaptive path generation (Ensures it works locally via Vite AND embedded Canvas)
       const collectionPath = typeof __app_id !== 'undefined' 
         ? `artifacts/${__app_id}/public/data/vyapar_payments` 
         : 'vyapar_payments';
 
-      // Construct the secure payment payload
       const paymentPayload = {
         fullName: formData.fullName.trim(),
         email: formData.email.trim().toLowerCase(),
@@ -96,269 +88,321 @@ export default function PaymentGateway() {
         planId: selectedPlan.id,
         planName: selectedPlan.name,
         amount: selectedPlan.price,
-        status: 'Pending', // Strictly set to Pending for Super Admin review
+        developer: 'Arun Ammisetty',
+        status: 'Pending',
         submittedAt: serverTimestamp()
       };
 
-      // Write to Firestore (Unauthenticated write allowed via new Security Rules)
       await addDoc(collection(db, collectionPath), paymentPayload);
-      
       setIsSuccess(true);
     } catch (err) {
-      console.error("Payment Submission Error:", err);
-      setError('Failed to securely transmit payment details. Please check your connection and try again.');
+      console.error(err);
+      setError('System Error: Failed to transmit data to the Secure Ledger.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Render nothing while redirecting if no plan was found
   if (!selectedPlan) return null;
 
-  // SUCCESS STATE VIEW
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-[#f4f7f9] flex items-center justify-center font-sans p-6">
-        <div className="bg-white max-w-lg w-full rounded-xl shadow-2xl p-8 md:p-12 text-center border-t-4 border-[#2ecc71]">
-          <div className="w-20 h-20 bg-[#2ecc71]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 size={40} className="text-[#2ecc71]" />
+      <div className="min-h-screen bg-black text-white flex items-center justify-center font-sans p-6 selection:bg-[#0d6efd]">
+        <div className="bg-[#111] max-w-lg w-full border border-[#333] shadow-2xl p-10 text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-[#00e676]"></div>
+          <CheckCircle2 size={64} className="text-[#00e676] mx-auto mb-6" />
+          <h2 className="text-3xl font-bold tracking-tighter uppercase mb-4 text-white">Receipt Logged</h2>
+          <div className="bg-black/50 border border-white/10 p-6 mb-8 text-left space-y-4">
+            <div className="flex justify-between items-center border-b border-white/5 pb-2">
+              <span className="text-gray-500 text-xs font-bold uppercase tracking-widest">Transaction Ref</span>
+              <span className="font-mono text-[#00e676]">{formData.utrNumber}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 text-xs font-bold uppercase tracking-widest">Auth Target</span>
+              <span className="text-white">{formData.email}</span>
+            </div>
           </div>
-          <h2 className="text-2xl font-black text-[#2c3e50] mb-4">Payment Receipt Submitted</h2>
-          <div className="bg-[#f9f9f9] border border-gray-200 p-4 rounded-lg mb-6 text-left space-y-2">
-            <p className="text-[14px] text-[#555] flex justify-between">
-              <span className="font-semibold text-gray-500">Transaction ID:</span> 
-              <span className="font-mono font-bold text-[#2c3e50]">{formData.utrNumber}</span>
-            </p>
-            <p className="text-[14px] text-[#555] flex justify-between">
-              <span className="font-semibold text-gray-500">Plan:</span> 
-              <span className="font-bold text-[#2c3e50]">{selectedPlan.name}</span>
-            </p>
-            <p className="text-[14px] text-[#555] flex justify-between">
-              <span className="font-semibold text-gray-500">Status:</span> 
-              <span className="font-bold text-[#f39c12] bg-[#f39c12]/10 px-2 py-0.5 rounded text-xs uppercase tracking-wider">Pending Approval</span>
-            </p>
-          </div>
-          <p className="text-[15px] text-[#555] leading-relaxed mb-8">
-            Your payment details have been securely queued for Super Admin verification. 
-            <strong> Please allow 2-4 hours for processing.</strong> Once verified, your email (<strong className="text-[#337ab7]">{formData.email}</strong>) will be whitelisted for registration.
+          <p className="text-gray-400 text-sm leading-relaxed mb-10">
+            Your verification request is now pending manual review. Super Admin controllers will whitelist your account within 2-4 hours. You will be able to complete registration once clearance is granted.
           </p>
-          <Link 
-            to="/" 
-            className="inline-block bg-[#2c3e50] hover:bg-[#1a252f] text-white font-bold px-8 py-3 rounded-[4px] transition-colors"
-          >
-            Return to Homepage
-          </Link>
+          <button onClick={() => navigate('/')} className="w-full bg-white text-black font-black py-4 uppercase tracking-[0.2em] text-xs hover:bg-gray-200 transition-colors">
+            Return to Command Center
+          </button>
         </div>
       </div>
     );
   }
 
-  // PAYMENT FORM VIEW
   return (
-    <div className="min-h-screen bg-[#f4f7f9] font-sans pb-20">
-      {/* Official Header */}
-      <header className="bg-black text-white px-6 md:px-12 py-5 w-full shrink-0 shadow-md">
-        <div className="max-w-[1200px] mx-auto flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft size={24} />
-          </button>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <ShieldCheck className="text-[#00e676]" size={24} /> 
-            Secure Checkout & KYC
-          </h1>
+    <div className="bg-black min-h-screen text-white font-sans selection:bg-[#0d6efd] selection:text-white">
+      
+      {/* 1. INSTITUTIONAL HEADER */}
+      <header className="border-b border-[#333] bg-black sticky top-0 z-[100] h-16 flex items-center">
+        <div className="max-w-[1400px] mx-auto px-6 w-full flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <button onClick={() => navigate(-1)} className="hover:text-[#0d6efd] transition-colors"><ArrowLeft size={20}/></button>
+            <div className="h-6 w-px bg-[#333]"></div>
+            <h1 className="text-sm font-black tracking-[0.3em] uppercase">Secure Payment Node</h1>
+          </div>
+          <div className="flex items-center gap-3">
+             <div className="text-[10px] text-gray-500 font-mono hidden sm:flex items-center gap-2">
+               <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> LEDGER CONNECTED
+             </div>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex flex-col lg:flex-row gap-10 lg:gap-16">
+      <main className="max-w-[1400px] mx-auto px-6 py-12">
+        <div className="flex flex-col lg:flex-row gap-16">
           
-          {/* LEFT COLUMN: Order Summary & Instructions */}
-          <div className="w-full lg:w-[450px] shrink-0 space-y-8">
+          {/* LEFT SIDE: PAYMENT METHODS & GOVERNANCE */}
+          <div className="flex-1 space-y-12">
             
-            {/* Order Summary */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="bg-[#2c3e50] p-5 text-white">
-                <h3 className="font-bold text-lg">Order Summary</h3>
-              </div>
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4 pb-4 border-b border-gray-100">
-                  <div>
-                    <h4 className="font-bold text-[#2c3e50] text-lg">{selectedPlan.name}</h4>
-                    <p className="text-sm text-gray-500">Billed {selectedPlan.billingCycle.replace('/ ', '')}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-2xl font-black text-[#337ab7]">{selectedPlan.priceLabel}</span>
-                  </div>
-                </div>
-                <ul className="space-y-2 mb-2">
-                  <li className="flex justify-between text-sm text-[#555]">
-                    <span>Subtotal</span>
-                    <span className="font-mono">{selectedPlan.priceLabel}</span>
-                  </li>
-                  <li className="flex justify-between text-sm text-[#555]">
-                    <span>GST (18%)</span>
-                    <span className="font-mono">Included</span>
-                  </li>
-                </ul>
-                <div className="flex justify-between items-center pt-4 border-t border-gray-200 mt-4">
-                  <span className="font-bold text-[#2c3e50]">Total Payable</span>
-                  <span className="text-xl font-black text-[#2ecc71]">{selectedPlan.priceLabel}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Payment Instructions */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="bg-[#f8f9fa] p-5 border-b border-gray-200 flex items-center gap-2">
-                <CreditCard className="text-[#337ab7]" size={20} />
-                <h3 className="font-bold text-[#2c3e50]">Payment Instructions</h3>
-              </div>
-              <div className="p-6 space-y-6">
-                
-                {/* UPI Section */}
+            {/* 2. DEVELOPER & RECIPIENT DATA (Section 1) */}
+            <section className="bg-[#111] border border-[#222] p-8">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 bg-white text-black flex items-center justify-center font-bold">VS</div>
                 <div>
-                  <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <QrCode size={16} /> Pay via UPI
-                  </h4>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 flex flex-col items-center justify-center text-center">
-                    <div className="w-32 h-32 bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center mb-3 shadow-sm">
-                      <QrCode size={64} className="text-gray-400" />
-                    </div>
-                    <p className="text-xs text-gray-500 mb-1">Scan using GPay, PhonePe, or Paytm</p>
-                    <p className="font-mono font-bold text-[#2c3e50] bg-white px-3 py-1.5 border border-gray-200 rounded">vyaparsetu.official@sbi</p>
-                  </div>
+                  <h2 className="text-xl font-bold tracking-tight uppercase">Beneficiary Profile</h2>
+                  <p className="text-[10px] text-[#0d6efd] font-black tracking-widest uppercase">Verified Developer Account</p>
                 </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="h-px bg-gray-200 flex-1"></div>
-                  <span className="text-xs font-bold text-gray-400 uppercase">OR</span>
-                  <div className="h-px bg-gray-200 flex-1"></div>
-                </div>
-
-                {/* Bank Section */}
-                <div>
-                  <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Building size={16} /> NEFT / IMPS Transfer
-                  </h4>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm space-y-2 font-mono text-[#444]">
-                    <div className="flex justify-between border-b border-gray-200 pb-2">
-                      <span className="text-gray-500">Bank Name:</span> <strong>State Bank of India</strong>
-                    </div>
-                    <div className="flex justify-between border-b border-gray-200 pb-2">
-                      <span className="text-gray-500">Account Name:</span> <strong>VyaparSetu Tech</strong>
-                    </div>
-                    <div className="flex justify-between border-b border-gray-200 pb-2">
-                      <span className="text-gray-500">Account No:</span> <strong>409283740019</strong>
-                    </div>
-                    <div className="flex justify-between pt-1">
-                      <span className="text-gray-500">IFSC Code:</span> <strong>SBIN0004321</strong>
-                    </div>
-                  </div>
-                </div>
-
               </div>
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6 border-t border-white/5">
+                <div>
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Account Holder</label>
+                  <p className="text-lg font-bold text-white">Arun Ammisetty</p>
+                  <p className="text-xs text-gray-400 mt-1">Lead Developer, VyaparSetu Technologies</p>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Primary VPA</label>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-mono font-bold text-[#00e676]">918329004424@waicici</p>
+                    <button className="text-gray-500 hover:text-white"><ExternalLink size={14}/></button>
+                  </div>
+                </div>
+              </div>
+            </section>
 
+            {/* 3. INTERACTIVE PAYMENT TABS (Section 2) */}
+            <section>
+              <div className="flex border-b border-[#222] mb-8 gap-8">
+                <button 
+                  onClick={() => setActiveMethod('upi')}
+                  className={`pb-4 text-xs font-black tracking-[0.2em] uppercase transition-all relative ${activeMethod === 'upi' ? 'text-white' : 'text-gray-600'}`}
+                >
+                  01. UPI GATEWAY
+                  {activeMethod === 'upi' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#0d6efd]"></div>}
+                </button>
+                <button 
+                  onClick={() => setActiveMethod('bank')}
+                  className={`pb-4 text-xs font-black tracking-[0.2em] uppercase transition-all relative ${activeMethod === 'bank' ? 'text-white' : 'text-gray-600'}`}
+                >
+                  02. BANK TRANSFER
+                  {activeMethod === 'bank' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#0d6efd]"></div>}
+                </button>
+              </div>
+
+              {activeMethod === 'upi' ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* QR Image Slots - Placeholders for your PNGs */}
+                  {['PhonePe', 'GPay', 'WhatsApp', 'BHIM'].map((app) => (
+                    <div key={app} className="bg-[#111] border border-[#222] p-4 text-center group hover:border-[#0d6efd] transition-all">
+                      <div className="aspect-square bg-white mb-4 overflow-hidden flex items-center justify-center">
+                        {/* REPLACE SRC WITH YOUR IMAGES:
+                          src="/images/phonepe_qr.png" etc.
+                        */}
+                        <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=918329004424@waicici&pn=Arun%20Ammisetty&am=${selectedPlan.price}&cu=INR`} 
+                          alt={`${app} QR`} 
+                          className="w-full h-full object-contain p-2 grayscale group-hover:grayscale-0 transition-all"
+                        />
+                      </div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover:text-white">{app}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-[#111] border border-[#222] p-8 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest block mb-1">Bank Name</span>
+                      <p className="text-lg font-bold">STATE BANK OF INDIA</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest block mb-1">Account No</span>
+                      <p className="text-lg font-mono font-bold tracking-wider">409283740019</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest block mb-1">IFSC Code</span>
+                      <p className="text-lg font-mono font-bold text-[#0d6efd]">SBIN0004321</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest block mb-1">Acc Type</span>
+                      <p className="text-lg font-bold">CURRENT / BUSINESS</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+
+            {/* 4. VERIFICATION PROTOCOLS (Section 3) */}
+            <section className="bg-[#050505] border border-[#222] p-8 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5"><Shield size={120}/></div>
+              <h3 className="text-xs font-black tracking-[0.2em] uppercase mb-6 flex items-center gap-3">
+                <ShieldCheck className="text-[#0d6efd]" size={16}/> Clearance Protocols
+              </h3>
+              <ul className="space-y-4 text-sm text-gray-400 font-light">
+                <li className="flex gap-4">
+                  <span className="text-[#0d6efd] font-bold">01</span>
+                  <span>Transfers must be initiated from a bank account registered under the Store Name or Owner Name provided in KYC.</span>
+                </li>
+                <li className="flex gap-4">
+                  <span className="text-[#0d6efd] font-bold">02</span>
+                  <span>UTR / Transaction IDs are cross-referenced with the SBI nodal server every 60 minutes.</span>
+                </li>
+                <li className="flex gap-4">
+                  <span className="text-[#0d6efd] font-bold">03</span>
+                  <span>Fraudulent UTR submissions will result in permanent hardware-level blocking of the VyaparSetu application.</span>
+                </li>
+              </ul>
+            </section>
+
+            {/* 5. PLATFORM SECURITY STANDARDS (Section 4) */}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-[#111] p-6 border border-[#222] flex gap-4 items-start">
+                <Lock className="text-[#0d6efd] shrink-0" size={20}/>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-widest mb-2">AES-256 Encryption</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed">Payment data is encrypted at the source before transmission to the central ledger.</p>
+                </div>
+              </div>
+              <div className="bg-[#111] p-6 border border-[#222] flex gap-4 items-start">
+                <Activity className="text-[#0d6efd] shrink-0" size={20}/>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-widest mb-2">Real-time Telemetry</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed">System monitoring ensures zero data leakage during the manual verification window.</p>
+                </div>
+              </div>
+            </section>
           </div>
 
-          {/* RIGHT COLUMN: Submission Form */}
-          <div className="flex-1">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-              <h2 className="text-2xl font-bold text-[#2c3e50] mb-2">Submit Payment Details</h2>
-              <p className="text-[#555] text-[15px] mb-8 pb-6 border-b border-gray-100">
-                After completing the payment using the instructions on the left, please fill out this form to queue your account for administrative approval.
-              </p>
+          {/* RIGHT SIDE: SECURE SUBMISSION FORM */}
+          <div className="w-full lg:w-[450px]">
+            <div className="bg-white text-black p-10 border-t-[6px] border-[#0d6efd] shadow-2xl sticky top-24">
+              <h2 className="text-2xl font-black tracking-tight uppercase mb-2">KYC Submission</h2>
+              <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-8">Platform Identity Whitelisting</p>
 
               {error && (
-                <div className="bg-[#f2dede] border border-[#ebccd1] text-[#a94442] px-4 py-3 rounded-md mb-6 flex items-start gap-2 shadow-sm">
-                  <AlertCircle size={18} className="shrink-0 mt-0.5" />
-                  <span className="font-medium text-[14px]">{error}</span>
+                <div className="bg-red-50 text-red-600 p-4 border-l-4 border-red-600 mb-8 text-xs font-bold flex gap-3 items-center">
+                  <AlertCircle size={16}/> {error}
                 </div>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                
-                {/* KYC Details */}
-                <div className="space-y-5">
-                  <h3 className="text-lg font-bold text-[#2c3e50] mb-4">1. KYC Details</h3>
-                  
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="fullName" className="font-bold text-[14px] text-gray-700 flex items-center gap-1">
-                      Full Store/Owner Name <span className="text-[#c9302c]">*</span>
-                    </label>
-                    <input 
-                      id="fullName" name="fullName" type="text" 
-                      value={formData.fullName} onChange={handleChange} 
-                      className="w-full border border-[#ccc] rounded-[4px] h-11 px-3 focus:outline-none focus:border-[#337ab7] focus:ring-1 focus:ring-[#337ab7] shadow-inner" 
-                      placeholder="e.g. Ramesh Kirana Store"
-                    />
-                  </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-2">01. Entity Name</label>
+                  <input 
+                    name="fullName" value={formData.fullName} onChange={handleChange}
+                    className="w-full border-b-2 border-gray-100 py-3 focus:outline-none focus:border-[#0d6efd] transition-colors font-bold text-sm" 
+                    placeholder="STORE OR OWNER NAME" 
+                  />
+                </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="email" className="font-bold text-[14px] text-gray-700 flex items-center gap-1">
-                      Registered Email Address <span className="text-[#c9302c]">*</span>
-                    </label>
-                    <input 
-                      id="email" name="email" type="email" 
-                      value={formData.email} onChange={handleChange} 
-                      className="w-full border border-[#ccc] rounded-[4px] h-11 px-3 focus:outline-none focus:border-[#337ab7] focus:ring-1 focus:ring-[#337ab7] shadow-inner" 
-                      placeholder="ramesh@example.com"
-                    />
-                    <div className="text-[12px] text-gray-500 flex items-start gap-1 mt-1">
-                      <Info size={14} className="shrink-0 text-[#337ab7] mt-0.5" />
-                      Crucial: This exact email must be used on the Registration page after approval.
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-2">02. Platform UID (Email)</label>
+                  <input 
+                    type="email" name="email" value={formData.email} onChange={handleChange}
+                    className="w-full border-b-2 border-gray-100 py-3 focus:outline-none focus:border-[#0d6efd] transition-colors font-bold text-sm" 
+                    placeholder="RETAILER@DOMAIN.COM" 
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-2">03. Contact Primary</label>
+                  <input 
+                    type="tel" name="phone" value={formData.phone} onChange={handleChange}
+                    className="w-full border-b-2 border-gray-100 py-3 focus:outline-none focus:border-[#0d6efd] transition-colors font-bold text-sm" 
+                    placeholder="+91-00000-00000" 
+                  />
+                </div>
+
+                <div className="pt-4">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 block mb-2">04. Transaction Reference (UTR)</label>
+                  <input 
+                    name="utrNumber" value={formData.utrNumber} onChange={handleChange}
+                    className="w-full bg-gray-50 border-2 border-dashed border-gray-200 p-4 focus:outline-none focus:border-[#0d6efd] transition-colors font-mono font-black text-xl text-center uppercase tracking-widest" 
+                    placeholder="REFERENCE ID" 
+                  />
+                  <p className="text-[9px] text-gray-400 mt-2 text-center uppercase font-bold tracking-wider">Verification will fail if ID is incorrect</p>
+                </div>
+
+                <div className="pt-6 border-t border-gray-100 mt-10">
+                  <div className="flex justify-between items-end mb-6">
+                    <div>
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Subscription Tier</span>
+                      <p className="font-bold text-sm">{selectedPlan.name}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Payable</span>
+                      <p className="text-2xl font-black text-[#0d6efd]">{selectedPlan.priceLabel}</p>
                     </div>
                   </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="phone" className="font-bold text-[14px] text-gray-700 flex items-center gap-1">
-                      Phone Number <span className="text-[#c9302c]">*</span>
-                    </label>
-                    <input 
-                      id="phone" name="phone" type="tel" 
-                      value={formData.phone} onChange={handleChange} 
-                      className="w-full border border-[#ccc] rounded-[4px] h-11 px-3 focus:outline-none focus:border-[#337ab7] focus:ring-1 focus:ring-[#337ab7] shadow-inner font-mono" 
-                      placeholder="+91"
-                    />
-                  </div>
-                </div>
-
-                {/* Payment Proof */}
-                <div className="space-y-5 pt-6 border-t border-gray-100">
-                  <h3 className="text-lg font-bold text-[#2c3e50] mb-4">2. Payment Verification</h3>
                   
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="utrNumber" className="font-bold text-[14px] text-gray-700 flex items-center gap-1">
-                      Transaction ID / UTR Number <span className="text-[#c9302c]">*</span>
-                    </label>
-                    <input 
-                      id="utrNumber" name="utrNumber" type="text" 
-                      value={formData.utrNumber} onChange={handleChange} 
-                      className="w-full border border-[#ccc] rounded-[4px] h-11 px-3 focus:outline-none focus:border-[#2ecc71] focus:ring-1 focus:ring-[#2ecc71] shadow-inner font-mono tracking-wide text-lg uppercase" 
-                      placeholder="e.g. 301928374652"
-                    />
-                    <p className="text-[12px] text-gray-500 mt-1">Enter the 12-digit reference number from your banking/UPI app.</p>
-                  </div>
-                </div>
-
-                {/* Submit Action */}
-                <div className="pt-6 border-t border-gray-100">
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-[#337ab7] hover:bg-[#286090] text-white font-bold text-[16px] py-4 rounded-[4px] transition-colors shadow-md disabled:opacity-70 flex items-center justify-center gap-2"
+                    className="w-full bg-[#0d6efd] hover:bg-[#0b5ed7] text-white font-black py-4 uppercase tracking-[0.25em] text-xs shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-3"
                   >
-                    {isLoading ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} />}
-                    {isLoading ? 'Encrypting & Submitting...' : 'Submit for Super Admin Review'}
+                    {isLoading ? <Loader2 className="animate-spin" size={16}/> : <UserCheck size={16}/>}
+                    {isLoading ? 'Processing Neural Data...' : 'Request Clearance'}
                   </button>
                 </div>
-
               </form>
             </div>
           </div>
 
         </div>
+
+        {/* 6. HELP CENTER SECTION (Section 5) */}
+        <section className="mt-24 pt-20 border-t border-[#222]">
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+             <div>
+               <h4 className="text-xs font-black tracking-[0.2em] uppercase mb-4 flex items-center gap-2">
+                 <HelpCircle size={16} className="text-[#0d6efd]"/> Assistance Desk
+               </h4>
+               <p className="text-gray-500 text-sm leading-relaxed mb-6 font-light">Facing issues with your UTR or payment timing? Our technical team is available for real-time routing support.</p>
+               <div className="space-y-2">
+                 <div className="flex items-center gap-3 text-xs text-white font-bold"><Mail size={14} className="text-gray-500"/> support@vyaparsetu.official</div>
+                 <div className="flex items-center gap-3 text-xs text-white font-bold"><Phone size={14} className="text-gray-500"/> +91 83290 04424</div>
+               </div>
+             </div>
+             <div>
+               <h4 className="text-xs font-black tracking-[0.2em] uppercase mb-4">Clearance SLA</h4>
+               <p className="text-gray-500 text-sm leading-relaxed font-light">Administrative clearance is an offline batch process. Requests submitted between 10:00 PM and 08:00 AM IST will be processed during the subsequent morning cycle.</p>
+             </div>
+             <div>
+               <h4 className="text-xs font-black tracking-[0.2em] uppercase mb-4">Refund Policy</h4>
+               <p className="text-gray-500 text-sm leading-relaxed font-light">Subscription fees are non-refundable once an account has been whitelisted and registered. Clerical error refunds can be processed prior to registration.</p>
+             </div>
+           </div>
+        </section>
+
       </main>
+
+      {/* FOOTER */}
+      <footer className="bg-[#050505] border-t border-[#111] py-12">
+        <div className="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+           <div className="text-[10px] font-black tracking-[0.4em] text-gray-700 uppercase">
+             VyaparSetu Technologies • Official Gateway
+           </div>
+           <div className="flex gap-8">
+              <a href="#" className="text-[9px] font-bold text-gray-500 hover:text-white uppercase tracking-widest">Global Privacy Policy</a>
+              <a href="#" className="text-[9px] font-bold text-gray-500 hover:text-white uppercase tracking-widest">Accessibility Hub</a>
+              <a href="#" className="text-[9px] font-bold text-gray-500 hover:text-white uppercase tracking-widest">Developer APIs</a>
+           </div>
+        </div>
+      </footer>
+
     </div>
   );
 }
