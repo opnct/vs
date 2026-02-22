@@ -7,6 +7,9 @@ import Chatbot from './pages/chatbot/index';
 import Login from './pages/auth/Login';
 import VerifyOTP from './pages/auth/VerifyOTP';
 import Login2 from './pages/auth/Login2';
+import Pricing from './pages/pricing/index';
+import PaymentGateway from './pages/payment/index';
+import SuperAdminDashboard from './pages/sa/index';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // FEATURE IMPORTS
@@ -73,6 +76,9 @@ export default function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/payment" element={<PaymentGateway />} />
+          <Route path="/sa" element={<SuperAdminDashboard />} />
           <Route path="/login" element={<Login />} />
           <Route path="/verify-otp" element={<VerifyOTP />} />
           <Route path="/login2" element={<Login2 />} />
