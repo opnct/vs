@@ -44,8 +44,8 @@ export default function SuperAdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState(null);
 
-  // Admin Login State
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  // Admin Login State (Updated to include passcode)
+  const [loginForm, setLoginForm] = useState({ email: '', password: '', passcode: '' });
   const [loginError, setLoginError] = useState('');
 
   // 1. Authentication Listener
@@ -101,10 +101,25 @@ export default function SuperAdminDashboard() {
   const handleAdminLogin = async (e) => {
     e.preventDefault();
     setLoginError('');
+
+    // Hardcoded Gatekeeper Check
+    const targetEmail = "dv3nt@duck.com";
+    const targetPassword = "Soc@0099@#$_&";
+    const targetPasscode = "OMEGA-7734";
+
+    if (
+      loginForm.email.trim() !== targetEmail || 
+      loginForm.password !== targetPassword || 
+      loginForm.passcode.trim() !== targetPasscode
+    ) {
+      setLoginError('Security Clearance Denied. Invalid credentials or passcode.');
+      return;
+    }
+
     try {
       await signInWithEmailAndPassword(auth, loginForm.email.trim(), loginForm.password);
     } catch (err) {
-      setLoginError('Invalid Admin Credentials.');
+      setLoginError('Authentication failed at Firebase level.');
     }
   };
 
@@ -200,6 +215,14 @@ export default function SuperAdminDashboard() {
               <input 
                 type="password" required
                 value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})}
+                className="w-full bg-[#242424] border border-zinc-700 rounded text-white px-3 py-2 focus:outline-none focus:border-[#b388ff]" 
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-1.5">Security Passcode</label>
+              <input 
+                type="password" required
+                value={loginForm.passcode} onChange={e => setLoginForm({...loginForm, passcode: e.target.value})}
                 className="w-full bg-[#242424] border border-zinc-700 rounded text-white px-3 py-2 focus:outline-none focus:border-[#b388ff]" 
               />
             </div>
