@@ -174,10 +174,6 @@ export default function Login2() {
       <div className="bg-black text-white px-6 md:px-12 py-5 w-full shrink-0">
         <div className="max-w-[1200px] mx-auto flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">VyaparSetu Login Portal</h1>
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-sm">
-            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-            <span className="text-[10px] font-bold text-green-500 uppercase tracking-widest">System Operational</span>
-          </div>
         </div>
       </div>
 
