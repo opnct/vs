@@ -60,6 +60,12 @@ export default function Header() {
               </div>
             )}
           </div>
+
+          {/* Onboarding & Gateway Links */}
+          <div className="flex items-center gap-6 ml-2 pl-6 border-l border-white/20">
+            <Link to="/login2" className="hover:text-gray-300 transition-colors">LOGIN</Link>
+            <Link to="/pricing" className="bg-[#005ea2] hover:bg-[#0b4774] text-white px-5 py-2.5 transition-colors shadow-sm">GET STARTED</Link>
+          </div>
         </div>
 
         {/* Mobile Toggle */}
@@ -91,6 +97,10 @@ export default function Header() {
               <Link to="/features/store-health-dashboard" className="py-4 border-b border-[#333333] text-[#888888] hover:text-white">ANALYTICS</Link>
             </div>
             <Link to="/contact" className="py-4 border-b border-[#333333] hover:text-white">CONTACT</Link>
+            
+            {/* Mobile Onboarding & Gateway Links */}
+            <Link to="/login2" className="py-4 border-b border-[#333333] hover:text-white">LOGIN</Link>
+            <Link to="/pricing" className="py-4 font-bold text-[#005ea2] hover:text-[#4da8ec]">GET STARTED</Link>
           </div>
         </div>
       )}

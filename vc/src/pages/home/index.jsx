@@ -78,12 +78,20 @@ export default function Home() {
           <h1 className="text-5xl md:text-7xl lg:text-[7rem] font-bold text-white tracking-tight leading-[1.05] mb-10 uppercase">
             SOFTWARE FOR <br /> RETAIL STORES
           </h1>
-          <a 
-            href="#explore-themes" 
-            className="inline-flex items-center gap-3 bg-[#005ea2] hover:bg-[#0b4774] text-white px-8 py-4 font-bold tracking-wider transition-colors text-[15px] uppercase"
-          >
-            EXPLORE <ArrowDown size={20} strokeWidth={2.5}/>
-          </a>
+          <div className="flex flex-wrap items-center gap-4">
+            <Link 
+              to="/pricing" 
+              className="inline-flex items-center gap-3 bg-[#005ea2] hover:bg-[#0b4774] text-white px-8 py-4 font-bold tracking-wider transition-colors text-[15px] uppercase shadow-lg shadow-[#005ea2]/20"
+            >
+              GET STARTED <ArrowRight size={20} strokeWidth={2.5}/>
+            </Link>
+            <a 
+              href="#explore-themes" 
+              className="inline-flex items-center gap-3 bg-transparent border border-white hover:bg-white hover:text-black text-white px-8 py-4 font-bold tracking-wider transition-colors text-[15px] uppercase"
+            >
+              EXPLORE <ArrowDown size={20} strokeWidth={2.5}/>
+            </a>
+          </div>
         </div>
       </section>
 
