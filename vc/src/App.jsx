@@ -6,6 +6,7 @@ import Home from './pages/home/index';
 import Chatbot from './pages/chatbot/index';
 import Login from './pages/auth/Login';
 import VerifyOTP from './pages/auth/VerifyOTP';
+import Login2 from './pages/auth/Login2';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // FEATURE IMPORTS
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/verify-otp" element={<VerifyOTP />} />
+          <Route path="/login2" element={<Login2 />} />
           
           {/* Protected Routes */}
           <Route 
