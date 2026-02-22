@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Eye, EyeOff, Loader2, AlertCircle, X, CheckCircle2 } from 'lucide-react';
+import emailjs from '@emailjs/browser';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc, collection, addDoc } from 'firebase/firestore';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 
 // Initialize Firebase securely utilizing environment variables
 const firebaseConfig = {
@@ -144,17 +145,8 @@ export default function Login() {
     setError('');
 
     try {
-      // 1. Authenticate formally with Email/Password
-      try {
-        await createUserWithEmailAndPassword(auth, formData.email.trim(), formData.password);
-      } catch (authError) {
-        // If the user already exists, gracefully fall back to signing them in
-        if (authError.code === 'auth/email-already-in-use') {
-          await signInWithEmailAndPassword(auth, formData.email.trim(), formData.password);
-        } else {
-          throw authError;
-        }
-      }
+      // 1. Authenticate formally with Email/Password (Strictly Registration Only)
+      await createUserWithEmailAndPassword(auth, formData.email.trim(), formData.password);
 
       // 2. Adaptive path generation (Ensures it works locally via Vite AND embedded Canvas)
       const collectionPath = typeof __app_id !== 'undefined' 
@@ -164,7 +156,6 @@ export default function Login() {
       const userRef = doc(db, collectionPath, formData.email.trim().toLowerCase());
       
       // 3. Save comprehensive registration data to real Firebase DB
-      // merge: true ensures returning users do not overwrite their existing profile data entirely
       await setDoc(userRef, {
         username: formData.username,
         firstName: formData.firstName,
@@ -177,8 +168,8 @@ export default function Login() {
         userType: formData.userType,
         organization: formData.organization,
         agreements: formData.agreements,
-        lastLoginAt: new Date().toISOString()
-      }, { merge: true });
+        registeredAt: new Date().toISOString()
+      });
 
       // 4. Execute Real Auth Context Logic (Triggers separate EmailJS OTP validation)
       await initiateLogin(formData.email.trim());
@@ -187,8 +178,12 @@ export default function Login() {
     } catch (err) {
       console.error("Registration Exception:", err);
       let errorMessage = 'Failed to secure profile registration data. Please try again.';
-      if (err.code === 'auth/wrong-password') errorMessage = 'Invalid password for existing account.';
-      if (err.code === 'auth/invalid-credential') errorMessage = 'Invalid credentials provided.';
+      
+      // Clearly catch existing users and prompt them to use the Login2 gateway
+      if (err.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered. Please click the login link below to access your account.';
+      }
+      
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -433,14 +428,20 @@ export default function Login() {
                 </label>
               </div>
 
-              {/* Action Button */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="bg-[#2ecc71] hover:bg-[#27ae60] text-white font-medium text-[15px] px-6 py-2.5 rounded-[3px] transition-colors shadow-sm disabled:opacity-70 flex items-center justify-center min-w-[120px]"
-              >
-                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'CONTINUE'}
-              </button>
+              {/* Action Button & Redirection Link */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 border-t border-gray-100 pt-4">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="bg-[#2ecc71] hover:bg-[#27ae60] text-white font-medium text-[15px] px-8 py-2.5 rounded-[3px] transition-colors shadow-sm disabled:opacity-70 flex items-center justify-center min-w-[140px]"
+                >
+                  {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'CONTINUE'}
+                </button>
+
+                <Link to="/login2" className="text-[#337ab7] hover:underline text-[14px] font-medium">
+                  Already have an account? Log in here
+                </Link>
+              </div>
             </div>
 
           </form>
@@ -479,7 +480,7 @@ export default function Login() {
       </div>
 
       {/* Solid Black Footer Bar mimicking the image */}
-      <div className="bg-black text-white text-center py-6 text-[13px] w-full shrink-0 mt-auto">
+      <div className="bg-black text-white text-center py-6 text-[13px] w-full shrink-0">
         <p className="mb-4">Protection and maintenance of user profile information is described in <a href="#" className="font-bold hover:underline">VyaparSetu's Web Privacy Policy &#x2197;</a></p>
         <p className="mb-6">For questions regarding the VyaparSetu Login, please contact <a href="#" className="font-bold hover:underline">VyaparSetu Support</a></p>
         <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6 font-bold tracking-wide">

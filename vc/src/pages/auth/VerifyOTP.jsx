@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Loader2, AlertCircle, X, CheckCircle2 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, updateDoc, collection, addDoc } from 'firebase/firestore';
+import { getAuth, signOut } from 'firebase/auth';
 
 // Initialize Firebase securely utilizing environment variables
 const firebaseConfig = {
@@ -119,8 +120,10 @@ export default function VerifyOTP() {
         lastVerifiedAt: new Date().toISOString()
       });
 
-      // 4. Replace history to prevent user from navigating back to OTP screen
-      navigate('/chatbot', { replace: true });
+      // 4. Terminate auto-registration session and force manual login via Login2.jsx
+      const auth = getAuth(app);
+      await signOut(auth);
+      navigate('/login2', { replace: true });
 
     } catch (err) {
       console.error("Verification Exception:", err);
@@ -301,11 +304,11 @@ export default function VerifyOTP() {
 
       {/* Solid Black Footer Bar */}
       <div className="bg-black text-white text-center py-6 text-[13px] w-full shrink-0 mt-auto">
-        <p className="mb-4">Protection and maintenance of user profile information is described in <a href="#" className="font-bold hover:underline">VyaparSetu's Web Privacy Policy &#x2197;</a></p>
+        <p className="mb-4">Protection and maintenance of user profile information is described in <a href="#" className="font-bold hover:underline">VyaparSetu's Web Privacy Policy</a></p>
         <p className="mb-6">For questions regarding the VyaparSetu Login, please contact <a href="#" className="font-bold hover:underline">VyaparSetu Support</a></p>
         <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6 font-bold tracking-wide">
           <span>V URSFOUR-2609-4</span>
-          <a href="#" className="hover:underline">Home</a>
+          <a href="/" className="hover:underline">Home</a>
           <a href="#" className="hover:underline">VyaparSetu</a>
           <a href="#" className="hover:underline">Accessibility</a>
         </div>
