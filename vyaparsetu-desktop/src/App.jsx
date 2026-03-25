@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@tauri-apps/api/core';
 import { 
   Calculator, HardDrive, BookOpen, Bot, ScanLine, 
   Globe, ShieldCheck, WifiOff, Printer, DownloadCloud, 
