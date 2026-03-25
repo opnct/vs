@@ -114,6 +114,34 @@ app.post('/api/payu/generate-hash', (req, res) => {
   }
 });
 
+/**
+ * ============================================================================
+ * ENDPOINT: PayU Success Callback Bridge (/api/payu/success)
+ * ----------------------------------------------------------------------------
+ * Purpose: Catches PayU's POST request and executes a safe GET redirect to Vercel.
+ * ============================================================================
+ */
+app.post('/api/payu/success', (req, res) => {
+  const txnid = req.body.txnid || '';
+  console.log(`[PAYU CALLBACK] Success payload received for TXN: ${txnid}`);
+  // Redirect to the React frontend with the transaction ID
+  res.redirect(`${productionFrontend}/payment?payment_status=success&txnid=${txnid}`);
+});
+
+/**
+ * ============================================================================
+ * ENDPOINT: PayU Failure Callback Bridge (/api/payu/failure)
+ * ----------------------------------------------------------------------------
+ * Purpose: Catches PayU's POST request and executes a safe GET redirect to Vercel.
+ * ============================================================================
+ */
+app.post('/api/payu/failure', (req, res) => {
+  const txnid = req.body.txnid || '';
+  console.error(`[PAYU CALLBACK] Failure/Cancellation payload received for TXN: ${txnid}`);
+  // Redirect to the React frontend with the transaction ID
+  res.redirect(`${productionFrontend}/payment?payment_status=failure&txnid=${txnid}`);
+});
+
 // Boot Sequence
 app.listen(PORT, () => {
   console.log(`VyaparSetu Backend initialized and listening on port ${PORT}`);
