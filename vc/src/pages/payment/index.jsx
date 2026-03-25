@@ -554,7 +554,7 @@ export default function PaymentGateway() {
                      <div className="space-y-4 border-b md:border-b-0 md:border-r border-zinc-800 pb-8 md:pb-0">
                         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 block">Email Support</span>
                         <div className="flex items-center gap-4 text-white font-black text-lg">
-                           <Mail size={24} className="text-[#005ea2]"/> support@vyaparsetu.tech
+                           <Mail size={24} className="text-[#005ea2]"/> support.vyaparsetu@tuta.io
                         </div>
                      </div>
                      <div className="space-y-4">
