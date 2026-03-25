@@ -164,12 +164,23 @@ export default function PaymentGateway() {
         txnid: txnid
       }));
 
-      // REAL BACKEND INTEGRATION: Fetching SHA-512 Hash from Secure Server
-      const backendUrl = import.meta.env.VITE_PAYU_BACKEND_URL || '/api/payu/generate-hash';
+      /**
+       * REAL BACKEND INTEGRATION: 
+       * Strictly utilizing the environment variable that MUST point to 
+       * the /api/payu/generate-hash endpoint on Render.
+       */
+      const backendUrl = import.meta.env.VITE_PAYU_BACKEND_URL;
       
+      if (!backendUrl) {
+        throw new Error('VITE_PAYU_BACKEND_URL is not defined in environment variables.');
+      }
+
       const response = await fetch(backendUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({
           txnid: txnid,
           amount: selectedPlan.price,
@@ -183,7 +194,8 @@ export default function PaymentGateway() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to retrieve secure hash from backend.');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP Error ${response.status}: Failed to reach hash generator.`);
       }
 
       const data = await response.json();
@@ -194,7 +206,7 @@ export default function PaymentGateway() {
       form.action = 'https://test.payu.in/_payment';
 
       const payuParams = {
-        key: import.meta.env.VITE_PAYU_MERCHANT_KEY, // Strictly pulling from .env
+        key: import.meta.env.VITE_PAYU_MERCHANT_KEY, 
         txnid: txnid,
         amount: selectedPlan.price,
         productinfo: selectedPlan.name,
@@ -219,8 +231,8 @@ export default function PaymentGateway() {
       form.submit();
 
     } catch (err) {
-      console.error(err);
-      setError('Payment Gateway Error: Unable to securely connect to PayU API. Verify backend integration and environment variables.');
+      console.error("[PAYMENT GATEWAY EXCEPTION]", err);
+      setError(`Checkout Error: ${err.message}. Please verify network connectivity and system configuration.`);
       setIsLoading(false);
     }
   };
