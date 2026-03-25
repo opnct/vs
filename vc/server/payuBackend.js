@@ -7,10 +7,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 /**
- * STRATEGY: Strict Origin Reflection & Normalization
- * Whitelist updated to support Production, Local Dev, and GitHub Codespaces.
+ * STRATEGY: Multi-Environment CORS Normalization
+ * Supports Vercel Production, Vercel Dev, and GitHub Codespaces.
+ * Normalizes origins by stripping trailing slashes to prevent preflight mismatches.
  */
 const productionFrontend = (process.env.FRONTEND_URL || 'https://vyaparsetuai.vercel.app').replace(/\/$/, "");
+
 const allowedOriginsNormalized = [
   productionFrontend,
   'http://localhost:5173',
@@ -20,14 +22,15 @@ const allowedOriginsNormalized = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow server-side/non-browser requests
+    // Allow requests with no origin (like server-to-server or curl)
     if (!origin) return callback(null, true);
     
-    // Normalize the incoming origin to check against our whitelist
+    // Normalize the incoming browser origin by removing trailing slash
     const normalizedIncoming = origin.replace(/\/$/, "");
     
     if (allowedOriginsNormalized.includes(normalizedIncoming)) {
       // SUCCESS: Reflect the EXACT origin string sent by the browser.
+      // This is required to satisfy the "Access-Control-Allow-Origin" header check.
       callback(null, origin);
     } else {
       console.warn(`[SECURITY] Blocked unauthorized origin: ${origin}`);
@@ -38,16 +41,16 @@ app.use(cors({
   credentials: true
 }));
 
-// Standard Parsers
+// Standard Parsers for PayU Payloads
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Retrieve secure credentials from backend .env
+// Retrieve secure credentials from backend environment
 const PAYU_MERCHANT_KEY = process.env.PAYU_MERCHANT_KEY;
 const PAYU_MERCHANT_SALT = process.env.PAYU_MERCHANT_SALT;
 
 if (!PAYU_MERCHANT_KEY || !PAYU_MERCHANT_SALT) {
-  console.error("FATAL ERROR: PayU Credentials missing from backend .env. Shutting down.");
+  console.error("FATAL ERROR: PayU Credentials missing from backend environment variables. Shutting down.");
   process.exit(1);
 }
 
@@ -55,7 +58,8 @@ if (!PAYU_MERCHANT_KEY || !PAYU_MERCHANT_SALT) {
  * ============================================================================
  * ENDPOINT: Root Handler (/)
  * ----------------------------------------------------------------------------
- * Purpose: Fixes the "Cannot GET /" error and provides a basic heartbeat.
+ * Purpose: Fixes the "Cannot GET /" error on Render and provides a 
+ * success heartbeat for initial server verification.
  * ============================================================================
  */
 app.get('/', (req, res) => {
@@ -70,29 +74,35 @@ app.get('/', (req, res) => {
  * ============================================================================
  */
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
+  res.status(200).json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    service: 'VyaparSetu Gateway'
+  });
 });
 
 /**
  * ============================================================================
  * ENDPOINT: Generate Payment Hash (/api/payu/generate-hash)
  * ----------------------------------------------------------------------------
- * Purpose: Securely generates the PayU SHA-512 hash.
+ * Purpose: Securely generates the SHA-512 cryptographic hash required by PayU.
  * ============================================================================
  */
 app.post('/api/payu/generate-hash', (req, res) => {
   try {
     const { txnid, amount, productinfo, firstname, email, phone, surl, furl } = req.body;
 
-    // Strict validation
+    // Strict validation of mandatory fields
     if (!txnid || !amount || !productinfo || !firstname || !email || !surl || !furl) {
       return res.status(400).json({ error: 'Payload validation failed. Mandatory PayU fields missing.' });
     }
 
+    // STRICT PAYU HASH FORMULA:
     // sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10|salt)
     const hashString = `${PAYU_MERCHANT_KEY}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${PAYU_MERCHANT_SALT}`;
     const hash = crypto.createHash('sha512').update(hashString).digest('hex');
 
+    // Return the authorized hash and merchant key
     res.status(200).json({
       key: PAYU_MERCHANT_KEY,
       hash: hash
@@ -100,12 +110,12 @@ app.post('/api/payu/generate-hash', (req, res) => {
 
   } catch (error) {
     console.error("Hash Generation Exception:", error);
-    res.status(500).json({ error: 'Cryptographic failure. Contact system administrator.' });
+    res.status(500).json({ error: 'Cryptographic failure during hash generation.' });
   }
 });
 
 // Boot Sequence
 app.listen(PORT, () => {
-  console.log(`VyaparSetu Backend listening on port ${PORT}`);
-  console.log(`CORS Whitelist Active for: ${allowedOriginsNormalized.join(', ')}`);
+  console.log(`VyaparSetu Backend initialized and listening on port ${PORT}`);
+  console.log(`CORS Policy active for: ${allowedOriginsNormalized.join(', ')}`);
 });
