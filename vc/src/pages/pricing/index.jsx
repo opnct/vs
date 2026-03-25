@@ -144,8 +144,13 @@ export default function Pricing() {
       billingCycle: plan.billingCycle
     };
     
-    // Route to payment page securely passing the serializable plan object in memory state
-    navigate('/payment', { state: { selectedPlan: serializablePlan } });
+    if (plan.price === 0) {
+      // Route Free Tier users directly to the registration page
+      navigate('/login', { state: { selectedPlan: serializablePlan } });
+    } else {
+      // Route Paid Tier users to the secure payment gateway
+      navigate('/payment', { state: { selectedPlan: serializablePlan } });
+    }
   };
 
   return (
