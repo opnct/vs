@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   CheckCircle2, Star, Zap, Building2, Store, Package, 
   ArrowRight, Globe, Layers, ShieldCheck, Microchip, 
   ChevronRight, Database, CloudLightning, Activity,
-  Smartphone, Cpu, ScanLine
+  Smartphone, Cpu, ScanLine, Calculator
 } from 'lucide-react';
 
 const pricingPlans = [
@@ -12,97 +12,74 @@ const pricingPlans = [
     id: 'plan_free',
     name: 'Free Tier',
     icon: Store,
-    price: 0,
-    priceLabel: '₹0',
-    billingCycle: 'Forever',
-    description: 'Basic access for micro-retailers to explore the VyaparSetu ecosystem.',
+    monthlyPrice: 0,
+    annualPrice: 0,
+    description: 'Basic access for micro-retailers to explore the VyaparSetu ecosystem. No credit card needed.',
     features: [
-      'Basic Chatbot Access (50 queries/mo)',
+      'Basic Chatbot Access (100 queries/mo)',
       'Daily Mandi Rate Updates (1 Location)',
       'Standard Community Support',
       'Single User Login'
     ],
-    buttonText: 'Start for Free',
+    buttonText: 'Direct Free Signup',
     recommended: false
   },
   {
     id: 'plan_starter',
-    name: 'Kirana Starter',
+    name: 'Starter / Essential',
     icon: Package,
-    price: 999,
-    priceLabel: '₹999',
-    billingCycle: '/ month',
-    description: 'Essential AI intelligence for single-store Kirana owners.',
+    monthlyPrice: 799,
+    annualPrice: 7999,
+    description: 'Perfect for Solopreneurs, local retail shops, and early-stage startups.',
     features: [
-      'Unlimited Chatbot Queries',
-      'Micro-Weather Stock Predictor',
-      'WhatsApp Khata Reminders (100/mo)',
-      'Daily Wage Tracker',
-      'Email Support'
+      '1,000 AI Messages/mo',
+      '1 User Seat',
+      'Standard Email Support',
+      'Basic Supply Chain Sync',
+      '14-Day Free Trial (No CC)'
     ],
-    buttonText: 'Select Starter',
+    buttonText: 'Start 14-Day Free Trial',
     recommended: false
   },
   {
     id: 'plan_growth',
-    name: 'Super Kirana',
+    name: 'Growth / Professional',
     icon: Star,
-    price: 2499,
-    priceLabel: '₹2,499',
-    billingCycle: '/ month',
-    description: 'Advanced financial and supply chain tools for high-volume stores.',
+    monthlyPrice: 2499,
+    annualPrice: 24999,
+    description: 'For established SMEs, agencies, e-commerce stores, and clinics.',
     features: [
-      'Everything in Kirana Starter',
-      'FMCG Scheme Decoding Scanner',
-      'Mandi-Rate Arbitrage Engine',
-      'Staff Fraud (Pilferage) Detector',
-      'Unlimited WhatsApp Reminders',
-      'Priority Phone Support'
+      '10,000 AI Messages/mo',
+      '3-5 User Seats',
+      'WhatsApp Integration',
+      'Advanced Analytics',
+      'Priority Phone Support',
+      '14-Day Free Trial (No CC)'
     ],
-    buttonText: 'Select Growth',
+    buttonText: 'Start 14-Day Free Trial',
     recommended: true
   },
   {
-    id: 'plan_distributor',
-    name: 'Distributor Hub',
-    icon: Building2,
-    price: 4999,
-    priceLabel: '₹4,999',
-    billingCycle: '/ month',
-    description: 'Wholesale-grade features for stockists and multi-branch retailers.',
-    features: [
-      'Everything in Super Kirana',
-      'Distributor Route Planner',
-      'B2B Tax Credit (ITC) Scanner',
-      'Expiry Liquidation Network Access',
-      'Supplier Payment Scheduler',
-      'Multi-Store Dashboard'
-    ],
-    buttonText: 'Select Distributor',
-    recommended: false
-  },
-  {
     id: 'plan_enterprise',
-    name: 'Enterprise / FPO',
+    name: 'Scale / Enterprise',
     icon: Zap,
-    price: 9999,
-    priceLabel: '₹9,999+',
-    billingCycle: '/ month',
-    description: 'Custom infrastructure for large supply chains and FPOs.',
+    monthlyPrice: 6999,
+    annualPrice: 69999,
+    description: 'For large franchises, high-volume e-commerce brands, hospitals, and real estate.',
     features: [
-      'All Premium Features',
-      'Direct-to-Farmer (FPO) Sourcing',
-      'Custom API Integrations',
+      'Unlimited AI Limits',
+      'Unlimited User Seats',
+      'Custom AI Model Training',
       'Dedicated Account Manager',
-      'White-labeled Reporting',
-      'Unlimited Store Locations'
+      'API Access for ERPs',
+      '14-Day Free Trial (No CC)'
     ],
-    buttonText: 'Request Custom Plan',
+    buttonText: 'Start 14-Day Free Trial',
     recommended: false
   }
 ];
 
-// --- NEW DATA FOR EXTRA SECTIONS ---
+// --- DATA FOR EXTRA SECTIONS ---
 const capabilities = [
   {
     title: 'Earth-Scale Supply Chain Sync',
@@ -133,18 +110,23 @@ const successStories = [
 
 export default function Pricing() {
   const navigate = useNavigate();
+  const [isAnnual, setIsAnnual] = useState(false);
 
   const handleSelectPlan = (plan) => {
-    // FIX: Destructure to only send serializable data (Remove React Components like icon)
+    // Determine the exact integer price based on the selected billing cycle
+    const activePrice = plan.monthlyPrice === 0 ? 0 : (isAnnual ? plan.annualPrice : plan.monthlyPrice);
+    const activeBillingCycle = plan.monthlyPrice === 0 ? 'Forever' : (isAnnual ? '/ year' : '/ month');
+    
+    // Package serializable data for the PayU Gateway
     const serializablePlan = {
       id: plan.id,
       name: plan.name,
-      price: plan.price,
-      priceLabel: plan.priceLabel,
-      billingCycle: plan.billingCycle
+      price: activePrice,
+      priceLabel: `₹${activePrice.toLocaleString('en-IN')}`,
+      billingCycle: activeBillingCycle
     };
     
-    if (plan.price === 0) {
+    if (activePrice === 0) {
       // Route Free Tier users directly to the registration page
       navigate('/login', { state: { selectedPlan: serializablePlan } });
     } else {
@@ -156,7 +138,7 @@ export default function Pricing() {
   return (
     <div className="bg-black min-h-screen text-white font-sans selection:bg-[#0d6efd] selection:text-white">
       
-      {/* 1. MASSIVE HERO SECTION (Earth.gov Style) */}
+      {/* 1. MASSIVE HERO SECTION */}
       <section className="relative h-[85vh] flex flex-col justify-center overflow-hidden border-b border-[#333]">
         <div className="absolute inset-0 z-0">
           <img 
@@ -184,9 +166,10 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* 2. THE PRICING GRID (Core Logic) */}
+      {/* 2. THE PRICING GRID */}
       <section id="pricing-grid" className="py-24 bg-black relative z-20">
         <div className="max-w-[1400px] mx-auto px-6 sm:px-12">
+          
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-[#333] pb-8">
             <div>
               <h2 className="text-sm font-bold tracking-[0.2em] text-[#0d6efd] uppercase mb-4">
@@ -199,51 +182,78 @@ export default function Pricing() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          {/* BILLING TOGGLE */}
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mb-16">
+            <span className={`text-sm font-bold tracking-widest uppercase transition-colors ${!isAnnual ? 'text-white' : 'text-gray-600'}`}>
+              Monthly Billing
+            </span>
+            <button 
+              onClick={() => setIsAnnual(!isAnnual)}
+              className="w-20 h-10 bg-[#1a1a1a] rounded-full border border-[#444] relative flex items-center px-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#0d6efd] focus:border-transparent"
+              aria-label="Toggle Billing Cycle"
+            >
+              <div className={`w-7 h-7 bg-[#0d6efd] rounded-full transition-transform duration-300 shadow-[0_0_15px_rgba(13,110,253,0.6)] ${isAnnual ? 'translate-x-10' : 'translate-x-0'}`} />
+            </button>
+            <span className={`text-sm font-bold tracking-widest uppercase flex items-center gap-3 transition-colors ${isAnnual ? 'text-white' : 'text-gray-600'}`}>
+              Annual Billing 
+              <span className="bg-[#0d6efd]/10 text-[#4da8ec] border border-[#0d6efd]/30 text-[10px] px-3 py-1.5 rounded-sm tracking-widest">SAVE 20% (2 MOS FREE)</span>
+            </span>
+          </div>
+
+          {/* PRICING CARDS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {pricingPlans.map((plan) => {
               const Icon = plan.icon;
               const isRecommended = plan.recommended;
+              const displayPrice = plan.monthlyPrice === 0 ? 0 : (isAnnual ? plan.annualPrice : plan.monthlyPrice);
+              const displayCycle = plan.monthlyPrice === 0 ? 'Forever' : (isAnnual ? '/ year' : '/ month');
 
               return (
                 <div 
                   key={plan.id} 
-                  className={`bg-[#111] border transition-all duration-300 flex flex-col h-full group ${isRecommended ? 'border-[#0d6efd] ring-1 ring-[#0d6efd]/50 shadow-[0_0_30px_rgba(13,110,253,0.15)]' : 'border-[#333] hover:border-gray-500'}`}
+                  className={`bg-[#111] border transition-all duration-300 flex flex-col h-full group ${isRecommended ? 'border-[#0d6efd] ring-1 ring-[#0d6efd]/50 shadow-[0_0_30px_rgba(13,110,253,0.15)] relative scale-105 z-10' : 'border-[#333] hover:border-gray-500'}`}
                 >
-                  <div className="p-6 border-b border-[#222]">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className={`p-2 bg-[#222] text-white inline-flex border border-[#333]`}>
-                        <Icon size={20} />
+                  {isRecommended && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0d6efd] text-white text-[10px] font-black uppercase tracking-widest py-1.5 px-4 rounded-sm shadow-lg w-max">
+                      Most Popular & Best Value
+                    </div>
+                  )}
+
+                  <div className="p-8 border-b border-[#222]">
+                    <div className="flex justify-between items-start mb-6">
+                      <div className={`p-3 bg-[#222] text-[#4da8ec] inline-flex border border-[#333]`}>
+                        <Icon size={24} />
                       </div>
-                      {isRecommended && (
-                        <span className="bg-[#0d6efd] text-white text-[10px] font-black uppercase tracking-widest py-1 px-2">
-                          Standard
-                        </span>
-                      )}
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2 tracking-tight">{plan.name}</h3>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold tracking-tighter">{plan.priceLabel}</span>
-                      <span className="text-[10px] text-gray-500 tracking-wider uppercase">{plan.billingCycle}</span>
+                    <h3 className="text-xl font-bold text-white mb-2 tracking-tight uppercase">{plan.name}</h3>
+                    <div className="flex items-baseline gap-1 mt-4">
+                      <span className="text-4xl font-black tracking-tighter">₹{displayPrice.toLocaleString('en-IN')}</span>
+                      <span className="text-[10px] text-gray-500 tracking-wider uppercase font-bold">{displayCycle}</span>
                     </div>
+                    {isAnnual && plan.monthlyPrice > 0 && (
+                      <p className="text-green-500 text-[11px] font-bold mt-2 uppercase tracking-wider">
+                        Billed annually (Save ₹{(plan.monthlyPrice * 12 - plan.annualPrice).toLocaleString('en-IN')})
+                      </p>
+                    )}
                   </div>
 
-                  <div className="p-6 flex-1 flex flex-col">
-                    <p className="text-xs text-gray-400 mb-6 h-10 leading-relaxed">{plan.description}</p>
-                    <ul className="space-y-4 mb-8 flex-1">
+                  <div className="p-8 flex-1 flex flex-col">
+                    <p className="text-sm text-gray-400 mb-8 leading-relaxed font-light">{plan.description}</p>
+                    <ul className="space-y-4 mb-10 flex-1">
                       {plan.features.map((feature, idx) => (
-                        <li key={idx} className="flex items-start gap-3 text-[13px] text-gray-300">
-                          <CheckCircle2 size={14} className={isRecommended ? "text-[#0d6efd] shrink-0 mt-0.5" : "text-gray-600 shrink-0 mt-0.5"} />
-                          <span className="leading-tight">{feature}</span>
+                        <li key={idx} className="flex items-start gap-3 text-[13px] text-gray-200">
+                          <CheckCircle2 size={16} className={isRecommended ? "text-[#0d6efd] shrink-0 mt-0.5" : "text-gray-600 shrink-0 mt-0.5"} />
+                          <span className="leading-relaxed">{feature}</span>
                         </li>
                       ))}
                     </ul>
 
                     <button
                       onClick={() => handleSelectPlan(plan)}
-                      className={`w-full py-3.5 text-[11px] font-black tracking-[0.2em] uppercase transition-colors flex justify-center items-center gap-2 ${
+                      className={`w-full py-4 text-[11px] font-black tracking-[0.2em] uppercase transition-all flex justify-center items-center gap-2 ${
                         isRecommended 
-                          ? 'bg-[#0d6efd] hover:bg-[#0b5ed7] text-white shadow-lg' 
-                          : 'bg-transparent hover:bg-white hover:text-black text-white border border-[#444]'
+                          ? 'bg-[#0d6efd] hover:bg-[#0b5ed7] text-white shadow-[0_4px_20px_rgba(13,110,253,0.3)]' 
+                          : 'bg-transparent hover:bg-white hover:text-black text-white border border-[#555]'
                       }`}
                     >
                       {plan.buttonText}
@@ -252,6 +262,12 @@ export default function Pricing() {
                 </div>
               );
             })}
+          </div>
+
+          <div className="text-center mt-10">
+             <p className="text-[#888] text-xs tracking-widest uppercase font-bold border border-[#333] bg-[#111] inline-block px-6 py-2 rounded-sm shadow-sm">
+                * Prices are exclusive of 18% GST (Input Tax Credit applicable for registered MSMEs)
+             </p>
           </div>
         </div>
       </section>
@@ -296,7 +312,7 @@ export default function Pricing() {
 
           <div className="flex flex-col gap-8">
             {capabilities.map((cap, idx) => (
-              <div key={idx} className="bg-[#111]/95 backdrop-blur-md border border-[#333] flex flex-col md:flex-row hover:border-gray-500 transition-all duration-300">
+              <div key={idx} className="bg-[#111]/95 backdrop-blur-md border border-[#333] flex flex-col md:flex-row hover:border-gray-500 transition-all duration-300 shadow-xl">
                 <div className="w-full md:w-[40%] lg:w-[35%] h-72 md:h-auto border-b md:border-b-0 md:border-r border-[#333] overflow-hidden">
                   <img src={cap.img} alt={cap.title} className="w-full h-full object-cover opacity-70 grayscale hover:grayscale-0 transition-all duration-700" />
                 </div>
@@ -318,7 +334,71 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* 5. NEW SECTION: HARDWARE INTERACTIVES */}
+      {/* 5. NEW SECTION: INDIAN MSME COMPLIANCE & CUSTOM SVGS */}
+      <section className="py-24 bg-[#050505] border-b border-[#222]">
+         <div className="max-w-[1400px] mx-auto px-6 sm:px-12">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-14 uppercase border-l-4 border-[#0d6efd] pl-6">
+              INDIAN B2B COMPLIANCE & MSME BENEFITS
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+              
+              {/* Custom SVG Component 1 */}
+              <div className="bg-[#111] border border-[#333] p-10 hover:border-[#0d6efd] transition-colors group">
+                <div className="mb-8 p-4 bg-[#1a1a1a] inline-block border border-[#222] shadow-inner rounded-md group-hover:bg-[#0d6efd]/10 group-hover:border-[#0d6efd]/30 transition-all">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white group-hover:text-[#0d6efd] transition-colors">
+                    <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                    <path d="M8 14h.01"></path>
+                    <path d="M12 14h.01"></path>
+                    <path d="M16 14h.01"></path>
+                    <path d="M8 18h.01"></path>
+                    <path d="M12 18h.01"></path>
+                    <path d="M16 18h.01"></path>
+                  </svg>
+                </div>
+                <h4 className="text-lg font-bold text-white mb-4 uppercase tracking-wide">GST Input Tax Credit</h4>
+                <p className="text-gray-400 font-light leading-relaxed text-sm">
+                  Fully compliant B2B invoicing allows registered Indian MSMEs to claim exactly 18% Input Tax Credit (ITC) directly offsetting the subscription cost. Automated E-Invoicing available on the Enterprise tier.
+                </p>
+              </div>
+
+              {/* Custom SVG Component 2 */}
+              <div className="bg-[#111] border border-[#333] p-10 hover:border-[#0d6efd] transition-colors group">
+                <div className="mb-8 p-4 bg-[#1a1a1a] inline-block border border-[#222] shadow-inner rounded-md group-hover:bg-[#0d6efd]/10 group-hover:border-[#0d6efd]/30 transition-all">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white group-hover:text-[#0d6efd] transition-colors">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <path d="M12 8v4"></path>
+                    <path d="M12 16h.01"></path>
+                  </svg>
+                </div>
+                <h4 className="text-lg font-bold text-white mb-4 uppercase tracking-wide">DPDP Act Compliant</h4>
+                <p className="text-gray-400 font-light leading-relaxed text-sm">
+                  Customer telemetry and supply chain metadata are strictly localized within Tier-IV Indian data centers. We maintain absolute compliance with the Digital Personal Data Protection Act of 2023.
+                </p>
+              </div>
+
+              {/* Custom SVG Component 3 */}
+              <div className="bg-[#111] border border-[#333] p-10 hover:border-[#0d6efd] transition-colors group">
+                <div className="mb-8 p-4 bg-[#1a1a1a] inline-block border border-[#222] shadow-inner rounded-md group-hover:bg-[#0d6efd]/10 group-hover:border-[#0d6efd]/30 transition-all">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white group-hover:text-[#0d6efd] transition-colors">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+                    <path d="M12 18V6"></path>
+                  </svg>
+                </div>
+                <h4 className="text-lg font-bold text-white mb-4 uppercase tracking-wide">Zero Setup Fees</h4>
+                <p className="text-gray-400 font-light leading-relaxed text-sm">
+                  We believe in transparent pricing for Indian business owners. There are absolutely no hidden onboarding costs, server configuration charges, or cancellation penalties.
+                </p>
+              </div>
+
+            </div>
+         </div>
+      </section>
+
+      {/* 6. NEW SECTION: HARDWARE INTERACTIVES */}
       <section className="py-28 bg-[#0a0a0a]">
         <div className="max-w-[1400px] mx-auto px-6 sm:px-12">
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-12 uppercase border-l-4 border-[#0d6efd] pl-6">
@@ -341,7 +421,7 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* 6. NEW SECTION: SECURITY PROTOCOLS */}
+      {/* 7. NEW SECTION: SECURITY PROTOCOLS */}
       <section className="py-24 bg-black border-t border-[#333]">
         <div className="max-w-[1400px] mx-auto px-6 sm:px-12">
           <div className="max-w-4xl">
@@ -355,7 +435,7 @@ export default function Pricing() {
             <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
               {[
                 { q: "Why is instant access not granted upon payment?", a: "To prevent systematic scraping of our Mandi Arbitrage APIs by unauthorized aggregators, all accounts require human-in-the-loop (HITL) verification by our Super Admin controllers. Approval is generally processed within 2-4 standard business hours." },
-                { q: "What happens if my KYC or Payment is denied?", a: "In the event a UTR (Transaction Reference) is flagged as invalid or fraudulent, the request is terminated immediately. Authorized refunds for clerical errors initiate automatically to the source account within 48 hours." },
+                { q: "What happens if my KYC or Payment is denied?", a: "In the event a UTR (Transaction Reference) is flagged as invalid or fraudulent, the request is terminated immediately. Authorized refunds for clerical errors initiate automatically to the source account within 48 to 72 bank working hours." },
                 { q: "How is my store's private ledger data protected?", a: "Your financial records, including Khata repayment scores and distributor margins, are encrypted at rest using industry-standard AES-256 protocols. VyaparSetu administrators cannot view raw transaction details without explicit support ticket clearance." }
               ].map((faq, idx) => (
                 <div key={idx} className="border-b border-[#222] pb-10 group">
