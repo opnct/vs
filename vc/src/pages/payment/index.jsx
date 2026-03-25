@@ -166,39 +166,45 @@ export default function PaymentGateway() {
 
       /**
        * CRITICAL ENDPOINT INTEGRATION:
-       * Strictly uses the VITE_PAYU_BACKEND_URL which must include 
-       * the full path: /api/payu/generate-hash
-       * This prevents 404 errors by ensuring no root-only calls are made.
+       * Strictly uses the VITE_PAYU_BACKEND_URL from environment.
        */
       const fullBackendUrl = import.meta.env.VITE_PAYU_BACKEND_URL;
       
       if (!fullBackendUrl || fullBackendUrl.trim() === "") {
-        throw new Error('Endpoint Configuration Missing: VITE_PAYU_BACKEND_URL is not set.');
+        throw new Error('CONFIG_ERROR: VITE_PAYU_BACKEND_URL is not defined in environment variables.');
       }
 
-      // Execute Secure POST to Hash Generator
-      const response = await fetch(fullBackendUrl, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          txnid: txnid,
-          amount: selectedPlan.price,
-          productinfo: selectedPlan.name,
-          firstname: formData.fullName.trim(),
-          email: formData.email.trim().toLowerCase(),
-          phone: formData.phone.trim(),
-          surl: window.location.origin + '/payment?payment_status=success&txnid=' + txnid,
-          furl: window.location.origin + '/payment?payment_status=failure'
-        })
-      });
+      // Execute Secure POST with advanced error checking for CORS/Port issues
+      let response;
+      try {
+        response = await fetch(fullBackendUrl, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            txnid: txnid,
+            amount: selectedPlan.price,
+            productinfo: selectedPlan.name,
+            firstname: formData.fullName.trim(),
+            email: formData.email.trim().toLowerCase(),
+            phone: formData.phone.trim(),
+            surl: window.location.origin + '/payment?payment_status=success&txnid=' + txnid,
+            furl: window.location.origin + '/payment?payment_status=failure'
+          })
+        });
+      } catch (fetchErr) {
+        // Handle browser-level failures (CORS mismatch, Connection Refused, Port not Public)
+        if (fetchErr.name === 'TypeError') {
+          throw new Error(`BROWSER_BLOCK: Failed to connect to ${fullBackendUrl}. Ensure Port 5000 visibility is set to PUBLIC in Codespaces and origin is whitelisted.`);
+        }
+        throw fetchErr;
+      }
 
       if (!response.ok) {
-        // Handle 404 or 500 errors from the server
         const errText = await response.text();
-        throw new Error(`Server Response ${response.status}: ${errText || 'Connection Refused'}`);
+        throw new Error(`SERVER_RESPONSE ${response.status}: ${errText || 'Access Denied'}`);
       }
 
       const data = await response.json();
@@ -234,8 +240,8 @@ export default function PaymentGateway() {
       form.submit();
 
     } catch (err) {
-      console.error("[PAYU_INIT_FAILURE]", err);
-      setError(`Gateway Error: ${err.message}. Verify that the VITE_PAYU_BACKEND_URL includes the /api/payu/generate-hash path.`);
+      console.error("[PAYU_INIT_DIAGNOSTICS]", err);
+      setError(`Gateway Error: ${err.message}`);
       setIsLoading(false);
     }
   };
@@ -273,11 +279,13 @@ export default function PaymentGateway() {
   return (
     <div className="fixed inset-0 z-[9999] bg-[#0a0a0a] text-zinc-300 font-sans selection:bg-[#005ea2] selection:text-white overflow-y-auto overflow-x-hidden">
       
+      {/* 1. OFFICIAL TOP BANNER */}
       <header className="bg-black text-white py-2 px-6 text-[11px] flex items-center gap-2 sticky top-0 z-[110] border-b border-zinc-800">
          <img src="https://upload.wikimedia.org/wikipedia/en/thumb/4/41/Flag_of_India.svg/1200px-Flag_of_India.svg.png" className="h-3 border border-zinc-700" alt="IN flag" />
          An official website of VyaparSetu Technologies. <span className="underline cursor-help ml-1 font-bold">Secure Payment Gateway</span>
       </header>
 
+      {/* 2. INSTITUTIONAL NAVIGATION */}
       <nav className="bg-black border-b border-zinc-800 sticky top-[28px] z-[100] h-20 flex items-center">
         <div className="max-w-[1400px] mx-auto px-6 w-full flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -295,6 +303,7 @@ export default function PaymentGateway() {
 
       <main className="max-w-[1400px] mx-auto px-6 py-24 lg:py-32">
         
+        {/* 3. HERO TITLE SECTION */}
         <div className="mb-28">
           <div className="text-[13px] font-black text-[#4da8ec] uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
              <Lock size={18}/> Encrypted Checkout
@@ -308,6 +317,7 @@ export default function PaymentGateway() {
 
         <div className="flex flex-col lg:flex-row gap-24">
           
+          {/* 4. SIDEBAR NAVIGATION */}
           <aside className="w-full lg:w-80 shrink-0">
             <div className="sticky top-48">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-10 pb-4 border-b border-zinc-800">On this page</h3>
@@ -349,8 +359,10 @@ export default function PaymentGateway() {
             </div>
           </aside>
 
+          {/* 5. MAIN CONTENT AREA */}
           <div className="flex-1 max-w-4xl space-y-40">
             
+            {/* SECTION 1: PAYU CHECKOUT FORM */}
             <section ref={sectionRefs.checkout} className="scroll-mt-48">
               <div className="bg-[#111] text-white p-16 lg:p-24 border-t-[12px] border-[#005ea2] shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-10 opacity-5"><Lock size={120}/></div>
