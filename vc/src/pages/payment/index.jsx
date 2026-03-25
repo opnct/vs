@@ -38,6 +38,7 @@ export default function PaymentGateway() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isFailure, setIsFailure] = useState(false);
 
   // Functional Section References
   const sectionRefs = {
@@ -107,7 +108,10 @@ export default function PaymentGateway() {
         }
       }
     } else if (status === 'failure') {
-      setError('Payment failed or was cancelled during the PayU session. Please try again.');
+      setIsFailure(true);
+      if (returnedTxnId) {
+        setFormData(prev => ({ ...prev, payuTxnId: returnedTxnId }));
+      }
     } else if (!selectedPlan && !status) {
       // Prevent unauthorized direct access
       navigate('/pricing', { replace: true });
@@ -191,7 +195,7 @@ export default function PaymentGateway() {
             email: formData.email.trim().toLowerCase(),
             phone: formData.phone.trim(),
             surl: window.location.origin + '/payment?payment_status=success&txnid=' + txnid,
-            furl: window.location.origin + '/payment?payment_status=failure'
+            furl: window.location.origin + '/payment?payment_status=failure&txnid=' + txnid
           })
         });
       } catch (fetchErr) {
@@ -224,7 +228,7 @@ export default function PaymentGateway() {
         email: formData.email.trim().toLowerCase(),
         phone: formData.phone.trim(),
         surl: window.location.origin + '/payment?payment_status=success&txnid=' + txnid,
-        furl: window.location.origin + '/payment?payment_status=failure',
+        furl: window.location.origin + '/payment?payment_status=failure&txnid=' + txnid,
         hash: data.hash
       };
 
@@ -271,6 +275,52 @@ export default function PaymentGateway() {
               Your payment was successful via PayU. Access is currently pending administrative clearance from the Super Admin. Please allow 2 to 4 business hours for Human-in-the-Loop verification to finalize your account setup.
             </p>
             <button onClick={() => navigate('/')} className="bg-[#005ea2] hover:bg-[#004a80] text-white font-bold py-4 px-12 rounded-sm transition-all uppercase tracking-widest text-[11px]">Return to Home</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isFailure) {
+    return (
+      <div className="fixed inset-0 z-[10000] bg-[#0a0a0a] text-zinc-300 flex flex-col font-sans selection:bg-[#005ea2] selection:text-white overflow-y-auto">
+        <header className="bg-black text-white py-2 px-6 text-[11px] flex items-center gap-2 shrink-0 border-b border-zinc-800">
+           <img src="https://upload.wikimedia.org/wikipedia/en/thumb/4/41/Flag_of_India.svg/1200px-Flag_of_India.svg.png" className="h-3 border border-zinc-700" alt="IN flag" />
+           Official website of VyaparSetu Technologies. <span className="underline cursor-help ml-1">Payment Declined</span>
+        </header>
+        <div className="flex-1 flex items-center justify-center p-6 bg-black">
+          <div className="bg-[#111] max-w-2xl w-full border border-zinc-800 shadow-2xl p-12 text-center">
+            <AlertCircle size={64} className="text-red-500 mx-auto mb-8" />
+            <h2 className="text-4xl font-bold tracking-tight mb-4 uppercase text-white">Payment Failed</h2>
+            <h3 className="text-xl font-bold text-zinc-500 mb-8 uppercase tracking-widest border-b border-zinc-800 pb-4">Transaction Declined or Cancelled</h3>
+            
+            {formData.payuTxnId && (
+              <div className="text-left bg-[#1a1a1a] border border-zinc-800 p-8 rounded-sm mb-10 space-y-4 font-mono text-[13px]">
+                 <p className="flex justify-between border-b border-zinc-800 pb-2"><span>ATTEMPTED TXN ID:</span> <span className="font-bold text-red-400">{formData.payuTxnId}</span></p>
+              </div>
+            )}
+            
+            <p className="text-zinc-400 mb-10 leading-relaxed text-sm">
+              We were unable to process your payment. This typically happens if the transaction was manually cancelled, your bank declined the request, or the payment session timed out. No charges have been finalized on our end.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <button 
+                onClick={() => { 
+                  setIsFailure(false); 
+                  if (selectedPlan) navigate('/payment', { state: { selectedPlan } }); 
+                  else navigate('/pricing');
+                }} 
+                className="bg-[#005ea2] hover:bg-[#004a80] text-white font-bold py-4 px-8 rounded-sm transition-all uppercase tracking-widest text-[11px]"
+              >
+                Retry Payment
+              </button>
+              <button 
+                onClick={() => navigate('/')} 
+                className="bg-transparent border border-zinc-700 hover:bg-zinc-900 text-white font-bold py-4 px-8 rounded-sm transition-all uppercase tracking-widest text-[11px]"
+              >
+                Return to Home
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -332,6 +382,10 @@ export default function PaymentGateway() {
                   { id: 'refunds', label: 'Refund Policy' },
                   { id: 'governance', label: 'Terms & Conditions' },
                   { id: 'privacy', label: 'Data Privacy' },
+                  { id: 'invoice', label: 'Invoicing & Tax' },
+                  { id: 'dispute', label: 'Dispute Resolution' },
+                  { id: 'downtime', label: 'Service Interruptions' },
+                  { id: 'suspension', label: 'Account Suspension' },
                   { id: 'help', label: 'Help & Support' }
                 ].map((item) => (
                   <li key={item.id}>
@@ -540,6 +594,46 @@ export default function PaymentGateway() {
                    <h4 className="text-[11px] font-black uppercase tracking-widest text-white">PCI-DSS Framework</h4>
                    <p className="text-sm text-zinc-400 font-light leading-relaxed">VyaparSetu does not store your credit card, UPI, or bank credentials. All financial parameters are handled exclusively by the Level-1 PCI-DSS certified PayU banking gateway.</p>
                  </div>
+              </div>
+            </section>
+
+            {/* ADDED SECTION 7: INVOICING */}
+            <section ref={sectionRefs.invoice} className="scroll-mt-48">
+              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-white">Invoicing & Tax</h2>
+              <div className="prose prose-zinc max-w-none text-zinc-400 font-light leading-loose text-base border-l-2 border-zinc-800 pl-8">
+                <p>
+                  Once your payment is verified and your chosen pricing plan is activated by our Super Admin, a formal GST invoice will be generated automatically and dispatched to your registered email address. Please ensure your billing details are correct during checkout to avoid invoice discrepancies.
+                </p>
+              </div>
+            </section>
+
+            {/* ADDED SECTION 8: DISPUTES */}
+            <section ref={sectionRefs.dispute} className="scroll-mt-48">
+              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-white">Dispute Resolution</h2>
+              <div className="prose prose-zinc max-w-none text-zinc-400 font-light leading-loose text-base border-l-2 border-zinc-800 pl-8">
+                <p>
+                  In the rare event of failed callbacks or debited amounts without plan activation, a formal dispute can be raised by sending an email with the PayU Txn ID to our support team. Reconciliations and fund reversals back to the source account generally conclude within 3-5 bank working days.
+                </p>
+              </div>
+            </section>
+
+            {/* ADDED SECTION 9: DOWNTIME */}
+            <section ref={sectionRefs.downtime} className="scroll-mt-48">
+              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-white">Service Interruptions</h2>
+              <div className="prose prose-zinc max-w-none text-zinc-400 font-light leading-loose text-base border-l-2 border-zinc-800 pl-8">
+                <p>
+                  If VyaparSetu undergoes scheduled system maintenance or experiences unplanned network downtime, your billing cycle will automatically be credited with proportional extended access. High availability is guaranteed under our standard Terms of Service.
+                </p>
+              </div>
+            </section>
+
+            {/* ADDED SECTION 10: SUSPENSION */}
+            <section ref={sectionRefs.suspension} className="scroll-mt-48">
+              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-white">Account Suspension</h2>
+              <div className="prose prose-zinc max-w-none text-zinc-400 font-light leading-loose text-base border-l-2 border-zinc-800 pl-8">
+                <p>
+                  Failure to renew your selected pricing plan within 7 days of its expiry date will result in the temporary suspension of all intelligence features and API access. Suspended account data is securely retained in cold storage for 30 days before permanent deletion.
+                </p>
               </div>
             </section>
 
