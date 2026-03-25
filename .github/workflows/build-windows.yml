@@ -23,6 +23,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install Frontend Dependencies
+        working-directory: ./vyaparsetu-desktop
         run: npm install
         
       - name: Build Tauri App (.exe)
@@ -30,6 +31,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          projectPath: './vyaparsetu-desktop'
           tagName: v__VERSION__ # Automatically uses version from package.json
           releaseName: 'VyaparSetu Retail Desk v__VERSION__'
           releaseBody: 'Automated Windows release compiled via GitHub Actions.'
