@@ -129,7 +129,8 @@ export default function SuperAdminDashboard() {
   };
 
   const handleApprove = async (payment) => {
-    if (!window.confirm(`APPROVE transaction ${payment.utrNumber} for ${payment.email}? This grants full platform access.`)) return;
+    const txId = payment.payuTransactionId || payment.utrNumber || 'UNKNOWN_TX';
+    if (!window.confirm(`APPROVE transaction ${txId} for ${payment.email}? This grants full platform access.`)) return;
     
     setActionLoading(payment.id);
     try {
@@ -142,7 +143,7 @@ export default function SuperAdminDashboard() {
         approvedAt: serverTimestamp(),
         approvedBy: user.email,
         planId: payment.planId,
-        utrNumber: payment.utrNumber
+        utrNumber: txId
       });
 
       // 2. Update the original payment record status
@@ -160,7 +161,8 @@ export default function SuperAdminDashboard() {
   };
 
   const handleDeny = async (payment) => {
-    if (!window.confirm(`DENY transaction ${payment.utrNumber} for ${payment.email}? This rejects their registration.`)) return;
+    const txId = payment.payuTransactionId || payment.utrNumber || 'UNKNOWN_TX';
+    if (!window.confirm(`DENY transaction ${txId} for ${payment.email}? This rejects their registration.`)) return;
     
     setActionLoading(payment.id);
     try {
@@ -238,11 +240,12 @@ export default function SuperAdminDashboard() {
   // DASHBOARD VIEW (If Authenticated)
   const filteredPayments = payments.filter(p => 
     p.email?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    p.payuTransactionId?.includes(searchQuery) ||
     p.utrNumber?.includes(searchQuery) ||
     p.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const pendingCount = payments.filter(p => p.status === 'Pending').length;
+  const pendingCount = payments.filter(p => p.status === 'Pending' || p.status === 'Paid_Pending_Approval').length;
 
   return (
     <div className="min-h-screen bg-[#121212] font-sans text-zinc-100 flex flex-col">
@@ -298,7 +301,7 @@ export default function SuperAdminDashboard() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
             <input 
               type="text" 
-              placeholder="Search email, UTR, or name..." 
+              placeholder="Search email or PayU Txn ID..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-[#1a1a1a] border border-zinc-800 rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:border-[#29b6f6] focus:ring-1 focus:ring-[#29b6f6]"
@@ -324,7 +327,7 @@ export default function SuperAdminDashboard() {
                     <th className="p-4 font-semibold">Submitted</th>
                     <th className="p-4 font-semibold">User Details</th>
                     <th className="p-4 font-semibold">Plan Target</th>
-                    <th className="p-4 font-semibold">UTR / Auth Code</th>
+                    <th className="p-4 font-semibold">PayU Txn ID / UTR</th>
                     <th className="p-4 font-semibold text-center">Status</th>
                     <th className="p-4 font-semibold text-right">Verification Action</th>
                   </tr>
@@ -344,10 +347,20 @@ export default function SuperAdminDashboard() {
                       });
                     }
 
-                    // Status Colors
+                    // Dynamic Status Colors & Labels
                     let statusBadge = "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
-                    if (payment.status === 'Approved') statusBadge = "bg-[#00e676]/10 text-[#00e676] border-[#00e676]/20";
-                    if (payment.status === 'Denied') statusBadge = "bg-red-500/10 text-red-500 border-red-500/20";
+                    let displayStatus = payment.status;
+                    
+                    if (payment.status === 'Approved') {
+                      statusBadge = "bg-[#00e676]/10 text-[#00e676] border-[#00e676]/20";
+                    } else if (payment.status === 'Denied') {
+                      statusBadge = "bg-red-500/10 text-red-500 border-red-500/20";
+                    } else if (payment.status === 'Paid_Pending_Approval') {
+                      statusBadge = "bg-[#005ea2]/10 text-[#005ea2] border-[#005ea2]/30";
+                      displayStatus = "PayU Verified";
+                    }
+
+                    const displayTxId = payment.payuTransactionId || payment.utrNumber || 'N/A';
 
                     return (
                       <tr key={payment.id} className="hover:bg-[#242424] transition-colors">
@@ -363,16 +376,16 @@ export default function SuperAdminDashboard() {
                         </td>
                         <td className="p-4">
                           <div className="bg-zinc-900 border border-zinc-800 px-2 py-1 rounded inline-block font-mono text-sm font-bold tracking-wider text-white">
-                            {payment.utrNumber}
+                            {displayTxId}
                           </div>
                         </td>
                         <td className="p-4 text-center">
                           <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded border ${statusBadge}`}>
-                            {payment.status}
+                            {displayStatus}
                           </span>
                         </td>
                         <td className="p-4 text-right">
-                          {payment.status === 'Pending' ? (
+                          {(payment.status === 'Pending' || payment.status === 'Paid_Pending_Approval') ? (
                             <div className="flex items-center justify-end gap-2">
                               <button 
                                 onClick={() => handleDeny(payment)}
