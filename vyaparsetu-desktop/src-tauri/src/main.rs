@@ -4,9 +4,10 @@
     windows_subsystem = "windows"
 )]
 
-use tauri::{
-    CustomMenuItem, GlobalShortcutManager, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
-};
+use tauri::Manager;
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::{TrayIconBuilder, TrayIconEvent};
+use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
 
 // --- NATIVE HARDWARE COMMANDS (Exposed to React) ---
 
@@ -34,49 +35,61 @@ fn read_weighing_scale() -> Result<f32, String> {
 }
 
 fn main() {
-    // 1. SETUP WINDOWS SYSTEM TRAY (Runs in background like an Antivirus)
-    let quit = CustomMenuItem::new("quit".to_string(), "Quit VyaparSetu");
-    let hide = CustomMenuItem::new("hide".to_string(), "Hide Command Dashboard");
-    let tray_menu = SystemTrayMenu::new().add_item(hide).add_item(quit);
-    let system_tray = SystemTray::new().with_menu(tray_menu);
-
     tauri::Builder::default()
-        .system_tray(system_tray)
-        .on_system_tray_event(|app, event| match event {
-            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
-                "quit" => {
-                    std::process::exit(0);
-                }
-                "hide" => {
-                    let window = app.get_window("main").unwrap();
-                    window.hide().unwrap();
-                }
-                _ => {}
-            },
-            // Show window if they double click the tray icon
-            SystemTrayEvent::DoubleClick { .. } => {
-                let window = app.get_window("main").unwrap();
-                window.show().unwrap();
-                window.set_focus().unwrap();
-            }
-            _ => {}
-        })
         // 2. SETUP GLOBAL WINDOWS SHORTCUT (Ctrl+Space for VyaparBot)
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_shortcuts(["ctrl+space"])
+                .unwrap()
+                .with_handler(|app, shortcut, event| {
+                    if event.state == ShortcutState::Pressed {
+                        if shortcut.matches(Modifiers::CONTROL, Code::Space) {
+                            // Instantly open the AI floating terminal from anywhere in Windows
+                            // Even if they are using Excel or watching a video
+                            if let Some(window) = app.get_webview_window("main") {
+                                if window.is_visible().unwrap_or(false) {
+                                    window.hide().unwrap();
+                                } else {
+                                    window.show().unwrap();
+                                    window.set_focus().unwrap();
+                                }
+                            }
+                        }
+                    }
+                })
+                .build(),
+        )
         .setup(|app| {
-            let app_handle = app.handle();
-            let mut shortcut_manager = app_handle.global_shortcut_manager();
-            
-            // Instantly open the AI floating terminal from anywhere in Windows
-            // Even if they are using Excel or watching a video
-            let _ = shortcut_manager.register("Ctrl+Space", move || {
-                let window = app_handle.get_window("main").unwrap();
-                if window.is_visible().unwrap() {
-                    window.hide().unwrap();
-                } else {
-                    window.show().unwrap();
-                    window.set_focus().unwrap();
-                }
-            });
+            // 1. SETUP WINDOWS SYSTEM TRAY (Runs in background like an Antivirus)
+            let quit_i = MenuItem::with_id(app, "quit", "Quit VyaparSetu", true, None::<&str>)?;
+            let hide_i = MenuItem::with_id(app, "hide", "Hide Command Dashboard", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&hide_i, &quit_i])?;
+
+            let _tray = TrayIconBuilder::new()
+                .menu(&menu)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "quit" => {
+                        std::process::exit(0);
+                    }
+                    "hide" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            window.hide().unwrap();
+                        }
+                    }
+                    _ => {}
+                })
+                // Show window if they double click the tray icon
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::DoubleClick { .. } = event {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            window.show().unwrap();
+                            window.set_focus().unwrap();
+                        }
+                    }
+                })
+                .build(app)?;
+
             Ok(())
         })
         // 3. REGISTER THE COMMANDS FOR REACT
