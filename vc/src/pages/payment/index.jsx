@@ -212,7 +212,8 @@ export default function PaymentGateway() {
       // Construct dynamic POST form for PayU Redirection
       const form = document.createElement('form');
       form.method = 'POST';
-      form.action = 'https://test.payu.in/_payment';
+      // UPDATED TO PAYU LIVE PRODUCTION ENDPOINT
+      form.action = 'https://secure.payu.in/_payment';
 
       const payuParams = {
         key: import.meta.env.VITE_PAYU_MERCHANT_KEY, 
@@ -331,10 +332,6 @@ export default function PaymentGateway() {
                   { id: 'refunds', label: 'Refund Policy' },
                   { id: 'governance', label: 'Terms & Conditions' },
                   { id: 'privacy', label: 'Data Privacy' },
-                  { id: 'invoice', label: 'Invoicing & Tax' },
-                  { id: 'dispute', label: 'Dispute Resolution' },
-                  { id: 'downtime', label: 'Service Interruptions' },
-                  { id: 'suspension', label: 'Account Suspension' },
                   { id: 'help', label: 'Help & Support' }
                 ].map((item) => (
                   <li key={item.id}>
@@ -362,7 +359,7 @@ export default function PaymentGateway() {
           {/* 5. MAIN CONTENT AREA */}
           <div className="flex-1 max-w-4xl space-y-40">
             
-            {/* SECTION 1: PAYU CHECKOUT FORM */}
+            {/* SECTION: CHECKOUT */}
             <section ref={sectionRefs.checkout} className="scroll-mt-48">
               <div className="bg-[#111] text-white p-16 lg:p-24 border-t-[12px] border-[#005ea2] shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-10 opacity-5"><Lock size={120}/></div>
@@ -427,6 +424,7 @@ export default function PaymentGateway() {
               </div>
             </section>
 
+            {/* SECTION: PROTOCOLS */}
             <section ref={sectionRefs.protocols} className="scroll-mt-48">
               <h2 className="text-4xl font-bold tracking-tight mb-10 uppercase text-white">Payment Guidelines</h2>
               <div className="space-y-12">
@@ -451,6 +449,101 @@ export default function PaymentGateway() {
               </div>
             </section>
 
+            {/* NEW SECTION 1: SECURITY */}
+            <section ref={sectionRefs.security} className="scroll-mt-48">
+              <h2 className="text-4xl font-bold tracking-tight mb-12 uppercase flex items-center gap-6 text-white">
+                <ShieldCheck className="text-[#005ea2]" size={40}/> Payment Security
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+                <div className="p-10 border border-zinc-800 bg-[#111] hover:bg-[#1a1a1a] transition-colors border-l-4 border-l-[#005ea2] shadow-sm">
+                   <h4 className="text-[11px] font-black uppercase tracking-[0.25em] mb-6 text-white">Bank-Grade Encryption</h4>
+                   <p className="text-sm text-zinc-400 leading-loose font-light">
+                     Your payment details and business information are encrypted using 256-bit SHA-512 cryptographic hashing before being sent to the PayU servers.
+                   </p>
+                </div>
+                <div className="p-10 border border-zinc-800 bg-[#111] hover:bg-[#1a1a1a] transition-colors border-l-4 border-l-zinc-300 shadow-sm">
+                   <h4 className="text-[11px] font-black uppercase tracking-[0.25em] mb-6 text-white">Fraud Prevention</h4>
+                   <p className="text-sm text-zinc-400 leading-loose font-light">
+                     Every transaction is mathematically hashed to protect against packet spoofing and unauthorized modification during transit.
+                   </p>
+                </div>
+              </div>
+            </section>
+
+            {/* NEW SECTION 2: AUDIT LOGS */}
+            <section ref={sectionRefs.audit} className="scroll-mt-48">
+              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-white">Transaction Tracking</h2>
+              <div className="bg-[#111] border border-zinc-800 p-12 text-center shadow-inner">
+                 <Database className="mx-auto text-zinc-600 mb-6" size={48}/>
+                 <p className="text-zinc-400 leading-relaxed font-light text-sm italic max-w-2xl mx-auto">
+                   For security and operational integrity, your IP address and submission timestamp are logged securely. This guarantees transaction traceability and aids rapid dispute resolution.
+                 </p>
+              </div>
+            </section>
+
+            {/* NEW SECTION 3: SLA TIMELINES */}
+            <section ref={sectionRefs.sla} className="scroll-mt-48">
+              <h2 className="text-4xl font-bold tracking-tight mb-10 uppercase flex items-center gap-6 text-white">
+                <Activity className="text-[#005ea2]" size={40}/> Activation Timeline
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                 <div className="space-y-3">
+                   <h5 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Verification Time</h5>
+                   <p className="text-2xl font-bold text-white">2 - 4 Hours</p>
+                 </div>
+                 <div className="space-y-3 border-l md:border-l border-zinc-800 md:pl-10">
+                   <h5 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">System Uptime</h5>
+                   <p className="text-2xl font-bold text-[#00e676]">24/7 Active</p>
+                 </div>
+                 <div className="space-y-3 border-l md:border-l border-zinc-800 md:pl-10">
+                   <h5 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Priority Processing</h5>
+                   <p className="text-2xl font-bold text-white">For Paid Plans</p>
+                 </div>
+              </div>
+            </section>
+
+            {/* NEW SECTION 4: REFUNDS */}
+            <section ref={sectionRefs.refunds} className="scroll-mt-48">
+              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-white">Refund Policy</h2>
+              <div className="prose prose-zinc max-w-none text-zinc-400 font-light leading-loose text-base border-l-2 border-zinc-800 pl-8">
+                <p>
+                  As per our standard billing policy, subscription fees are strictly non-refundable once your account has been successfully verified and intelligence features are activated. If you execute an accidental duplicate payment, PayU's automated banking settlement algorithms initiate a refund for the unverified duplicate amount within 48 to 72 bank working hours.
+                </p>
+              </div>
+            </section>
+
+            {/* NEW SECTION 5: GOVERNANCE */}
+            <section ref={sectionRefs.governance} className="scroll-mt-48">
+              <h2 className="text-4xl font-bold tracking-tight mb-10 uppercase flex items-center gap-6 text-white">
+                <Shield className="text-[#005ea2]" size={40}/> Terms & Conditions
+              </h2>
+              <div className="prose prose-zinc max-w-none text-zinc-400 font-light leading-loose text-base border-l-2 border-zinc-800 pl-8">
+                <p>
+                  VyaparSetu actively monitors for spoofed parameters or unauthorized success URL manipulation. Any intentional attempt to bypass the PayU hash validation to gain illegal platform access will lead to immediate and permanent blacklisting of your business identity, mobile number, and IP address from the VyaparSetu intelligence network without prior notice.
+                </p>
+              </div>
+            </section>
+
+            {/* NEW SECTION 6: PRIVACY */}
+            <section ref={sectionRefs.privacy} className="scroll-mt-48">
+              <h2 className="text-4xl font-bold tracking-tight mb-10 uppercase flex items-center gap-6 text-white">
+                <Lock className="text-[#005ea2]" size={40}/> Data Privacy
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 bg-[#111] p-10 border border-zinc-800">
+                 <div className="space-y-4">
+                   <Globe className="text-zinc-600" size={32}/>
+                   <h4 className="text-[11px] font-black uppercase tracking-widest text-white">Secure Data Localization</h4>
+                   <p className="text-sm text-zinc-400 font-light leading-relaxed">Your payment logs and business meta-data are stored locally on highly secure Indian infrastructure in strict compliance with central government data localization directives.</p>
+                 </div>
+                 <div className="space-y-4">
+                   <Database className="text-zinc-600" size={32}/>
+                   <h4 className="text-[11px] font-black uppercase tracking-widest text-white">PCI-DSS Framework</h4>
+                   <p className="text-sm text-zinc-400 font-light leading-relaxed">VyaparSetu does not store your credit card, UPI, or bank credentials. All financial parameters are handled exclusively by the Level-1 PCI-DSS certified PayU banking gateway.</p>
+                 </div>
+              </div>
+            </section>
+
+            {/* SECTION: HELP DESK */}
             <section ref={sectionRefs.help} className="scroll-mt-48 pb-40">
                <div className="bg-[#111] p-16 lg:p-24 border border-zinc-800 relative overflow-hidden text-white shadow-2xl">
                   <div className="absolute bottom-0 right-0 p-8 opacity-5"><HelpCircle size={140}/></div>
@@ -478,6 +571,7 @@ export default function PaymentGateway() {
         </div>
       </main>
 
+      {/* FOOTER */}
       <footer className="bg-black border-t border-zinc-800 py-32 px-10 relative z-[120]">
         <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-16">
            <div className="flex flex-col items-center md:items-start">
