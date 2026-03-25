@@ -1,0 +1,37 @@
+name: Build VyaparSetu Windows EXE
+
+on:
+  push:
+    branches: [ main ]
+  # Allows you to run this build manually from the Actions tab
+  workflow_dispatch: 
+
+jobs:
+  build-tauri:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Frontend Dependencies
+        run: npm install
+        
+      - name: Build Tauri App (.exe)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__ # Automatically uses version from package.json
+          releaseName: 'VyaparSetu Retail Desk v__VERSION__'
+          releaseBody: 'Automated Windows release compiled via GitHub Actions.'
+          releaseDraft: true
+          prerelease: false
