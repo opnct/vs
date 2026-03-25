@@ -194,8 +194,8 @@ export default function PaymentGateway() {
             firstname: formData.fullName.trim(),
             email: formData.email.trim().toLowerCase(),
             phone: formData.phone.trim(),
-            surl: window.location.origin + '/payment?payment_status=success&txnid=' + txnid,
-            furl: window.location.origin + '/payment?payment_status=failure&txnid=' + txnid
+            surl: 'https://vyaparsetu-api.onrender.com/api/payu/success',
+            furl: 'https://vyaparsetu-api.onrender.com/api/payu/failure'
           })
         });
       } catch (fetchErr) {
@@ -227,8 +227,8 @@ export default function PaymentGateway() {
         firstname: formData.fullName.trim(),
         email: formData.email.trim().toLowerCase(),
         phone: formData.phone.trim(),
-        surl: window.location.origin + '/payment?payment_status=success&txnid=' + txnid,
-        furl: window.location.origin + '/payment?payment_status=failure&txnid=' + txnid,
+        surl: 'https://vyaparsetu-api.onrender.com/api/payu/success',
+        furl: 'https://vyaparsetu-api.onrender.com/api/payu/failure',
         hash: data.hash
       };
 
