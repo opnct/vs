@@ -7,24 +7,31 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 /**
- * STRATEGY: Intelligent CORS Normalization
- * Normalizes origins by stripping trailing slashes to prevent 
- * "Response to preflight request doesn't pass access control check" errors.
+ * STRATEGY: Multi-Environment CORS Normalization
+ * Supports Vercel Production, Vercel Dev, and local Vite development.
+ * Normalizes origins by stripping trailing slashes to prevent string-mismatch errors.
  */
-const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, "");
+const productionFrontend = (process.env.FRONTEND_URL || 'https://vyaparsetuai.vercel.app').replace(/\/$/, "");
+const allowedOrigins = [
+  productionFrontend,
+  'http://localhost:5173', // Standard Vite Local
+  'http://localhost:3000'  // Standard Vercel Dev / Next.js Local
+];
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl)
+    // Allow requests with no origin (like mobile apps, postman, or server-side fetch)
     if (!origin) return callback(null, true);
     
+    // Normalize incoming browser origin by removing trailing slash
     const normalizedOrigin = origin.replace(/\/$/, "");
     
-    // Exact match check against the normalized frontend URL
-    if (normalizedOrigin === frontendUrl || normalizedOrigin === 'http://localhost:5173') {
+    // Check against authorized whitelist
+    if (allowedOrigins.includes(normalizedOrigin)) {
       callback(null, true);
     } else {
-      callback(new Error('CORS policy: Identity Mismatch. Access Denied.'));
+      console.warn(`[CORS REJECTION] Unauthorized Origin: ${origin}`);
+      callback(new Error('CORS policy: Access Denied for this origin.'));
     }
   },
   methods: ['GET', 'POST', 'OPTIONS'],
@@ -105,5 +112,5 @@ app.post('/api/payu/generate-hash', (req, res) => {
 // Boot Sequence
 app.listen(PORT, () => {
   console.log(`VyaparSetu Secure PayU Node Server initialized on port ${PORT}`);
-  console.log(`Allowing CORS for: ${frontendUrl}`);
+  console.log(`CORS Policy active for: ${allowedOrigins.join(', ')}`);
 });
