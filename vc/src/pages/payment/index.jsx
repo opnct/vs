@@ -194,7 +194,7 @@ export default function PaymentGateway() {
       form.action = 'https://test.payu.in/_payment';
 
       const payuParams = {
-        key: data.key || import.meta.env.VITE_PAYU_MERCHANT_KEY,
+        key: import.meta.env.VITE_PAYU_MERCHANT_KEY, // Strictly pulling from .env
         txnid: txnid,
         amount: selectedPlan.price,
         productinfo: selectedPlan.name,
@@ -229,23 +229,23 @@ export default function PaymentGateway() {
 
   if (isSuccess) {
     return (
-      <div className="fixed inset-0 z-[10000] bg-white text-black flex flex-col font-sans selection:bg-[#005ea2] selection:text-white overflow-y-auto">
-        <header className="bg-black text-white py-2 px-6 text-[11px] flex items-center gap-2 shrink-0">
+      <div className="fixed inset-0 z-[10000] bg-[#0a0a0a] text-zinc-300 flex flex-col font-sans selection:bg-[#005ea2] selection:text-white overflow-y-auto">
+        <header className="bg-black text-white py-2 px-6 text-[11px] flex items-center gap-2 shrink-0 border-b border-zinc-800">
            <img src="https://upload.wikimedia.org/wikipedia/en/thumb/4/41/Flag_of_India.svg/1200px-Flag_of_India.svg.png" className="h-3 border border-zinc-700" alt="IN flag" />
            Official website of VyaparSetu Technologies. <span className="underline cursor-help ml-1">Clearance Pending</span>
         </header>
-        <div className="flex-1 flex items-center justify-center p-6 bg-[#f0f0f0]">
-          <div className="bg-white max-w-2xl w-full border border-zinc-200 shadow-2xl p-12 text-center">
+        <div className="flex-1 flex items-center justify-center p-6 bg-black">
+          <div className="bg-[#111] max-w-2xl w-full border border-zinc-800 shadow-2xl p-12 text-center">
             <ShieldCheck size={64} className="text-[#005ea2] mx-auto mb-8" />
-            <h2 className="text-4xl font-bold tracking-tight mb-4 uppercase text-black">Payment Successful</h2>
-            <h3 className="text-xl font-bold text-red-600 mb-8 uppercase tracking-widest border-b border-zinc-100 pb-4">Clearance Pending</h3>
+            <h2 className="text-4xl font-bold tracking-tight mb-4 uppercase text-white">Payment Successful</h2>
+            <h3 className="text-xl font-bold text-red-500 mb-8 uppercase tracking-widest border-b border-zinc-800 pb-4">Clearance Pending</h3>
             
-            <div className="text-left bg-zinc-50 border border-zinc-200 p-8 rounded-sm mb-10 space-y-4 font-mono text-[13px]">
-               <p className="flex justify-between border-b border-zinc-100 pb-2"><span>PAYU TXN ID:</span> <span className="font-bold text-[#005ea2]">{formData.payuTxnId}</span></p>
-               <p className="flex justify-between"><span>REGISTERED EMAIL:</span> <span className="font-bold">{formData.email}</span></p>
+            <div className="text-left bg-[#1a1a1a] border border-zinc-800 p-8 rounded-sm mb-10 space-y-4 font-mono text-[13px]">
+               <p className="flex justify-between border-b border-zinc-800 pb-2"><span>PAYU TXN ID:</span> <span className="font-bold text-[#4da8ec]">{formData.payuTxnId}</span></p>
+               <p className="flex justify-between"><span>REGISTERED EMAIL:</span> <span className="font-bold text-white">{formData.email}</span></p>
             </div>
             
-            <p className="text-zinc-600 mb-10 leading-relaxed text-sm">
+            <p className="text-zinc-400 mb-10 leading-relaxed text-sm">
               Your payment was successful via PayU. Access is currently pending administrative clearance from the Super Admin. Please allow 2 to 4 business hours for Human-in-the-Loop verification to finalize your account setup.
             </p>
             <button onClick={() => navigate('/')} className="bg-[#005ea2] hover:bg-[#004a80] text-white font-bold py-4 px-12 rounded-sm transition-all uppercase tracking-widest text-[11px]">Return to Home</button>
@@ -256,26 +256,26 @@ export default function PaymentGateway() {
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-white text-[#1b1b1b] font-sans selection:bg-[#005ea2] selection:text-white overflow-y-auto overflow-x-hidden">
+    <div className="fixed inset-0 z-[9999] bg-[#0a0a0a] text-zinc-300 font-sans selection:bg-[#005ea2] selection:text-white overflow-y-auto overflow-x-hidden">
       
       {/* 1. OFFICIAL TOP BANNER */}
-      <header className="bg-black text-white py-2 px-6 text-[11px] flex items-center gap-2 sticky top-0 z-[110]">
+      <header className="bg-black text-white py-2 px-6 text-[11px] flex items-center gap-2 sticky top-0 z-[110] border-b border-zinc-800">
          <img src="https://upload.wikimedia.org/wikipedia/en/thumb/4/41/Flag_of_India.svg/1200px-Flag_of_India.svg.png" className="h-3 border border-zinc-700" alt="IN flag" />
          An official website of VyaparSetu Technologies. <span className="underline cursor-help ml-1 font-bold">Secure Payment Gateway</span>
       </header>
 
       {/* 2. INSTITUTIONAL NAVIGATION */}
-      <nav className="bg-white border-b border-zinc-200 sticky top-[28px] z-[100] h-20 flex items-center">
+      <nav className="bg-black border-b border-zinc-800 sticky top-[28px] z-[100] h-20 flex items-center">
         <div className="max-w-[1400px] mx-auto px-6 w-full flex items-center justify-between">
           <div className="flex items-center gap-4">
-             <Link to="/" className="text-2xl font-black tracking-tighter text-black uppercase">VyaparSetu</Link>
-             <div className="h-10 w-px bg-zinc-200 mx-4"></div>
+             <Link to="/" className="text-2xl font-black tracking-tighter text-white uppercase">VyaparSetu</Link>
+             <div className="h-10 w-px bg-zinc-800 mx-4"></div>
              <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest leading-none">PayU Gateway</span>
           </div>
           <div className="flex items-center gap-10">
-            <Link to="/" className="text-[11px] font-black uppercase tracking-[0.2em] hover:text-[#005ea2] transition-colors">Home</Link>
-            <Link to="/pricing" className="text-[11px] font-black uppercase tracking-[0.2em] hover:text-[#005ea2] transition-colors">Pricing</Link>
-            <button onClick={() => navigate(-1)} className="text-[10px] font-black bg-black text-white px-5 py-2.5 uppercase tracking-[0.2em] hover:bg-[#333] transition-all shadow-sm">Cancel Checkout</button>
+            <Link to="/" className="text-[11px] font-black uppercase tracking-[0.2em] text-white hover:text-[#4da8ec] transition-colors">Home</Link>
+            <Link to="/pricing" className="text-[11px] font-black uppercase tracking-[0.2em] text-white hover:text-[#4da8ec] transition-colors">Pricing</Link>
+            <button onClick={() => navigate(-1)} className="text-[10px] font-black bg-white text-black px-5 py-2.5 uppercase tracking-[0.2em] hover:bg-zinc-200 transition-all shadow-sm">Cancel Checkout</button>
           </div>
         </div>
       </nav>
@@ -284,12 +284,12 @@ export default function PaymentGateway() {
         
         {/* 3. HERO TITLE SECTION */}
         <div className="mb-28">
-          <div className="text-[13px] font-black text-[#005ea2] uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
+          <div className="text-[13px] font-black text-[#4da8ec] uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
              <Lock size={18}/> Encrypted Checkout
           </div>
-          <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 uppercase leading-[0.9] text-black">Automated<br/>Gateway</h1>
+          <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 uppercase leading-[0.9] text-white">Automated<br/>Gateway</h1>
           <div className="h-2 w-32 bg-[#005ea2] mb-14"></div>
-          <p className="max-w-2xl text-xl text-zinc-500 font-light leading-relaxed">
+          <p className="max-w-2xl text-xl text-zinc-400 font-light leading-relaxed">
             VyaparSetu utilizes PayU for seamless enterprise transactions. Please complete your billing profile below to be securely redirected to the banking interface.
           </p>
         </div>
@@ -299,8 +299,8 @@ export default function PaymentGateway() {
           {/* 4. SIDEBAR NAVIGATION */}
           <aside className="w-full lg:w-80 shrink-0">
             <div className="sticky top-48">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-10 pb-4 border-b border-zinc-100">On this page</h3>
-              <ul className="space-y-0 border-l-4 border-zinc-100">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-10 pb-4 border-b border-zinc-800">On this page</h3>
+              <ul className="space-y-0 border-l-4 border-zinc-800">
                 {[
                   { id: 'checkout', label: 'PayU Checkout' },
                   { id: 'protocols', label: 'Payment Rules' },
@@ -319,7 +319,7 @@ export default function PaymentGateway() {
                   <li key={item.id}>
                     <button 
                       onClick={() => scrollToSection(item.id)}
-                      className={`w-full text-left py-4 px-8 text-[12px] uppercase tracking-[0.15em] transition-all border-l-4 -ml-1 ${activeSection === item.id ? 'border-[#005ea2] font-black text-[#005ea2] bg-zinc-50/50' : 'border-transparent text-zinc-400 hover:text-black hover:bg-zinc-50'}`}
+                      className={`w-full text-left py-4 px-8 text-[12px] uppercase tracking-[0.15em] transition-all border-l-4 -ml-1 ${activeSection === item.id ? 'border-[#4da8ec] font-black text-[#4da8ec] bg-[#111]' : 'border-transparent text-zinc-500 hover:text-white hover:bg-zinc-900'}`}
                     >
                       {item.label}
                     </button>
@@ -328,11 +328,11 @@ export default function PaymentGateway() {
               </ul>
               
               {selectedPlan && (
-                <div className="mt-16 p-8 bg-zinc-900 text-white relative group border border-zinc-800">
+                <div className="mt-16 p-8 bg-[#111] text-white relative group border border-zinc-800">
                   <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform"><Layers size={80}/></div>
                   <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-4">Selected Plan</p>
                   <div className="text-xl font-bold uppercase mb-2 tracking-tight">{selectedPlan.name}</div>
-                  <div className="text-3xl font-black text-[#005ea2]">{selectedPlan.priceLabel}</div>
+                  <div className="text-3xl font-black text-[#4da8ec]">{selectedPlan.priceLabel}</div>
                 </div>
               )}
             </div>
@@ -343,13 +343,13 @@ export default function PaymentGateway() {
             
             {/* SECTION 1: PAYU CHECKOUT FORM */}
             <section ref={sectionRefs.checkout} className="scroll-mt-48">
-              <div className="bg-[#1b1b1b] text-white p-16 lg:p-24 border-t-[12px] border-[#005ea2] shadow-2xl relative overflow-hidden">
+              <div className="bg-[#111] text-white p-16 lg:p-24 border-t-[12px] border-[#005ea2] shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-10 opacity-5"><Lock size={120}/></div>
                 <h2 className="text-5xl font-black tracking-tighter mb-6 uppercase text-white leading-none">Billing Profile</h2>
                 <p className="text-zinc-400 text-[11px] font-black mb-16 uppercase tracking-[0.4em]">Initialize secure PayU session</p>
 
                 {error && (
-                  <div className="bg-red-950/40 text-red-400 p-8 border-l-8 border-red-500 mb-12 text-sm font-bold flex gap-5 items-center">
+                  <div className="bg-red-900/20 text-red-400 p-8 border-l-8 border-red-500 mb-12 text-sm font-bold flex gap-5 items-center">
                     <AlertCircle size={24} className="shrink-0"/> <span>{error}</span>
                   </div>
                 )}
@@ -357,28 +357,28 @@ export default function PaymentGateway() {
                 <form onSubmit={handlePayUCheckout} className="space-y-16">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-14">
                     <div className="space-y-6">
-                      <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 block">01. Billing Name (As per Plan Registration)</label>
+                      <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 block">01. Billing Name (As per Plan Registration)</label>
                       <input 
                         name="fullName" value={formData.fullName} onChange={handleChange}
-                        className="w-full bg-transparent border-b-2 border-zinc-800 py-5 focus:outline-none focus:border-[#005ea2] transition-colors font-bold text-xl text-white uppercase placeholder:text-zinc-800" 
+                        className="w-full bg-transparent border-b-2 border-zinc-800 py-5 focus:outline-none focus:border-[#4da8ec] transition-colors font-bold text-xl text-white uppercase placeholder:text-zinc-700" 
                         placeholder="STORE OR BUSINESS NAME" 
                       />
                     </div>
 
                     <div className="space-y-6">
-                      <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 block">02. Account Registration Email</label>
+                      <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 block">02. Account Registration Email</label>
                       <input 
                         type="email" name="email" value={formData.email} onChange={handleChange}
-                        className="w-full bg-transparent border-b-2 border-zinc-800 py-5 focus:outline-none focus:border-[#005ea2] transition-colors font-bold text-xl text-white uppercase placeholder:text-zinc-800" 
+                        className="w-full bg-transparent border-b-2 border-zinc-800 py-5 focus:outline-none focus:border-[#4da8ec] transition-colors font-bold text-xl text-white uppercase placeholder:text-zinc-700" 
                         placeholder="EMAIL FOR PLAN ACTIVATION" 
                       />
                     </div>
 
                     <div className="space-y-6 md:col-span-2">
-                      <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 block">03. Owner Mobile Number</label>
+                      <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 block">03. Owner Mobile Number</label>
                       <input 
                         type="tel" name="phone" value={formData.phone} onChange={handleChange}
-                        className="w-full bg-transparent border-b-2 border-zinc-800 py-5 focus:outline-none focus:border-[#005ea2] transition-colors font-bold text-xl text-white uppercase placeholder:text-zinc-800" 
+                        className="w-full bg-transparent border-b-2 border-zinc-800 py-5 focus:outline-none focus:border-[#4da8ec] transition-colors font-bold text-xl text-white uppercase placeholder:text-zinc-700" 
                         placeholder="+91-00000-00000" 
                       />
                     </div>
@@ -388,8 +388,8 @@ export default function PaymentGateway() {
                     <div>
                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] block mb-4">TOTAL AMOUNT DUE</span>
                        <div className="flex items-baseline gap-4">
-                         <span className="text-5xl font-black text-[#005ea2] tracking-tighter uppercase">{selectedPlan?.priceLabel || '₹0'}</span>
-                         <span className="text-zinc-600 text-[10px] font-black uppercase tracking-[0.2em]">Subscription Fee</span>
+                         <span className="text-5xl font-black text-[#4da8ec] tracking-tighter uppercase">{selectedPlan?.priceLabel || '₹0'}</span>
+                         <span className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em]">Subscription Fee</span>
                        </div>
                     </div>
                     
@@ -408,22 +408,22 @@ export default function PaymentGateway() {
 
             {/* SECTION 2: CLEARANCE RULES */}
             <section ref={sectionRefs.protocols} className="scroll-mt-48">
-              <h2 className="text-4xl font-bold tracking-tight mb-10 uppercase text-black">Payment Guidelines</h2>
+              <h2 className="text-4xl font-bold tracking-tight mb-10 uppercase text-white">Payment Guidelines</h2>
               <div className="space-y-12">
-                <div className="flex gap-12 items-start border-b border-zinc-100 pb-10">
+                <div className="flex gap-12 items-start border-b border-zinc-800 pb-10">
                    <div className="w-16 h-16 bg-[#005ea2] flex items-center justify-center font-black text-white text-xl shrink-0 shadow-lg">01</div>
                    <div>
-                     <h4 className="text-sm font-black uppercase tracking-widest mb-3 text-black">Automated Redirection</h4>
-                     <p className="text-zinc-500 leading-loose font-light">
+                     <h4 className="text-sm font-black uppercase tracking-widest mb-3 text-white">Automated Redirection</h4>
+                     <p className="text-zinc-400 leading-loose font-light">
                        Clicking the checkout button will redirect you to the official PayU gateway. Do not close or refresh your browser during the payment process to ensure your transaction ID is captured correctly.
                      </p>
                    </div>
                 </div>
                 <div className="flex gap-12 items-start">
-                   <div className="w-16 h-16 bg-black flex items-center justify-center font-black text-white text-xl shrink-0 shadow-lg">02</div>
+                   <div className="w-16 h-16 bg-[#222] flex items-center justify-center font-black text-white text-xl shrink-0 shadow-lg border border-zinc-800">02</div>
                    <div>
-                     <h4 className="text-sm font-black uppercase tracking-widest mb-3 text-black">Clearance Mandate</h4>
-                     <p className="text-zinc-500 leading-loose font-light">
+                     <h4 className="text-sm font-black uppercase tracking-widest mb-3 text-white">Clearance Mandate</h4>
+                     <p className="text-zinc-400 leading-loose font-light">
                        Access is not instantaneous. After PayU successfully captures funds, your account moves to the "Paid - Pending Clearance" queue for our SA Controllers to conduct a KYC identity review.
                      </p>
                    </div>
@@ -433,19 +433,19 @@ export default function PaymentGateway() {
 
             {/* SECTION 3: SECURITY ARCHITECTURE */}
             <section ref={sectionRefs.security} className="scroll-mt-48">
-              <h2 className="text-4xl font-bold tracking-tight mb-12 uppercase flex items-center gap-6 text-black">
+              <h2 className="text-4xl font-bold tracking-tight mb-12 uppercase flex items-center gap-6 text-white">
                 <ShieldCheck className="text-[#005ea2]" size={40}/> Payment Security
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-                <div className="p-10 border border-zinc-100 bg-zinc-50/50 hover:bg-white transition-colors border-l-4 border-l-[#005ea2] shadow-sm">
-                   <h4 className="text-[11px] font-black uppercase tracking-[0.25em] mb-6 text-black">Bank-Grade Encryption</h4>
-                   <p className="text-sm text-zinc-500 leading-loose font-light">
+                <div className="p-10 border border-zinc-800 bg-[#111] hover:bg-[#1a1a1a] transition-colors border-l-4 border-l-[#005ea2] shadow-sm">
+                   <h4 className="text-[11px] font-black uppercase tracking-[0.25em] mb-6 text-white">Bank-Grade Encryption</h4>
+                   <p className="text-sm text-zinc-400 leading-loose font-light">
                      Your payment details and business information are encrypted using 256-bit SHA-512 cryptographic hashing before being sent to the PayU servers.
                    </p>
                 </div>
-                <div className="p-10 border border-zinc-100 bg-zinc-50/50 hover:bg-white transition-colors border-l-4 border-l-black shadow-sm">
-                   <h4 className="text-[11px] font-black uppercase tracking-[0.25em] mb-6 text-black">Fraud Prevention</h4>
-                   <p className="text-sm text-zinc-500 leading-loose font-light">
+                <div className="p-10 border border-zinc-800 bg-[#111] hover:bg-[#1a1a1a] transition-colors border-l-4 border-l-zinc-300 shadow-sm">
+                   <h4 className="text-[11px] font-black uppercase tracking-[0.25em] mb-6 text-white">Fraud Prevention</h4>
+                   <p className="text-sm text-zinc-400 leading-loose font-light">
                      Every completed PayU transaction invokes a server-side webhook verifying the signature to protect against packet spoofing and fraudulent claims.
                    </p>
                 </div>
@@ -454,10 +454,10 @@ export default function PaymentGateway() {
 
             {/* SECTION 4: AUDIT LOGS */}
             <section ref={sectionRefs.audit} className="scroll-mt-48">
-              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-black">Transaction Tracking</h2>
-              <div className="bg-zinc-50 border border-zinc-200 p-12 text-center shadow-inner">
-                 <Database className="mx-auto text-zinc-300 mb-6" size={48}/>
-                 <p className="text-zinc-600 leading-relaxed font-light text-sm italic max-w-2xl mx-auto">
+              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-white">Transaction Tracking</h2>
+              <div className="bg-[#111] border border-zinc-800 p-12 text-center shadow-inner">
+                 <Database className="mx-auto text-zinc-600 mb-6" size={48}/>
+                 <p className="text-zinc-400 leading-relaxed font-light text-sm italic max-w-2xl mx-auto">
                    For security and tracking purposes, your IP address and submission timestamp are logged securely. This helps our support team locate your transaction quickly if there is a banking delay.
                  </p>
               </div>
@@ -465,29 +465,29 @@ export default function PaymentGateway() {
 
             {/* SECTION 5: RESPONSE SLA */}
             <section ref={sectionRefs.sla} className="scroll-mt-48">
-              <h2 className="text-4xl font-bold tracking-tight mb-10 uppercase flex items-center gap-6 text-black">
+              <h2 className="text-4xl font-bold tracking-tight mb-10 uppercase flex items-center gap-6 text-white">
                 <Activity className="text-[#005ea2]" size={40}/> Activation Timeline
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                  <div className="space-y-3">
-                   <h5 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Verification Time</h5>
-                   <p className="text-2xl font-bold text-black">2 - 4 Hours</p>
+                   <h5 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Verification Time</h5>
+                   <p className="text-2xl font-bold text-white">2 - 4 Hours</p>
                  </div>
-                 <div className="space-y-3 border-l md:border-l border-zinc-200 md:pl-10">
-                   <h5 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">System Uptime</h5>
+                 <div className="space-y-3 border-l md:border-l border-zinc-800 md:pl-10">
+                   <h5 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">System Uptime</h5>
                    <p className="text-2xl font-bold text-[#00e676]">24/7 Active</p>
                  </div>
-                 <div className="space-y-3 border-l md:border-l border-zinc-200 md:pl-10">
-                   <h5 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Priority Processing</h5>
-                   <p className="text-2xl font-bold text-black">For Paid Plans</p>
+                 <div className="space-y-3 border-l md:border-l border-zinc-800 md:pl-10">
+                   <h5 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Priority Processing</h5>
+                   <p className="text-2xl font-bold text-white">For Paid Plans</p>
                  </div>
               </div>
             </section>
 
             {/* SECTION 6: REFUND STATUTES */}
             <section ref={sectionRefs.refunds} className="scroll-mt-48">
-              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-black">Refund Policy</h2>
-              <div className="prose prose-zinc max-w-none text-zinc-600 font-light leading-loose text-base border-l-2 border-zinc-200 pl-8">
+              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-white">Refund Policy</h2>
+              <div className="prose prose-zinc max-w-none text-zinc-400 font-light leading-loose text-base border-l-2 border-zinc-800 pl-8">
                 <p>
                   As per our standard billing policy, subscription fees are non-refundable once your account has been successfully verified and activated. If you made an accidental duplicate payment, PayU automatically initiates a refund for the unverified duplicate amount within 48 hours.
                 </p>
@@ -496,10 +496,10 @@ export default function PaymentGateway() {
 
             {/* SECTION 7: LEGAL CHARTER */}
             <section ref={sectionRefs.governance} className="scroll-mt-48">
-              <h2 className="text-4xl font-bold tracking-tight mb-10 uppercase flex items-center gap-6 text-black">
+              <h2 className="text-4xl font-bold tracking-tight mb-10 uppercase flex items-center gap-6 text-white">
                 <Shield className="text-[#005ea2]" size={40}/> Terms & Conditions
               </h2>
-              <div className="prose prose-zinc max-w-none text-zinc-600 font-light leading-loose text-base border-l-2 border-zinc-200 pl-8">
+              <div className="prose prose-zinc max-w-none text-zinc-400 font-light leading-loose text-base border-l-2 border-zinc-800 pl-8">
                 <p>
                   VyaparSetu actively monitors for spoofed webhooks. Any intentional attempt to bypass the PayU hash validation to gain free access will lead to the permanent blacklisting of your mobile number and IP address from the VyaparSetu intelligence network.
                 </p>
@@ -508,51 +508,51 @@ export default function PaymentGateway() {
 
             {/* SECTION 8: PRIVACY NODE */}
             <section ref={sectionRefs.privacy} className="scroll-mt-48">
-              <h2 className="text-4xl font-bold tracking-tight mb-10 uppercase flex items-center gap-6 text-black">
+              <h2 className="text-4xl font-bold tracking-tight mb-10 uppercase flex items-center gap-6 text-white">
                 <Lock className="text-[#005ea2]" size={40}/> Data Privacy
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 bg-zinc-50 p-10 border border-zinc-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 bg-[#111] p-10 border border-zinc-800">
                  <div className="space-y-4">
-                   <Globe className="text-zinc-300" size={32}/>
-                   <h4 className="text-[11px] font-black uppercase tracking-widest text-black">Secure Storage</h4>
-                   <p className="text-sm text-zinc-500 font-light leading-relaxed">Your payment logs are stored locally on highly secure Indian servers in strict compliance with government data localization guidelines.</p>
+                   <Globe className="text-zinc-600" size={32}/>
+                   <h4 className="text-[11px] font-black uppercase tracking-widest text-white">Secure Storage</h4>
+                   <p className="text-sm text-zinc-400 font-light leading-relaxed">Your payment logs are stored locally on highly secure Indian servers in strict compliance with government data localization guidelines.</p>
                  </div>
                  <div className="space-y-4">
-                   <Database className="text-zinc-300" size={32}/>
-                   <h4 className="text-[11px] font-black uppercase tracking-widest text-black">PCI-DSS Compliant</h4>
-                   <p className="text-sm text-zinc-500 font-light leading-relaxed">VyaparSetu does not store your credit card or bank credentials. All financial data is handled exclusively by the PCI-DSS certified PayU infrastructure.</p>
+                   <Database className="text-zinc-600" size={32}/>
+                   <h4 className="text-[11px] font-black uppercase tracking-widest text-white">PCI-DSS Compliant</h4>
+                   <p className="text-sm text-zinc-400 font-light leading-relaxed">VyaparSetu does not store your credit card or bank credentials. All financial data is handled exclusively by the PCI-DSS certified PayU infrastructure.</p>
                  </div>
               </div>
             </section>
 
             {/* SECTION 9: INVOICING DETAILS */}
             <section ref={sectionRefs.invoice} className="scroll-mt-48">
-              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-black">Invoicing & Tax</h2>
-              <div className="prose prose-zinc max-w-none text-zinc-600 font-light leading-loose text-base border-l-2 border-zinc-200 pl-8">
+              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-white">Invoicing & Tax</h2>
+              <div className="prose prose-zinc max-w-none text-zinc-400 font-light leading-loose text-base border-l-2 border-zinc-800 pl-8">
                 <p>Once your payment is verified and your chosen pricing plan is activated, a formal GST invoice will be generated and dispatched to your registered email address.</p>
               </div>
             </section>
 
             {/* SECTION 10: DISPUTE RESOLUTION */}
             <section ref={sectionRefs.dispute} className="scroll-mt-48">
-              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-black">Dispute Resolution</h2>
-              <div className="prose prose-zinc max-w-none text-zinc-600 font-light leading-loose text-base border-l-2 border-zinc-200 pl-8">
+              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-white">Dispute Resolution</h2>
+              <div className="prose prose-zinc max-w-none text-zinc-400 font-light leading-loose text-base border-l-2 border-zinc-800 pl-8">
                 <p>In case of failed callbacks or debited amounts without plan activation, a formal dispute can be raised with the PayU Txn ID. Reconciliations generally conclude within 3-5 bank working days.</p>
               </div>
             </section>
 
             {/* SECTION 11: SERVICE INTERRUPTIONS */}
             <section ref={sectionRefs.downtime} className="scroll-mt-48">
-              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-black">Service Interruptions</h2>
-              <div className="prose prose-zinc max-w-none text-zinc-600 font-light leading-loose text-base border-l-2 border-zinc-200 pl-8">
+              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-white">Service Interruptions</h2>
+              <div className="prose prose-zinc max-w-none text-zinc-400 font-light leading-loose text-base border-l-2 border-zinc-800 pl-8">
                 <p>If VyaparSetu undergoes scheduled maintenance, your billing cycle will be credited with proportional extended access. Unplanned downtime compensation is governed by our Terms of Service.</p>
               </div>
             </section>
 
             {/* SECTION 12: ACCOUNT SUSPENSION */}
             <section ref={sectionRefs.suspension} className="scroll-mt-48">
-              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-black">Account Suspension</h2>
-              <div className="prose prose-zinc max-w-none text-zinc-600 font-light leading-loose text-base border-l-2 border-zinc-200 pl-8">
+              <h2 className="text-4xl font-bold tracking-tight mb-8 uppercase text-white">Account Suspension</h2>
+              <div className="prose prose-zinc max-w-none text-zinc-400 font-light leading-loose text-base border-l-2 border-zinc-800 pl-8">
                 <p>Failure to renew your selected pricing plan within 7 days of expiry will result in temporary suspension of intelligence features. Data is retained for 30 days post-suspension.</p>
               </div>
             </section>
@@ -560,7 +560,7 @@ export default function PaymentGateway() {
             {/* SECTION 13: TECHNICAL DESK */}
             <section ref={sectionRefs.help} className="scroll-mt-48 pb-40">
                <div className="bg-[#111] p-16 lg:p-24 border border-zinc-800 relative overflow-hidden text-white shadow-2xl">
-                  <div className="absolute bottom-0 right-0 p-8 opacity-10"><HelpCircle size={140}/></div>
+                  <div className="absolute bottom-0 right-0 p-8 opacity-5"><HelpCircle size={140}/></div>
                   <h3 className="text-3xl font-bold mb-12 uppercase tracking-tighter flex items-center gap-5">
                     <Cpu className="text-[#005ea2]" size={32}/> Help & Support
                   </h3>
@@ -586,16 +586,16 @@ export default function PaymentGateway() {
       </main>
 
       {/* INSTITUTIONAL FOOTER */}
-      <footer className="bg-white border-t border-zinc-100 py-32 px-10 relative z-[120]">
+      <footer className="bg-black border-t border-zinc-800 py-32 px-10 relative z-[120]">
         <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-16">
            <div className="flex flex-col items-center md:items-start">
-             <div className="text-[12px] font-black tracking-[0.5em] text-black uppercase mb-4">VyaparSetu Technologies</div>
-             <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">PayU Gateway Node v3.0</div>
+             <div className="text-[12px] font-black tracking-[0.5em] text-white uppercase mb-4">VyaparSetu Technologies</div>
+             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">PayU Gateway Node v3.0</div>
            </div>
-           <div className="flex gap-20 text-[11px] font-black uppercase tracking-[0.3em] text-zinc-400">
-              <a href="#" className="hover:text-[#005ea2] transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-[#005ea2] transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-[#005ea2] transition-colors">Help Center</a>
+           <div className="flex gap-20 text-[11px] font-black uppercase tracking-[0.3em] text-zinc-500">
+              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-white transition-colors">Help Center</a>
            </div>
         </div>
       </footer>
