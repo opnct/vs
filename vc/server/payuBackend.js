@@ -8,13 +8,14 @@ const PORT = process.env.PORT || 5000;
 
 /**
  * STRATEGY: Strict Origin Reflection & Normalization
- * Resolves the "The Access-Control-Allow-Origin header is not equal to the supplied origin" error.
+ * Whitelist updated to support Production, Local Dev, and GitHub Codespaces.
  */
 const productionFrontend = (process.env.FRONTEND_URL || 'https://vyaparsetuai.vercel.app').replace(/\/$/, "");
 const allowedOriginsNormalized = [
   productionFrontend,
   'http://localhost:5173',
-  'http://localhost:3000'
+  'http://localhost:3000',
+  'https://studious-space-giggle-r4gpwr9vrjv25wvv-3000.app.github.dev' // Authorized Codespace Origin
 ];
 
 app.use(cors({
@@ -27,7 +28,6 @@ app.use(cors({
     
     if (allowedOriginsNormalized.includes(normalizedIncoming)) {
       // SUCCESS: Reflect the EXACT origin string sent by the browser.
-      // This ensures bit-for-bit equality to satisfy the CORS policy.
       callback(null, origin);
     } else {
       console.warn(`[SECURITY] Blocked unauthorized origin: ${origin}`);
@@ -104,13 +104,8 @@ app.post('/api/payu/generate-hash', (req, res) => {
   }
 });
 
-/**
- * Note: Webhooks removed as per architectural decision. 
- * Redirection status captured via frontend SURL/FURL.
- */
-
 // Boot Sequence
 app.listen(PORT, () => {
   console.log(`VyaparSetu Backend listening on port ${PORT}`);
-  console.log(`CORS Whitelist: ${allowedOriginsNormalized.join(', ')}`);
+  console.log(`CORS Whitelist Active for: ${allowedOriginsNormalized.join(', ')}`);
 });
