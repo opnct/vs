@@ -38,5 +38,5 @@ jobs:
           tagName: v__VERSION__ # Automatically uses version from package.json
           releaseName: 'VyaparSetu Retail Desk v__VERSION__'
           releaseBody: 'Automated Windows release compiled via GitHub Actions.'
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
