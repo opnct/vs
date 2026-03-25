@@ -154,7 +154,7 @@ export default function Login() {
       const approvalSnap = await getDoc(approvalRef);
 
       if (!approvalSnap.exists()) {
-        throw new Error("Registration blocked. Payment pending Super Admin approval.");
+        throw new Error("Payment successful. Awaiting mandatory identity verification by Super Admin. Please allow 2-4 hours.");
       }
 
       // 1. Authenticate formally with Email/Password (Strictly Registration Only)
@@ -194,7 +194,7 @@ export default function Login() {
       // Clearly catch existing users and prompt them to use the Login2 gateway
       if (err.code === 'auth/email-already-in-use') {
         errorMessage = 'This email is already registered. Please click the login link below to access your account.';
-      } else if (err.message === "Registration blocked. Payment pending Super Admin approval.") {
+      } else if (err.message === "Payment successful. Awaiting mandatory identity verification by Super Admin. Please allow 2-4 hours.") {
         errorMessage = err.message;
       }
       
