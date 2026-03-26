@@ -48,12 +48,13 @@ pub struct StaffMember {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PurchaseItemInput {
-    productId: i64,
-    qty: f64,
-    purchasePrice: f64,
-    mrp: f64,
-    taxAmount: f64,
+    pub product_id: i64,
+    pub qty: f64,
+    pub purchase_price: f64,
+    pub mrp: f64,
+    pub _tax_amount: f64,
 }
 
 #[derive(Deserialize)]
@@ -65,7 +66,7 @@ pub struct ReceiptPayload {
 
 #[derive(Deserialize)]
 pub struct ShopDetails {
-    name: String, address: String, contact: String, gstin: String,
+    name: String, address: String, contact: String, _gstin: String,
 }
 
 #[derive(Deserialize)]
@@ -223,8 +224,8 @@ fn add_purchase_record(state: tauri::State<AppState>, supplier_id: i64, bill_num
     tx.execute("INSERT INTO purchases (supplier_id, bill_number, total_amount, paid_amount, payment_status) VALUES (?1, ?2, ?3, ?4, ?5)", params![supplier_id, bill_number, total_amount, paid_amount, payment_status]).map_err(|e| e.to_string())?;
     let p_id = tx.last_insert_rowid();
     for item in items {
-        tx.execute("INSERT INTO purchase_items (purchase_id, product_id, product_name, quantity, purchase_price, mrp, total) VALUES (?1, ?2, (SELECT name FROM products WHERE id=?2), ?3, ?4, ?5, ?6)", params![p_id, item.productId, item.qty, item.purchasePrice, item.mrp, (item.qty * item.purchasePrice)]).map_err(|e| e.to_string())?;
-        tx.execute("UPDATE products SET stock_quantity = stock_quantity + ?1, purchase_price = ?2, selling_price = ?3 WHERE id = ?4", params![item.qty, item.purchasePrice, item.mrp, item.productId]).map_err(|e| e.to_string())?;
+        tx.execute("INSERT INTO purchase_items (purchase_id, product_id, product_name, quantity, purchase_price, mrp, total) VALUES (?1, ?2, (SELECT name FROM products WHERE id=?2), ?3, ?4, ?5, ?6)", params![p_id, item.product_id, item.qty, item.purchase_price, item.mrp, (item.qty * item.purchase_price)]).map_err(|e| e.to_string())?;
+        tx.execute("UPDATE products SET stock_quantity = stock_quantity + ?1, purchase_price = ?2, selling_price = ?3 WHERE id = ?4", params![item.qty, item.purchase_price, item.mrp, item.product_id]).map_err(|e| e.to_string())?;
     }
     tx.commit().map_err(|e| e.to_string())?;
     Ok("Purchase and Stock synced".to_string())
