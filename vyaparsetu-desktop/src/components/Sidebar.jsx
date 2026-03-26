@@ -14,11 +14,12 @@ import {
   RefreshCw,
   Lock,
   LogOut,
-  UserCircle,
-  LogIn
+  UserCircle
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Sidebar({ activeTab, setActiveTab, onLock, isOffline }) {
+  const { t } = useLanguage();
   // Sync Status State: 'synced' | 'syncing' | 'offline'
   const [syncStatus, setSyncStatus] = useState(isOffline ? 'offline' : 'synced');
 
@@ -28,35 +29,35 @@ export default function Sidebar({ activeTab, setActiveTab, onLock, isOffline }) 
     window.dispatchEvent(new Event('storage'));
   };
 
-  // Organized production navigation mapping
+  // Organized production navigation mapping using translation keys
   const sections = [
     {
-      title: "Storefront",
+      title: t('nav_storefront'),
       items: [
-        { id: 'pos', label: 'POS Billing', icon: ShoppingCart },
-        { id: 'khata', label: 'Udhaar Khata', icon: BookOpen },
-        { id: 'inventory', label: 'Inventory', icon: Package },
+        { id: 'pos', label: t('nav_pos'), icon: ShoppingCart },
+        { id: 'khata', label: t('nav_khata'), icon: BookOpen },
+        { id: 'inventory', label: t('nav_inventory'), icon: Package },
       ]
     },
     {
-      title: "Supply Chain",
+      title: t('nav_supply_chain'),
       items: [
-        { id: 'purchases', label: 'Purchases', icon: ShoppingBag },
-        { id: 'suppliers', label: 'Suppliers', icon: Truck },
+        { id: 'purchases', label: t('nav_purchases'), icon: ShoppingBag },
+        { id: 'suppliers', label: t('nav_suppliers'), icon: Truck },
       ]
     },
     {
-      title: "Insights",
+      title: t('nav_insights'),
       items: [
-        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'reports', label: 'Reports', icon: BarChart2 },
+        { id: 'dashboard', label: t('nav_dashboard'), icon: LayoutDashboard },
+        { id: 'reports', label: t('nav_reports'), icon: BarChart2 },
       ]
     },
     {
-      title: "Administration",
+      title: t('nav_admin'),
       items: [
-        { id: 'staff', label: 'Staff Control', icon: Users },
-        { id: 'settings', label: 'Settings', icon: Settings },
+        { id: 'staff', label: t('nav_staff'), icon: Users },
+        { id: 'settings', label: t('nav_settings'), icon: Settings },
       ]
     }
   ];
@@ -115,7 +116,7 @@ export default function Sidebar({ activeTab, setActiveTab, onLock, isOffline }) 
         {isOffline ? (
           <button 
             onClick={handleSignInRequest}
-            title="Guest Mode - Click to Sign In"
+            title={`${t('offline_badge')} - Click to Sign In`}
             className="w-14 h-14 rounded-full bg-status-orange/10 hover:bg-status-orange/20 text-status-orange flex items-center justify-center transition-all group border border-status-orange/20 relative"
           >
             <UserCircle size={22} className="group-hover:scale-110 transition-transform" />
@@ -123,7 +124,7 @@ export default function Sidebar({ activeTab, setActiveTab, onLock, isOffline }) 
           </button>
         ) : (
           <div 
-            title={syncStatus === 'synced' ? 'Cloud Synced' : syncStatus === 'syncing' ? 'Syncing...' : 'Offline'}
+            title={syncStatus === 'synced' ? t('synced') : syncStatus === 'syncing' ? 'Syncing...' : t('offline_badge')}
             className="w-14 h-14 rounded-full bg-brand-surface flex items-center justify-center text-[#888888] relative border border-white/5"
           >
             {syncStatus === 'synced' && <CloudCheck size={22} className="text-mac-green" />}
