@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { invoke } from '@tauri-apps/api/core';
 import { auth } from './firebase';
 import { Lock, UserCheck, ShieldAlert, MonitorOff } from 'lucide-react';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 
 // --- LAYOUT COMPONENTS ---
 import Sidebar from './components/Sidebar';
@@ -33,6 +34,7 @@ import Staff from './pages/Staff';
  * A production-grade security barrier that protects the POS from unauthorized access.
  */
 const StaffPinLock = ({ onUnlock }) => {
+  const { t } = useLanguage();
   const [pin, setPin] = useState("");
   const [error, setError] = useState(false);
 
@@ -72,8 +74,8 @@ const StaffPinLock = ({ onUnlock }) => {
           }`}>
             <Lock size={36} />
           </div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Staff Access Required</h2>
-          <p className="text-[#A1A1AA] text-sm mt-2">Enter 4-digit PIN to unlock billing</p>
+          <h2 className="text-2xl font-bold text-white tracking-tight">{t('pin_required')}</h2>
+          <p className="text-[#A1A1AA] text-sm mt-2">{t('pin_desc')}</p>
         </div>
 
         <div className="flex justify-center gap-4 mb-10">
@@ -104,6 +106,7 @@ const StaffPinLock = ({ onUnlock }) => {
 
 // The main POS interface layout controller
 const MainLayout = ({ user, isOffline }) => {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('pos');
   const [activeStaff, setActiveStaff] = useState(null);
 
@@ -142,7 +145,7 @@ const MainLayout = ({ user, isOffline }) => {
           {isOffline && (
             <div className="mb-6 bg-status-orange/10 border border-status-orange/20 p-3 rounded-2xl flex items-center gap-3 text-status-orange text-xs font-medium">
               <MonitorOff size={14} />
-              Running in Local Offline Mode. Data is not being synced to Cloud.
+              {t('set_cloud_offline_msg')}
             </div>
           )}
           <div className="max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -187,39 +190,29 @@ export default function App() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  if (loading) {
-    return (
-      <div className="h-screen w-full bg-brand-black flex flex-col items-center justify-center">
-        <div className="w-16 h-16 border-4 border-brand-blue border-t-transparent rounded-full animate-spin mb-6 shadow-[0_0_30px_rgba(59,130,246,0.3)]"></div>
-        <p className="text-brand-muted font-bold tracking-widest text-[10px] uppercase animate-pulse">VyaparSetu Terminal Initializing</p>
-      </div>
-    );
-  }
-
-  return (
+  const AppRouter = () => (
     <Router>
       <Routes>
-        {/* STAGE 1: ONBOARDING */}
         <Route path="/onboarding" element={!hasSeenTutorial ? <Onboarding onComplete={() => setHasSeenTutorial(true)} /> : <Navigate to="/login" />} />
-
-        {/* STAGE 2: AUTH STACK */}
-        <Route path="/login" element={
-          !hasSeenTutorial ? <Navigate to="/onboarding" /> : 
-          (user || isOfflineMode) ? <Navigate to="/" /> : <Login />
-        } />
-        
+        <Route path="/login" element={!hasSeenTutorial ? <Navigate to="/onboarding" /> : (user || isOfflineMode) ? <Navigate to="/" /> : <Login />} />
         <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/" />} />
         <Route path="/verify-email" element={user && !user.emailVerified ? <VerifyEmail /> : <Navigate to="/" />} />
-        
-        {/* STAGE 3: CORE APPLICATION (PROTECTED) */}
-        <Route path="/" element={
-          (!hasSeenTutorial) ? <Navigate to="/onboarding" /> :
-          (user || isOfflineMode) ? <MainLayout user={user} isOffline={isOfflineMode} /> : <Navigate to="/login" />
-        } />
-        
-        {/* FALLBACK */}
+        <Route path="/" element={(!hasSeenTutorial) ? <Navigate to="/onboarding" /> : (user || isOfflineMode) ? <MainLayout user={user} isOffline={isOfflineMode} /> : <Navigate to="/login" />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
+  );
+
+  return (
+    <LanguageProvider>
+      {loading ? (
+        <div className="h-screen w-full bg-brand-black flex flex-col items-center justify-center">
+          <div className="w-16 h-16 border-4 border-brand-blue border-t-transparent rounded-full animate-spin mb-6 shadow-[0_0_30px_rgba(59,130,246,0.3)]"></div>
+          <p className="text-brand-muted font-bold tracking-widest text-[10px] uppercase animate-pulse">VyaparSetu Terminal Initializing</p>
+        </div>
+      ) : (
+        <AppRouter />
+      )}
+    </LanguageProvider>
   );
 }
