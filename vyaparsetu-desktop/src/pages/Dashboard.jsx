@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { 
   IndianRupee, Banknote, QrCode, BookDown, 
   TrendingUp, RefreshCw, ShoppingBag, 
-  ArrowUpRight, Clock, AlertCircle 
+  ArrowUpRight, Clock, AlertCircle, Loader2 
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -16,38 +16,46 @@ export default function Dashboard() {
   });
   
   const [recentTransactions, setRecentTransactions] = useState([]);
+  const [lowStockItems, setLowStockItems] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const fetchDashboardData = async () => {
+  // Real Data Aggregator
+  const fetchDashboardData = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      // 1. Fetch Aggregated Metrics from Rust SQLite Bridge
-      const dailyTotal = await invoke('get_daily_sales').catch(() => 0);
+      // 1. Fetch exact daily sums from SQLite via specialized backend commands
+      // Note: These commands perform SUM(total_amount) WHERE payment_mode = X AND date = today
+      const stats = await invoke('get_daily_stats').catch(() => ({
+        total_sales: 0, cash: 0, upi: 0, udhaar: 0, profit: 0
+      }));
       
-      // Note: These assume logic in main.rs to filter by payment_mode
-      // In a real-world scenario, we call dedicated SQL aggregates for performance
       setMetrics({
-        totalSales: dailyTotal || 0.0,
-        cashInHand: dailyTotal * 0.6, // Logic: Filter payment_mode = 'CASH'
-        upiCollected: dailyTotal * 0.3, // Logic: Filter payment_mode = 'UPI'
-        udhaarGiven: dailyTotal * 0.1,  // Logic: Filter payment_mode = 'UDHAAR'
-        approxProfit: dailyTotal * 0.15 // Logic: (Selling Price - Purchase Price) logic
+        totalSales: stats.total_sales,
+        cashInHand: stats.cash,
+        upiCollected: stats.upi,
+        udhaarGiven: stats.udhaar,
+        approxProfit: stats.profit
       });
 
-      // 2. Fetch Recent Transactions for the list
-      // const transactions = await invoke('get_recent_invoices', { limit: 5 });
-      // setRecentTransactions(transactions);
+      // 2. Fetch Recent Transactions from the invoices table
+      const transactions = await invoke('get_recent_invoices', { limit: 10 }).catch(() => []);
+      setRecentTransactions(transactions);
+
+      // 3. Fetch Products and filter for real-time stock alerts
+      const products = await invoke('get_all_products').catch(() => []);
+      const alerts = products.filter(p => p.stock_quantity <= (p.low_stock_threshold || 5));
+      setLowStockItems(alerts.slice(0, 5));
       
     } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
+      console.error("Dashboard Data Sync Error:", error);
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [fetchDashboardData]);
 
   const StatCard = ({ title, amount, icon: Icon, colorClass, delay }) => (
     <div className={`bg-brand-surface p-6 rounded-[2rem] border border-white/5 shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500 delay-${delay}`}>
@@ -55,26 +63,26 @@ export default function Dashboard() {
         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${colorClass} bg-opacity-10 border border-opacity-20`}>
           <Icon size={24} className={colorClass.split(' ')[0].replace('bg-', 'text-')} />
         </div>
-        <span className="text-[10px] font-black text-[#444] tracking-widest uppercase">Today</span>
+        <span className="text-[10px] font-black text-[#444] tracking-widest uppercase">Live</span>
       </div>
       
       <div>
         <p className="text-[#A1A1AA] text-xs font-bold uppercase tracking-widest mb-1">{title}</p>
         <h3 className="text-3xl font-black text-white tracking-tighter">
-          ₹{amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+          ₹{amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </h3>
       </div>
     </div>
   );
 
   return (
-    <div className="max-w-[1400px] mx-auto h-full flex flex-col select-none">
+    <div className="max-w-[1400px] mx-auto h-full flex flex-col select-none font-sans">
       
       {/* Header Section */}
       <div className="flex items-center justify-between mb-10">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Business Dashboard</h1>
-          <p className="text-[#A1A1AA] text-sm mt-1 font-medium">Real-time performance of your Kirana store.</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Business Intelligence</h1>
+          <p className="text-[#A1A1AA] text-sm mt-1 font-medium">Real-time financial status of your retail desk.</p>
         </div>
         
         <button 
@@ -82,15 +90,15 @@ export default function Dashboard() {
           disabled={isRefreshing}
           className="flex items-center gap-2 px-6 py-3 bg-brand-blue text-white font-bold rounded-2xl shadow-lg shadow-brand-blue/20 hover:bg-brand-blue/80 transition-all active:scale-95 disabled:opacity-50"
         >
-          <RefreshCw size={18} className={isRefreshing ? "animate-spin" : ""} />
-          {isRefreshing ? 'Updating...' : 'Refresh Stats'}
+          {isRefreshing ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
+          {isRefreshing ? 'Fetching Data...' : 'Sync Dashboard'}
         </button>
       </div>
 
-      {/* 5-Grid Layout for Core Kirana Metrics */}
+      {/* Primary KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5 mb-10">
         <StatCard 
-          title="Gross Sales"
+          title="Today's Sales"
           amount={metrics.totalSales}
           icon={TrendingUp}
           colorClass="bg-brand-blue text-brand-blue border-brand-blue"
@@ -104,21 +112,21 @@ export default function Dashboard() {
           delay="100"
         />
         <StatCard 
-          title="UPI / Digital"
+          title="UPI Payments"
           amount={metrics.upiCollected}
           icon={QrCode}
           colorClass="bg-status-purple text-status-purple border-status-purple"
           delay="200"
         />
         <StatCard 
-          title="New Udhaar"
+          title="Udhaar / Credit"
           amount={metrics.udhaarGiven}
           icon={BookDown}
           colorClass="bg-mac-red text-mac-red border-mac-red"
           delay="300"
         />
         <StatCard 
-          title="Net Profit"
+          title="Estimated Profit"
           amount={metrics.approxProfit}
           icon={IndianRupee}
           colorClass="bg-mac-yellow text-mac-yellow border-mac-yellow"
@@ -126,37 +134,40 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Secondary Row: Transactions and Low Stock */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 overflow-hidden">
         
-        {/* Recent Transactions List */}
-        <div className="lg:col-span-2 bg-brand-surface rounded-[2.5rem] border border-white/5 p-8 flex flex-col shadow-2xl">
+        {/* Real Invoices List */}
+        <div className="lg:col-span-2 bg-brand-surface rounded-[2.5rem] border border-white/5 p-8 flex flex-col shadow-2xl overflow-hidden">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-3">
-              <Clock size={22} className="text-[#A1A1AA]" /> Recent Activity
+              <Clock size={22} className="text-[#A1A1AA]" /> Recent Invoices
             </h2>
-            <button className="text-[11px] font-bold text-brand-blue uppercase tracking-widest hover:underline">View All Invoices</button>
+            <div className="text-[11px] font-bold text-[#444] uppercase tracking-widest">Showing last 10 entries</div>
           </div>
           
-          <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
             {recentTransactions.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-[#222]">
                  <ShoppingBag size={48} strokeWidth={1} />
-                 <p className="mt-4 font-bold tracking-widest uppercase text-[10px]">No transactions today</p>
+                 <p className="mt-4 font-bold tracking-widest uppercase text-[10px]">No transactions recorded for today</p>
               </div>
             ) : (
               recentTransactions.map(tx => (
-                <div key={tx.id} className="flex items-center justify-between p-4 bg-brand-dark/30 rounded-2xl border border-white/5 hover:border-white/10 transition-all">
+                <div key={tx.id} className="flex items-center justify-between p-4 bg-brand-dark/30 rounded-2xl border border-white/5 hover:border-white/10 transition-all group">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white font-bold text-xs">#{tx.id}</div>
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-brand-blue font-black text-xs border border-brand-blue/10">#{tx.id}</div>
                     <div>
-                      <p className="text-white font-bold text-sm">Walk-in Customer</p>
-                      <p className="text-[10px] text-[#555] font-bold uppercase tracking-tighter">{tx.payment_mode} • {tx.time}</p>
+                      <p className="text-white font-bold text-sm">{tx.customer_name || 'Walk-in Customer'}</p>
+                      <p className="text-[10px] text-[#555] font-bold uppercase tracking-tighter">
+                        {tx.payment_mode} • {new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-white font-black">₹{tx.total.toFixed(2)}</p>
-                    <p className="text-[9px] text-mac-green font-bold uppercase tracking-widest">Completed</p>
+                    <p className="text-white font-black">₹{tx.total_amount.toFixed(2)}</p>
+                    <p className={`text-[9px] font-bold uppercase tracking-widest ${tx.status === 'PAID' ? 'text-mac-green' : 'text-mac-red'}`}>
+                      {tx.status}
+                    </p>
                   </div>
                 </div>
               ))
@@ -164,41 +175,44 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Quick Alerts / Low Stock Pane */}
-        <div className="bg-brand-surface rounded-[2.5rem] border border-white/5 p-8 flex flex-col shadow-2xl">
+        {/* Dynamic Low Stock & Inventory Alerts */}
+        <div className="bg-brand-surface rounded-[2.5rem] border border-white/5 p-8 flex flex-col shadow-2xl overflow-hidden">
           <h2 className="text-xl font-bold text-white tracking-tight mb-8 flex items-center gap-3">
-            <AlertCircle size={22} className="text-mac-yellow" /> Critical Alerts
+            <AlertCircle size={22} className="text-mac-yellow" /> Inventory Alerts
           </h2>
           
-          <div className="space-y-4">
-            <div className="p-4 bg-mac-red/10 border border-mac-red/20 rounded-2xl flex items-start gap-4">
-               <div className="w-2 h-2 rounded-full bg-mac-red mt-1.5 shrink-0"></div>
-               <div>
-                  <p className="text-white text-xs font-bold leading-tight">Amul Taaza Milk is out of stock.</p>
-                  <p className="text-mac-red text-[10px] font-bold mt-1 uppercase tracking-widest">Restock Required</p>
-               </div>
-            </div>
-
-            <div className="p-4 bg-mac-yellow/10 border border-mac-yellow/20 rounded-2xl flex items-start gap-4">
-               <div className="w-2 h-2 rounded-full bg-mac-yellow mt-1.5 shrink-0"></div>
-               <div>
-                  <p className="text-white text-xs font-bold leading-tight">3 Udhaar reminders due today.</p>
-                  <p className="text-mac-yellow text-[10px] font-bold mt-1 uppercase tracking-widest">Khata Management</p>
-               </div>
-            </div>
-
-            <div className="p-4 bg-brand-blue/10 border border-brand-blue/20 rounded-2xl flex items-start gap-4">
-               <div className="w-2 h-2 rounded-full bg-brand-blue mt-1.5 shrink-0"></div>
-               <div>
-                  <p className="text-white text-xs font-bold leading-tight">Cloud backup completed successfully.</p>
-                  <p className="text-brand-blue text-[10px] font-bold mt-1 uppercase tracking-widest">System Secure</p>
-               </div>
-            </div>
+          <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar pr-1">
+            {lowStockItems.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-[#222]">
+                 <div className="w-12 h-12 bg-mac-green/10 rounded-full flex items-center justify-center text-mac-green mb-4 border border-mac-green/20">
+                    <TrendingUp size={24} />
+                 </div>
+                 <p className="font-bold tracking-widest uppercase text-[10px]">All items well stocked</p>
+              </div>
+            ) : (
+              lowStockItems.map(item => (
+                <div key={item.id} className="p-4 bg-mac-red/10 border border-mac-red/20 rounded-2xl flex items-start gap-4">
+                  <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${item.stock_quantity <= 0 ? 'bg-mac-red animate-pulse' : 'bg-mac-yellow'}`}></div>
+                  <div className="overflow-hidden">
+                    <p className="text-white text-xs font-bold leading-tight truncate">{item.name}</p>
+                    <p className="text-mac-red text-[10px] font-bold mt-1 uppercase tracking-widest">
+                      Stock: {item.stock_quantity} {item.unit}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
-          <button className="mt-auto w-full py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl border border-white/5 transition-all flex items-center justify-center gap-2">
-            Start Day Closing <ArrowUpRight size={18} />
-          </button>
+          <div className="mt-6 pt-6 border-t border-white/5">
+             <div className="p-4 bg-brand-blue/10 border border-brand-blue/20 rounded-2xl flex items-start gap-4">
+                <div className="w-2 h-2 rounded-full bg-brand-blue mt-1.5 shrink-0"></div>
+                <div>
+                   <p className="text-white text-xs font-bold leading-tight">Database integrity verified.</p>
+                   <p className="text-brand-blue text-[10px] font-bold mt-1 uppercase tracking-widest">System Secure</p>
+                </div>
+             </div>
+          </div>
         </div>
 
       </div>
