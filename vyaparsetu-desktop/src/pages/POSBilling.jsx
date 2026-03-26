@@ -2,35 +2,37 @@ import React, { useState, useRef, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { 
   Search, Plus, Minus, Trash2, Printer, 
-  Banknote, QrCode, BookDown, CheckCircle2 
+  Banknote, QrCode, BookDown, CheckCircle2,
+  PauseCircle, PlayCircle, Calculator, Percent
 } from 'lucide-react';
 
-// Typical Kirana frequent items for quick-tap billing
-const FREQUENT_ITEMS = [
-  { id: 1, name: "Aashirvaad Atta 5kg", price: 240.00, bgColor: "bg-pastel-pink", textColor: "text-rose-900" },
-  { id: 2, name: "Tata Salt 1kg", price: 28.00, bgColor: "bg-pastel-peach", textColor: "text-orange-900" },
-  { id: 3, name: "Fortune Soyabean Oil 1L", price: 145.00, bgColor: "bg-pastel-yellow", textColor: "text-yellow-900" },
-  { id: 4, name: "Maggi 2-Min Noodles 140g", price: 30.00, bgColor: "bg-pastel-blue", textColor: "text-indigo-900" },
-  { id: 5, name: "Amul Taaza Milk 500ml", price: 27.00, bgColor: "bg-pastel-purple", textColor: "text-purple-900" },
-  { id: 6, name: "Brooke Bond Red Label 250g", price: 130.00, bgColor: "bg-pastel-pink", textColor: "text-rose-900" },
-  { id: 7, name: "Sugar (Loose) 1kg", price: 42.00, bgColor: "bg-pastel-peach", textColor: "text-orange-900" },
-  { id: 8, name: "Toor Dal (Loose) 1kg", price: 160.00, bgColor: "bg-pastel-blue", textColor: "text-indigo-900" },
+// Real-world Kirana items with HSN and GST defaults
+const QUICK_ITEMS = [
+  { id: 101, name: "Aashirvaad Atta 5kg", price: 245.00, gst: 5, hsn: "1101" },
+  { id: 102, name: "Tata Salt 1kg", price: 28.00, gst: 0, hsn: "2501" },
+  { id: 103, name: "Fortune Oil 1L", price: 155.00, gst: 5, hsn: "1512" },
+  { id: 104, name: "Maggi 140g", price: 30.00, gst: 12, hsn: "1902" },
+  { id: 105, name: "Amul Butter 100g", price: 56.00, gst: 12, hsn: "0405" },
+  { id: 106, name: "Red Label Tea 250g", price: 140.00, gst: 5, hsn: "0902" },
+  { id: 107, name: "Sugar 1kg", price: 44.00, gst: 5, hsn: "1701" },
+  { id: 108, name: "Surf Excel 1kg", price: 135.00, gst: 18, hsn: "3402" },
 ];
 
 export default function POSBilling() {
   const [cart, setCart] = useState([]);
+  const [holdQueue, setHoldQueue] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [paymentMode, setPaymentMode] = useState("CASH");
-  const [discount, setDiscount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  
   const searchInputRef = useRef(null);
 
-  // Keep focus on search bar for barcode scanners
+  // Auto-focus for barcode scanners
   useEffect(() => {
     if (searchInputRef.current) searchInputRef.current.focus();
-  }, [cart]);
+  }, [cart, holdQueue]);
 
-  // Cart Logic
+  // --- CART LOGIC ---
   const addToCart = (product) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
@@ -39,226 +41,315 @@ export default function POSBilling() {
           item.id === product.id ? { ...item, qty: item.qty + 1 } : item
         );
       }
-      return [...prev, { ...product, qty: 1 }];
+      return [...prev, { 
+        ...product, 
+        qty: 1, 
+        discountPercent: 0,
+        sgstPercent: product.gst / 2,
+        cgstPercent: product.gst / 2
+      }];
     });
     setSearchQuery("");
   };
 
-  const updateQty = (id, delta) => {
+  const updateItem = (id, field, value) => {
     setCart(prev => prev.map(item => {
       if (item.id === id) {
-        const newQty = item.qty + delta;
-        return newQty > 0 ? { ...item, qty: newQty } : item;
+        const updated = { ...item, [field]: value };
+        return updated;
       }
       return item;
     }));
   };
 
-  const removeItem = (id) => {
-    setCart(prev => prev.filter(item => item.id !== id));
+  const removeItem = (id) => setCart(prev => prev.filter(item => item.id !== id));
+
+  // --- HOLD / RESUME LOGIC ---
+  const holdCurrentBill = () => {
+    if (cart.length === 0) return;
+    setHoldQueue(prev => [...prev, { id: Date.now(), items: cart, time: new Date().toLocaleTimeString() }]);
+    setCart([]);
   };
 
-  // Financial Calculations
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const grandTotal = Math.max(0, subtotal - discount);
+  const resumeBill = (holdId) => {
+    const bill = holdQueue.find(b => b.id === holdId);
+    if (cart.length > 0) {
+      // If current cart isn't empty, hold it first
+      setHoldQueue(prev => [...prev.filter(b => b.id !== holdId), { id: Date.now(), items: cart, time: new Date().toLocaleTimeString() }]);
+    } else {
+      setHoldQueue(prev => prev.filter(b => b.id !== holdId));
+    }
+    setCart(bill.items);
+  };
 
-  // Real SQLite & Hardware Integration
-  const handlePrintAndSave = async () => {
+  // --- FINANCIAL CALCULATIONS ---
+  const totals = cart.reduce((acc, item) => {
+    const gross = item.price * item.qty;
+    const discount = gross * (item.discountPercent / 100);
+    const taxable = gross - discount;
+    const tax = taxable * ((item.sgstPercent + item.cgstPercent) / 100);
+    
+    acc.subtotal += gross;
+    acc.totalDiscount += discount;
+    acc.totalTax += tax;
+    acc.grandTotal += (taxable + tax);
+    return acc;
+  }, { subtotal: 0, totalDiscount: 0, totalTax: 0, grandTotal: 0 });
+
+  // --- CHECKOUT & PRINTING ---
+  const handleFinalCheckout = async () => {
     if (cart.length === 0) return;
     setIsProcessing(true);
 
     try {
-      const status = paymentMode === 'UDHAAR' ? 'UNPAID' : 'PAID';
-      
-      // 1. Save to native SQLite database via Rust
-      const invoiceId = await invoke('create_invoice', {
-        customerId: null, // Walk-in customer by default
-        subtotal: subtotal,
-        totalAmount: grandTotal,
+      const shopInfo = {
+        name: "VyaparSetu Retail Store",
+        address: "Main Market, Sector 12, India",
+        contact: "+91 9876543210",
+        gstin: "27AAAAA0000A1Z5"
+      };
+
+      // 1. Save to SQLite via Rust
+      await invoke('create_invoice', {
+        customerId: null,
+        subtotal: totals.subtotal,
+        discountPercent: 0, 
+        discountAmount: totals.totalDiscount,
+        taxAmount: totals.totalTax,
+        totalAmount: totals.grandTotal,
         paymentMode: paymentMode,
-        status: status
+        status: paymentMode === 'UDHAAR' ? 'UNPAID' : 'PAID'
       });
 
-      // 2. Format receipt for Thermal Printer
-      const receiptText = `
-        === VYAPARSETU RETAIL ===
-        Bill No: ${invoiceId}
-        Date: ${new Date().toLocaleString()}
-        Mode: ${paymentMode}
-        -------------------------
-        Items: ${cart.length}
-        Total: Rs. ${grandTotal.toFixed(2)}
-        =========================
-      `;
+      // 2. Trigger Real Thermal Print Command
+      await invoke('print_receipt', {
+        receipt: {
+          shop: shopInfo,
+          items: cart.map(i => ({
+            name: i.name,
+            qty: i.qty,
+            price: i.price,
+            discount_percent: i.discountPercent,
+            sgst_percent: i.sgstPercent,
+            cgst_percent: i.cgstPercent
+          })),
+          payment_mode: paymentMode
+        }
+      });
 
-      // 3. Send raw byte command to LPT1/USB Thermal Printer via Rust
-      await invoke('print_receipt', { receiptData: receiptText });
-
-      // Reset UI for the next customer instantly
       setCart([]);
-      setDiscount(0);
       setPaymentMode("CASH");
-      
     } catch (error) {
-      console.error("Billing Failed:", error);
-      alert("Hardware or Database Error: " + error);
+      console.error("POS Error:", error);
     } finally {
       setIsProcessing(false);
     }
   };
 
   return (
-    <div className="flex h-full gap-6 max-w-[1600px] mx-auto">
+    <div className="flex h-full gap-6 select-none">
       
-      {/* LEFT PANE: Product Selection & Barcode */}
-      <div className="flex-1 flex flex-col gap-6">
+      {/* LEFT: Product Lookup & Quick Grid */}
+      <div className="flex-1 flex flex-col gap-6 overflow-hidden">
         
-        {/* Barcode / Search Input */}
-        <div className="bg-white p-4 rounded-4xl shadow-soft-float border border-gray-100 flex items-center gap-4 transition-all focus-within:ring-4 ring-brand-bg">
-          <div className="w-12 h-12 bg-pastel-blue rounded-2xl flex items-center justify-center shrink-0">
-            <Search size={24} className="text-indigo-900" />
+        {/* Search Bar */}
+        <div className="bg-brand-surface p-2 rounded-2xl border border-white/5 flex items-center gap-4 group focus-within:border-brand-blue/50 transition-all">
+          <div className="w-12 h-12 flex items-center justify-center text-[#A1A1AA]">
+            <Search size={22} />
           </div>
           <input 
             ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Scan Barcode or Search Item Name (Enter to Add)"
+            className="flex-1 bg-transparent border-none outline-none text-xl font-medium text-white placeholder-[#666]"
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && searchQuery) {
-                // Mock barcode scan - grabs first matching item
-                const found = FREQUENT_ITEMS.find(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
-                if (found) addToCart(found);
+              if(e.key === 'Enter' && searchQuery) {
+                const item = QUICK_ITEMS.find(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
+                if(item) addToCart(item);
               }
             }}
-            placeholder="Scan barcode or search item name..."
-            className="flex-1 bg-transparent text-2xl font-bold text-brand-text placeholder-brand-muted/50 border-none outline-none"
           />
         </div>
 
-        {/* Frequent Items Grid */}
-        <div className="flex-1 overflow-y-auto pr-2 pb-4">
-          <h3 className="text-lg font-bold text-brand-text tracking-tight mb-4 flex items-center gap-2">
-            Top Selling Items
-          </h3>
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {FREQUENT_ITEMS.map(item => (
+        {/* Quick Items Grid */}
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[#A1A1AA] font-bold text-sm uppercase tracking-widest">Fast Selling Items</h3>
+            {holdQueue.length > 0 && (
+              <span className="bg-mac-yellow/20 text-mac-yellow text-[10px] px-2 py-1 rounded-full font-bold">
+                {holdQueue.length} BILLS ON HOLD
+              </span>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {QUICK_ITEMS.map(item => (
               <button
                 key={item.id}
                 onClick={() => addToCart(item)}
-                className={`${item.bgColor} p-5 rounded-3xl shadow-sm hover:shadow-soft-float transition-all active:scale-95 text-left border border-white/40 group relative overflow-hidden`}
+                className="bg-brand-surface p-5 rounded-3xl border border-white/5 hover:border-brand-blue/40 hover:bg-white/5 transition-all text-left active:scale-95 group"
               >
-                <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-white/20 rounded-full blur-xl group-hover:bg-white/30 transition-all"></div>
-                <h4 className={`text-sm font-bold ${item.textColor} leading-tight mb-2 pr-4`}>{item.name}</h4>
-                <p className={`text-xl font-black ${item.textColor} tracking-tighter`}>₹{item.price}</p>
+                <div className="text-xs font-bold text-[#A1A1AA] mb-1 group-hover:text-brand-blue transition-colors uppercase">{item.hsn}</div>
+                <h4 className="text-white font-bold leading-tight line-clamp-2 mb-3 h-10">{item.name}</h4>
+                <div className="flex items-end justify-between">
+                   <span className="text-2xl font-black text-white">₹{item.price}</span>
+                   <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full text-[#A1A1AA]">{item.gst}% GST</span>
+                </div>
               </button>
             ))}
           </div>
-        </div>
 
+          {/* Hold Queue Section */}
+          {holdQueue.length > 0 && (
+            <div className="mt-8">
+              <h3 className="text-[#A1A1AA] font-bold text-sm uppercase tracking-widest mb-4">Pending Bills</h3>
+              <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar">
+                {holdQueue.map((bill, index) => (
+                  <button 
+                    key={bill.id}
+                    onClick={() => resumeBill(bill.id)}
+                    className="flex-shrink-0 bg-mac-yellow/10 border border-mac-yellow/20 p-4 rounded-2xl flex items-center gap-3 hover:bg-mac-yellow/20 transition-all"
+                  >
+                    <PlayCircle size={20} className="text-mac-yellow" />
+                    <div className="text-left">
+                      <p className="text-white text-xs font-bold">Bill #{index + 1}</p>
+                      <p className="text-mac-yellow text-[10px]">{bill.items.length} Items • {bill.time}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* RIGHT PANE: Live Cart & Checkout */}
-      <div className="w-[420px] bg-white rounded-4xl shadow-soft-float border border-gray-50 flex flex-col shrink-0 overflow-hidden">
+      {/* RIGHT: Active Cart & Checkout */}
+      <div className="w-[450px] bg-brand-surface rounded-[2.5rem] border border-white/5 flex flex-col overflow-hidden shadow-2xl">
         
-        {/* Cart Header */}
-        <div className="p-6 border-b border-gray-50 bg-gray-50/50">
-          <h2 className="text-xl font-black text-brand-text tracking-tight flex items-center justify-between">
-            Current Bill
-            <span className="text-sm font-bold bg-white px-3 py-1 rounded-full text-brand-muted shadow-sm">
-              {cart.length} Items
-            </span>
-          </h2>
+        <div className="p-6 border-b border-white/5 flex items-center justify-between">
+          <h2 className="text-white font-bold text-lg tracking-tight">Current Bill</h2>
+          <div className="flex gap-2">
+            <button 
+              onClick={holdCurrentBill}
+              title="Hold Bill"
+              className="p-2.5 rounded-xl bg-white/5 text-[#A1A1AA] hover:text-mac-yellow hover:bg-mac-yellow/10 transition-all"
+            >
+              <PauseCircle size={20} />
+            </button>
+            <button 
+              onClick={() => setCart([])}
+              title="Clear Cart"
+              className="p-2.5 rounded-xl bg-white/5 text-[#A1A1AA] hover:text-mac-red hover:bg-mac-red/10 transition-all"
+            >
+              <Trash2 size={20} />
+            </button>
+          </div>
         </div>
 
-        {/* Cart Items Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {/* Dynamic Cart List */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
           {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-brand-muted opacity-60">
-              <ShoppingCartPlaceholder />
-              <p className="font-bold mt-4 tracking-wide">Cart is empty</p>
-              <p className="text-xs font-medium">Scan an item to begin billing</p>
+            <div className="h-full flex flex-col items-center justify-center opacity-20 text-white">
+              <Calculator size={64} strokeWidth={1} />
+              <p className="mt-4 font-bold tracking-widest uppercase text-xs">Waiting for items...</p>
             </div>
           ) : (
             cart.map(item => (
-              <div key={item.id} className="bg-brand-bg p-3.5 rounded-3xl flex items-center justify-between border border-gray-100 group">
-                <div className="flex-1 pr-3">
-                  <h4 className="text-sm font-bold text-brand-text leading-tight line-clamp-1">{item.name}</h4>
-                  <p className="text-xs font-bold text-brand-muted mt-0.5">₹{item.price} / unit</p>
-                </div>
-                
-                <div className="flex items-center gap-3 bg-white p-1 rounded-2xl shadow-sm border border-gray-50">
-                  <button onClick={() => updateQty(item.id, -1)} className="w-8 h-8 flex items-center justify-center bg-gray-50 hover:bg-pastel-pink rounded-xl text-brand-text transition-colors">
-                    <Minus size={14} strokeWidth={3} />
-                  </button>
-                  <span className="w-4 text-center font-black text-sm">{item.qty}</span>
-                  <button onClick={() => updateQty(item.id, 1)} className="w-8 h-8 flex items-center justify-center bg-gray-50 hover:bg-pastel-blue rounded-xl text-brand-text transition-colors">
-                    <Plus size={14} strokeWidth={3} />
-                  </button>
+              <div key={item.id} className="bg-brand-dark/50 p-4 rounded-3xl border border-white/5 group">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <h4 className="text-sm font-bold text-white leading-tight line-clamp-1">{item.name}</h4>
+                    <p className="text-[10px] font-bold text-[#A1A1AA] mt-1">₹{item.price} / unit • HSN: {item.hsn}</p>
+                  </div>
+                  <span className="text-sm font-black text-white ml-4">
+                    ₹{((item.price * item.qty) * (1 - item.discountPercent/100)).toFixed(2)}
+                  </span>
                 </div>
 
-                <div className="w-20 text-right pl-3">
-                  <p className="font-black text-brand-text">₹{(item.price * item.qty).toFixed(2)}</p>
-                  <button onClick={() => removeItem(item.id)} className="text-[10px] font-bold text-red-400 hover:text-red-600 uppercase tracking-wider mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    Remove
-                  </button>
+                <div className="flex items-center gap-3">
+                  {/* Qty Control */}
+                  <div className="flex items-center gap-2 bg-brand-dark px-2 py-1 rounded-xl border border-white/5">
+                    <button onClick={() => updateItem(item.id, 'qty', Math.max(1, item.qty - 1))} className="text-[#A1A1AA] hover:text-white p-1"><Minus size={14}/></button>
+                    <span className="w-6 text-center text-xs font-bold text-white">{item.qty}</span>
+                    <button onClick={() => updateItem(item.id, 'qty', item.qty + 1)} className="text-[#A1A1AA] hover:text-white p-1"><Plus size={14}/></button>
+                  </div>
+                  
+                  {/* Discount Input */}
+                  <div className="flex items-center gap-1.5 bg-brand-dark px-3 py-1 rounded-xl border border-white/5 flex-1">
+                    <Percent size={12} className="text-[#666]" />
+                    <input 
+                      type="number" 
+                      value={item.discountPercent || ''} 
+                      onChange={(e) => updateItem(item.id, 'discountPercent', Number(e.target.value))}
+                      placeholder="0"
+                      className="bg-transparent border-none outline-none text-[11px] font-bold text-mac-green w-full placeholder-[#444]"
+                    />
+                    <span className="text-[9px] font-bold text-[#444] uppercase tracking-tighter">Disc</span>
+                  </div>
+
+                  <button onClick={() => removeItem(item.id)} className="p-2 text-mac-red opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16}/></button>
                 </div>
               </div>
             ))
           )}
         </div>
 
-        {/* Checkout Controls Area */}
-        <div className="p-6 bg-brand-bg border-t border-gray-100">
+        {/* Footer Summary & Checkout */}
+        <div className="p-6 bg-black/20 border-t border-white/5 space-y-4">
           
-          {/* Payment Toggles */}
-          <div className="grid grid-cols-3 gap-2 mb-6">
-            <PaymentBtn mode="CASH" icon={Banknote} current={paymentMode} set={setPaymentMode} color="bg-pastel-peach text-orange-900 ring-orange-200" />
-            <PaymentBtn mode="UPI" icon={QrCode} current={paymentMode} set={setPaymentMode} color="bg-pastel-blue text-indigo-900 ring-indigo-200" />
-            <PaymentBtn mode="UDHAAR" icon={BookDown} current={paymentMode} set={setPaymentMode} color="bg-pastel-pink text-rose-900 ring-rose-200" />
+          {/* Payment Tabs */}
+          <div className="grid grid-cols-4 gap-2">
+            {['CASH', 'UPI', 'UDHAAR', 'SPLIT'].map(mode => (
+              <button 
+                key={mode}
+                onClick={() => setPaymentMode(mode)}
+                className={`py-2.5 rounded-xl text-[10px] font-bold tracking-widest transition-all ${
+                  paymentMode === mode 
+                    ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/20' 
+                    : 'bg-white/5 text-[#A1A1AA] hover:bg-white/10'
+                }`}
+              >
+                {mode}
+              </button>
+            ))}
           </div>
 
-          {/* Totals Calculation */}
-          <div className="space-y-3 mb-6">
-            <div className="flex justify-between items-center text-sm font-bold text-brand-muted">
+          <div className="space-y-2">
+            <div className="flex justify-between text-[13px] font-medium text-[#A1A1AA]">
               <span>Subtotal</span>
-              <span>₹{subtotal.toFixed(2)}</span>
+              <span>₹{totals.subtotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between items-center text-sm font-bold text-brand-muted">
-              <span>Discount</span>
-              <input 
-                type="number" 
-                value={discount || ''} 
-                onChange={e => setDiscount(Number(e.target.value))}
-                placeholder="0"
-                className="w-20 bg-white border border-gray-200 rounded-lg text-right px-2 py-1 text-brand-text focus:ring-2 ring-pastel-blue outline-none"
-              />
+            <div className="flex justify-between text-[13px] font-medium text-mac-red/80">
+              <span>Savings</span>
+              <span>- ₹{totals.totalDiscount.toFixed(2)}</span>
             </div>
-            <div className="h-px w-full bg-gray-200 my-2"></div>
-            <div className="flex justify-between items-end">
-              <span className="text-brand-text font-black tracking-tight text-lg">Grand Total</span>
-              <span className="text-4xl font-black text-brand-text tracking-tighter leading-none">
-                ₹{grandTotal.toFixed(2)}
+            <div className="flex justify-between text-[13px] font-medium text-mac-green/80">
+              <span>GST (SGST+CGST)</span>
+              <span>+ ₹{totals.totalTax.toFixed(2)}</span>
+            </div>
+            <div className="pt-2 mt-2 border-t border-white/5 flex justify-between items-end">
+              <span className="text-white font-bold">Grand Total</span>
+              <span className="text-4xl font-black text-white tracking-tighter leading-none">
+                ₹{totals.grandTotal.toFixed(2)}
               </span>
             </div>
           </div>
 
-          {/* Massive Action Button */}
           <button 
-            onClick={handlePrintAndSave}
+            onClick={handleFinalCheckout}
             disabled={cart.length === 0 || isProcessing}
-            className={`w-full py-5 rounded-3xl flex items-center justify-center gap-3 text-lg font-black tracking-wide transition-all ${
+            className={`w-full py-5 rounded-[2rem] flex items-center justify-center gap-3 text-lg font-black tracking-widest transition-all ${
               cart.length === 0 
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                : 'bg-[#2a2845] text-white hover:bg-black shadow-soft-3d active:scale-[0.98]'
+                ? 'bg-white/5 text-white/20 cursor-not-allowed' 
+                : 'bg-brand-blue text-white hover:bg-brand-blue/80 shadow-2xl shadow-brand-blue/20 active:scale-95'
             }`}
           >
             {isProcessing ? (
-              <span className="animate-pulse flex items-center gap-2">Processing...</span>
+              <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
             ) : (
-              <>
-                <Printer size={24} />
-                PRINT & SAVE BILL
-              </>
+              <><Printer size={22} /> PRINT & SAVE</>
             )}
           </button>
         </div>
@@ -267,29 +358,3 @@ export default function POSBilling() {
     </div>
   );
 }
-
-// Sub-components for cleaner code
-const PaymentBtn = ({ mode, icon: Icon, current, set, color }) => {
-  const isActive = current === mode;
-  return (
-    <button 
-      onClick={() => set(mode)}
-      className={`flex flex-col items-center justify-center py-3 rounded-2xl transition-all border ${
-        isActive 
-          ? `${color} border-transparent ring-4 ring-offset-2 ring-offset-brand-bg font-black scale-105 shadow-sm` 
-          : 'bg-white border-gray-100 text-brand-muted hover:bg-gray-50 font-bold'
-      }`}
-    >
-      <Icon size={20} className="mb-1.5" strokeWidth={isActive ? 2.5 : 2} />
-      <span className="text-[10px] tracking-widest">{mode}</span>
-    </button>
-  );
-};
-
-const ShoppingCartPlaceholder = () => (
-  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="8" cy="21" r="1" />
-    <circle cx="19" cy="21" r="1" />
-    <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
-  </svg>
-);
