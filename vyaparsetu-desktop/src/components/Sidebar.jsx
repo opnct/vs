@@ -13,12 +13,20 @@ import {
   CloudOff,
   RefreshCw,
   Lock,
-  LogOut
+  LogOut,
+  UserCircle,
+  LogIn
 } from 'lucide-react';
 
-export default function Sidebar({ activeTab, setActiveTab, onLock }) {
+export default function Sidebar({ activeTab, setActiveTab, onLock, isOffline }) {
   // Sync Status State: 'synced' | 'syncing' | 'offline'
-  const [syncStatus, setSyncStatus] = useState('synced');
+  const [syncStatus, setSyncStatus] = useState(isOffline ? 'offline' : 'synced');
+
+  // Handle exiting guest mode to sign in
+  const handleSignInRequest = () => {
+    localStorage.removeItem('vs_offline_mode');
+    window.dispatchEvent(new Event('storage'));
+  };
 
   // Organized production navigation mapping
   const sections = [
@@ -56,13 +64,25 @@ export default function Sidebar({ activeTab, setActiveTab, onLock }) {
   return (
     <aside className="w-64 h-full bg-brand-surface flex flex-col shrink-0 z-20 border-r border-white/5 select-none">
       
-      {/* 1. Window Decorations */}
-      <div className="p-6 flex items-center justify-between">
-        <div className="flex gap-2">
+      {/* 1. Window Decorations & Account Badge */}
+      <div className="p-6">
+        <div className="flex gap-2 mb-6">
           <div className="w-3 h-3 rounded-full bg-mac-red shadow-inner"></div>
           <div className="w-3 h-3 rounded-full bg-mac-yellow shadow-inner"></div>
           <div className="w-3 h-3 rounded-full bg-mac-green shadow-inner"></div>
         </div>
+
+        {isOffline && (
+          <div className="bg-status-orange/10 border border-status-orange/20 rounded-2xl px-4 py-3 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+            <div className="w-8 h-8 rounded-full bg-status-orange/20 flex items-center justify-center text-status-orange">
+              <UserCircle size={20} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-status-orange uppercase tracking-tighter">Guest Mode</p>
+              <p className="text-[12px] font-bold text-white leading-none">Offline Account</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 2. Scrollable Nav Content */}
@@ -104,18 +124,30 @@ export default function Sidebar({ activeTab, setActiveTab, onLock }) {
       {/* 3. Production Footer: Sync Status & Security */}
       <div className="p-4 bg-brand-dark/30 border-t border-white/5 space-y-3">
         
-        {/* Real-time Cloud Sync Status */}
-        <div className="px-3 py-3 bg-white/5 rounded-2xl flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {syncStatus === 'synced' && <CloudCheck size={16} className="text-mac-green" />}
-            {syncStatus === 'syncing' && <RefreshCw size={16} className="text-brand-blue animate-spin" />}
-            {syncStatus === 'offline' && <CloudOff size={16} className="text-mac-red" />}
-            <span className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-widest">
-              {syncStatus === 'synced' ? 'Cloud Synced' : syncStatus === 'syncing' ? 'Syncing...' : 'Offline'}
+        {/* Real-time Cloud Sync Status or Login Prompt */}
+        {isOffline ? (
+          <button 
+            onClick={handleSignInRequest}
+            className="w-full px-3 py-3 bg-brand-blue/10 hover:bg-brand-blue/20 border border-brand-blue/20 rounded-2xl flex items-center gap-3 transition-all group"
+          >
+            <LogIn size={16} className="text-brand-blue group-hover:scale-110 transition-transform" />
+            <span className="text-[11px] font-bold text-brand-blue uppercase tracking-widest">
+              Login / Cloud Sync
             </span>
+          </button>
+        ) : (
+          <div className="px-3 py-3 bg-white/5 rounded-2xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {syncStatus === 'synced' && <CloudCheck size={16} className="text-mac-green" />}
+              {syncStatus === 'syncing' && <RefreshCw size={16} className="text-brand-blue animate-spin" />}
+              {syncStatus === 'offline' && <CloudOff size={16} className="text-mac-red" />}
+              <span className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-widest">
+                {syncStatus === 'synced' ? 'Cloud Synced' : syncStatus === 'syncing' ? 'Syncing...' : 'Offline'}
+              </span>
+            </div>
+            <div className={`w-1.5 h-1.5 rounded-full ${syncStatus === 'synced' ? 'bg-mac-green shadow-[0_0_8px_#50e3c2]' : 'bg-mac-red'}`}></div>
           </div>
-          <div className={`w-1.5 h-1.5 rounded-full ${syncStatus === 'synced' ? 'bg-mac-green shadow-[0_0_8px_#50e3c2]' : 'bg-mac-red'}`}></div>
-        </div>
+        )}
 
         {/* Quick Session Actions */}
         <div className="flex gap-2">
