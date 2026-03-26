@@ -2,9 +2,26 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
-    "opener:default"
+    "opener:default",
+    "allow-start-cloud-sync",
+    "allow-sync-offline-pos",
+    "allow-print-receipt",
+    "allow-read-weighing-scale",
+    "allow-add-product",
+    "allow-add-supplier",
+    "allow-create-invoice",
+    "allow-get-daily-sales",
+    "allow-get-khata-due",
+    "allow-get-all-products",
+    "allow-get-all-customers",
+    "allow-get-all-suppliers",
+    "allow-get-all-staff",
+    "allow-get-customer-khata",
+    "allow-get-supplier-purchases"
   ]
 }

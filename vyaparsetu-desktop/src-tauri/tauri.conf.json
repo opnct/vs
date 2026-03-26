@@ -12,13 +12,17 @@
   "app": {
     "windows": [
       {
-        "title": "vyaparsetu-desktop",
-        "width": 800,
-        "height": 600
+        "title": "VyaparSetu Retail POS",
+        "width": 1280,
+        "height": 800,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "center": true
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://generativelanguage.googleapis.com https://*.firebaseio.com https://*.googleapis.com ipc: tauri:; font-src 'self' data:;"
     }
   },
   "bundle": {
@@ -30,6 +34,7 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "publisher": "VyaparSetu Technologies"
   }
 }
