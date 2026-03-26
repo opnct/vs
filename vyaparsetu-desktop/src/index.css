@@ -2,26 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Make the app feel like a native desktop app */
+/* Native Windows App Feel Variables */
+:root {
+  --app-bg: #f8f9fb;
+  --app-text: #2a2845;
+}
+
 body {
   margin: 0;
   padding: 0;
-  user-select: none; /* Prevents accidental text highlighting */
-  overflow: hidden; /* Prevents whole-page scrolling */
-  background-color: #0a0a0a;
+  /* Prevents accidental text highlighting like a real desktop app */
+  user-select: none; 
+  -webkit-user-select: none;
+  /* Prevents whole-page window scrolling */
+  overflow: hidden; 
+  background-color: var(--app-bg);
+  color: var(--app-text);
+  /* Buttery smooth typography rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar for inner scrollable areas */
+/* Re-enable selection ONLY for billing input fields and search bars */
+input, textarea {
+  user-select: auto;
+  -webkit-user-select: auto;
+}
+
+/* Remove ugly default focus outlines, we will use Tailwind rings */
+*:focus {
+  outline: none;
+}
+
+/* Custom, ultra-minimal soft scrollbar for inner content areas */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #111; 
+  background: transparent; 
 }
 ::-webkit-scrollbar-thumb {
-  background: #333; 
+  background: rgba(142, 140, 159, 0.2); /* Soft muted gray */
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #0d6efd; 
+  background: rgba(142, 140, 159, 0.5); 
 }
