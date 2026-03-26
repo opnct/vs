@@ -19,6 +19,10 @@ import POSBilling from './pages/POSBilling';
 import KhataLedger from './pages/KhataLedger';
 import Inventory from './pages/Inventory';
 import Settings from './pages/Settings';
+import Purchases from './pages/Purchases';
+import Suppliers from './pages/Suppliers';
+import Reports from './pages/Reports';
+import Staff from './pages/Staff';
 
 // The main POS interface (only visible when authenticated)
 const MainLayout = ({ user }) => {
@@ -36,6 +40,14 @@ const MainLayout = ({ user }) => {
         return <KhataLedger />;
       case 'inventory':
         return <Inventory />;
+      case 'purchases':
+        return <Purchases />;
+      case 'suppliers':
+        return <Suppliers />;
+      case 'reports':
+        return <Reports />;
+      case 'staff':
+        return <Staff />;
       case 'settings':
         return <Settings />;
       default:
