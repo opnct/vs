@@ -56,7 +56,7 @@ impl SyncEngine {
     }
 
     async fn sync_table(&self, sqlite_table: &str, firestore_collection: &str) -> Result<(), String> {
-        let (last_id, rows) = self.get_unsynced_rows(sqlite_table)?;
+        let (_last_id, rows) = self.get_unsynced_rows(sqlite_table)?;
 
         if rows.is_empty() {
             return Ok(());

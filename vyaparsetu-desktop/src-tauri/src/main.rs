@@ -220,11 +220,11 @@ fn get_daily_stats(state: tauri::State<AppState>) -> Result<Value, String> {
 fn add_purchase_record(state: tauri::State<AppState>, supplier_id: i64, bill_number: Option<String>, total_amount: f64, paid_amount: f64, payment_status: String, items: Vec<PurchaseItemInput>) -> Result<String, String> {
     let mut conn = state.db.lock().map_err(|e| e.to_string())?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
-    tx.execute("INSERT INTO purchases (supplier_id, bill_number, total_amount, paid_amount, payment_status) VALUES (?1, ?2, ?3, ?4, ?5)", params![supplier_id, bill_number, total_amount, paid_amount, payment_status])?;
+    tx.execute("INSERT INTO purchases (supplier_id, bill_number, total_amount, paid_amount, payment_status) VALUES (?1, ?2, ?3, ?4, ?5)", params![supplier_id, bill_number, total_amount, paid_amount, payment_status]).map_err(|e| e.to_string())?;
     let p_id = tx.last_insert_rowid();
     for item in items {
-        tx.execute("INSERT INTO purchase_items (purchase_id, product_id, product_name, quantity, purchase_price, mrp, total) VALUES (?1, ?2, (SELECT name FROM products WHERE id=?2), ?3, ?4, ?5, ?6)", params![p_id, item.productId, item.qty, item.purchasePrice, item.mrp, (item.qty * item.purchasePrice)])?;
-        tx.execute("UPDATE products SET stock_quantity = stock_quantity + ?1, purchase_price = ?2, selling_price = ?3 WHERE id = ?4", params![item.qty, item.purchasePrice, item.mrp, item.productId])?;
+        tx.execute("INSERT INTO purchase_items (purchase_id, product_id, product_name, quantity, purchase_price, mrp, total) VALUES (?1, ?2, (SELECT name FROM products WHERE id=?2), ?3, ?4, ?5, ?6)", params![p_id, item.productId, item.qty, item.purchasePrice, item.mrp, (item.qty * item.purchasePrice)]).map_err(|e| e.to_string())?;
+        tx.execute("UPDATE products SET stock_quantity = stock_quantity + ?1, purchase_price = ?2, selling_price = ?3 WHERE id = ?4", params![item.qty, item.purchasePrice, item.mrp, item.productId]).map_err(|e| e.to_string())?;
     }
     tx.commit().map_err(|e| e.to_string())?;
     Ok("Purchase and Stock synced".to_string())
@@ -235,8 +235,8 @@ fn add_purchase_record(state: tauri::State<AppState>, supplier_id: i64, bill_num
 #[tauri::command]
 fn get_all_products(state: tauri::State<AppState>) -> Result<Vec<Product>, String> {
     let conn = state.db.lock().map_err(|e| e.to_string())?;
-    let mut stmt = conn.prepare("SELECT id, name, barcode, category, unit, hsn_code, purchase_price, selling_price, stock_quantity FROM products ORDER BY name ASC")?;
-    let rows = stmt.query_map([], |r| Ok(Product { id: r.get(0)?, name: r.get(1)?, barcode: r.get(2)?, category: r.get(3)?, unit: r.get(4)?, hsn_code: r.get(5)?, purchase_price: r.get(6)?, selling_price: r.get(7)?, stock_quantity: r.get(8)? }))?;
+    let mut stmt = conn.prepare("SELECT id, name, barcode, category, unit, hsn_code, purchase_price, selling_price, stock_quantity FROM products ORDER BY name ASC").map_err(|e| e.to_string())?;
+    let rows = stmt.query_map([], |r| Ok(Product { id: r.get(0)?, name: r.get(1)?, barcode: r.get(2)?, category: r.get(3)?, unit: r.get(4)?, hsn_code: r.get(5)?, purchase_price: r.get(6)?, selling_price: r.get(7)?, stock_quantity: r.get(8)? })).map_err(|e| e.to_string())?;
     let mut results = Vec::new();
     for r in rows { results.push(r.map_err(|e| e.to_string())?); }
     Ok(results)
@@ -245,8 +245,8 @@ fn get_all_products(state: tauri::State<AppState>) -> Result<Vec<Product>, Strin
 #[tauri::command]
 fn get_all_suppliers(state: tauri::State<AppState>) -> Result<Vec<Value>, String> {
     let conn = state.db.lock().map_err(|e| e.to_string())?;
-    let mut stmt = conn.prepare("SELECT id, name, phone, gstin FROM suppliers ORDER BY name ASC")?;
-    let rows = stmt.query_map([], |r| Ok(json!({ "id": r.get::<_, i64>(0)?, "name": r.get::<_, String>(1)?, "phone": r.get::<_, Option<String>>(2)?, "gstin": r.get::<_, Option<String>>(3)? })))?;
+    let mut stmt = conn.prepare("SELECT id, name, phone, gstin FROM suppliers ORDER BY name ASC").map_err(|e| e.to_string())?;
+    let rows = stmt.query_map([], |r| Ok(json!({ "id": r.get::<_, i64>(0)?, "name": r.get::<_, String>(1)?, "phone": r.get::<_, Option<String>>(2)?, "gstin": r.get::<_, Option<String>>(3)? }))).map_err(|e| e.to_string())?;
     let mut results = Vec::new();
     for r in rows { results.push(r.map_err(|e| e.to_string())?); }
     Ok(results)
@@ -255,8 +255,8 @@ fn get_all_suppliers(state: tauri::State<AppState>) -> Result<Vec<Value>, String
 #[tauri::command]
 fn get_all_staff(state: tauri::State<AppState>) -> Result<Vec<Value>, String> {
     let conn = state.db.lock().map_err(|e| e.to_string())?;
-    let mut stmt = conn.prepare("SELECT id, name, phone, role, allow_discount, allow_delete FROM staff")?;
-    let rows = stmt.query_map([], |r| Ok(json!({ "id": r.get::<_, i64>(0)?, "name": r.get::<_, String>(1)?, "phone": r.get::<_, Option<String>>(2)?, "role": r.get::<_, String>(3)?, "allow_discount": r.get::<_, bool>(4)?, "allow_delete": r.get::<_, bool>(5)? })))?;
+    let mut stmt = conn.prepare("SELECT id, name, phone, role, allow_discount, allow_delete FROM staff").map_err(|e| e.to_string())?;
+    let rows = stmt.query_map([], |r| Ok(json!({ "id": r.get::<_, i64>(0)?, "name": r.get::<_, String>(1)?, "phone": r.get::<_, Option<String>>(2)?, "role": r.get::<_, String>(3)?, "allow_discount": r.get::<_, bool>(4)?, "allow_delete": r.get::<_, bool>(5)? }))).map_err(|e| e.to_string())?;
     let mut results = Vec::new();
     for r in rows { results.push(r.map_err(|e| e.to_string())?); }
     Ok(results)
