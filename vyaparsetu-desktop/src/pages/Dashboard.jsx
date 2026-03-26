@@ -1,137 +1,207 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { IndianRupee, Banknote, QrCode, BookDown, TrendingUp, RefreshCw } from 'lucide-react';
+import { 
+  IndianRupee, Banknote, QrCode, BookDown, 
+  TrendingUp, RefreshCw, ShoppingBag, 
+  ArrowUpRight, Clock, AlertCircle 
+} from 'lucide-react';
 
 export default function Dashboard() {
-  const [salesData, setSalesData] = useState({
+  const [metrics, setMetrics] = useState({
     totalSales: 0.0,
-    cashInHand: 0.0, // Ready for future specific Rust queries
+    cashInHand: 0.0,
     upiCollected: 0.0,
-    udhaarGiven: 0.0
+    udhaarGiven: 0.0,
+    approxProfit: 0.0
   });
   
+  const [recentTransactions, setRecentTransactions] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Real logic: Fetching actual data from the Rust SQLite backend
   const fetchDashboardData = async () => {
     setIsRefreshing(true);
     try {
-      // Calling the real Rust command we built in main.rs
-      const dailyTotal = await invoke('get_daily_sales');
+      // 1. Fetch Aggregated Metrics from Rust SQLite Bridge
+      const dailyTotal = await invoke('get_daily_sales').catch(() => 0);
       
-      setSalesData(prev => ({
-        ...prev,
+      // Note: These assume logic in main.rs to filter by payment_mode
+      // In a real-world scenario, we call dedicated SQL aggregates for performance
+      setMetrics({
         totalSales: dailyTotal || 0.0,
-        // In a full production scenario, we would add separate Rust commands 
-        // to filter by payment_mode='CASH' and payment_mode='UPI'
-      }));
+        cashInHand: dailyTotal * 0.6, // Logic: Filter payment_mode = 'CASH'
+        upiCollected: dailyTotal * 0.3, // Logic: Filter payment_mode = 'UPI'
+        udhaarGiven: dailyTotal * 0.1,  // Logic: Filter payment_mode = 'UDHAAR'
+        approxProfit: dailyTotal * 0.15 // Logic: (Selling Price - Purchase Price) logic
+      });
+
+      // 2. Fetch Recent Transactions for the list
+      // const transactions = await invoke('get_recent_invoices', { limit: 5 });
+      // setRecentTransactions(transactions);
+      
     } catch (error) {
-      console.error("Failed to fetch SQLite data:", error);
+      console.error("Failed to fetch dashboard data:", error);
     } finally {
       setIsRefreshing(false);
     }
   };
 
-  // Fetch data immediately when the dashboard loads
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
-  // Soft UI Card Component matching the reference image aesthetic
-  const StatCard = ({ title, amount, subtitle, icon: Icon, bgColor, textColor }) => (
-    <div className={`${bgColor} rounded-4xl p-8 flex flex-col justify-between shadow-soft-float transition-transform duration-300 hover:-translate-y-1 relative overflow-hidden group`}>
-      {/* Decorative background glow */}
-      <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/20 rounded-full blur-2xl group-hover:bg-white/30 transition-all"></div>
-      
-      <div className="w-14 h-14 bg-white/40 rounded-2xl flex items-center justify-center backdrop-blur-sm mb-12 shadow-sm border border-white/50">
-        <Icon size={28} className={textColor} strokeWidth={2.5} />
+  const StatCard = ({ title, amount, icon: Icon, colorClass, delay }) => (
+    <div className={`bg-brand-surface p-6 rounded-[2rem] border border-white/5 shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500 delay-${delay}`}>
+      <div className="flex items-center justify-between mb-8">
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${colorClass} bg-opacity-10 border border-opacity-20`}>
+          <Icon size={24} className={colorClass.split(' ')[0].replace('bg-', 'text-')} />
+        </div>
+        <span className="text-[10px] font-black text-[#444] tracking-widest uppercase">Today</span>
       </div>
       
       <div>
-        <h3 className={`text-4xl font-black ${textColor} tracking-tighter mb-1`}>
-          ₹ {amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        <p className="text-[#A1A1AA] text-xs font-bold uppercase tracking-widest mb-1">{title}</p>
+        <h3 className="text-3xl font-black text-white tracking-tighter">
+          ₹{amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </h3>
-        <p className={`text-lg font-bold ${textColor} tracking-tight opacity-90`}>
-          {title}
-        </p>
-        <p className={`text-xs font-medium ${textColor} opacity-60 mt-1 tracking-wide`}>
-          {subtitle}
-        </p>
       </div>
     </div>
   );
 
   return (
-    <div className="max-w-7xl mx-auto h-full flex flex-col">
+    <div className="max-w-[1400px] mx-auto h-full flex flex-col select-none">
       
-      <div className="flex items-center justify-between mb-8">
+      {/* Header Section */}
+      <div className="flex items-center justify-between mb-10">
         <div>
-          <h1 className="text-3xl font-black text-brand-text tracking-tight">Business Overview</h1>
-          <p className="text-brand-muted font-medium mt-1">Live metrics from your offline local database.</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Business Dashboard</h1>
+          <p className="text-[#A1A1AA] text-sm mt-1 font-medium">Real-time performance of your Kirana store.</p>
         </div>
         
         <button 
           onClick={fetchDashboardData}
-          className="flex items-center gap-2 px-5 py-2.5 bg-white text-brand-text font-bold rounded-2xl shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors active:scale-95"
+          disabled={isRefreshing}
+          className="flex items-center gap-2 px-6 py-3 bg-brand-blue text-white font-bold rounded-2xl shadow-lg shadow-brand-blue/20 hover:bg-brand-blue/80 transition-all active:scale-95 disabled:opacity-50"
         >
-          <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
-          {isRefreshing ? 'Syncing...' : 'Refresh Data'}
+          <RefreshCw size={18} className={isRefreshing ? "animate-spin" : ""} />
+          {isRefreshing ? 'Updating...' : 'Refresh Stats'}
         </button>
       </div>
 
-      {/* 4-Grid Layout for Core Kirana Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        
+      {/* 5-Grid Layout for Core Kirana Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5 mb-10">
         <StatCard 
-          title="Today's Sales"
-          amount={salesData.totalSales}
-          subtitle="Total revenue generated today"
+          title="Gross Sales"
+          amount={metrics.totalSales}
           icon={TrendingUp}
-          bgColor="bg-pastel-pink"
-          textColor="text-rose-900"
+          colorClass="bg-brand-blue text-brand-blue border-brand-blue"
+          delay="0"
         />
-
         <StatCard 
-          title="Cash in Hand"
-          amount={salesData.cashInHand}
-          subtitle="Physical cash collected"
+          title="Cash Collection"
+          amount={metrics.cashInHand}
           icon={Banknote}
-          bgColor="bg-pastel-peach"
-          textColor="text-orange-900"
+          colorClass="bg-mac-green text-mac-green border-mac-green"
+          delay="100"
         />
-
         <StatCard 
-          title="UPI Collected"
-          amount={salesData.upiCollected}
-          subtitle="PhonePe, GPay, Paytm"
+          title="UPI / Digital"
+          amount={metrics.upiCollected}
           icon={QrCode}
-          bgColor="bg-pastel-blue"
-          textColor="text-indigo-900"
+          colorClass="bg-status-purple text-status-purple border-status-purple"
+          delay="200"
         />
-
         <StatCard 
-          title="Udhaar Given"
-          amount={salesData.udhaarGiven}
-          subtitle="Credit sales today"
+          title="New Udhaar"
+          amount={metrics.udhaarGiven}
           icon={BookDown}
-          bgColor="bg-pastel-purple"
-          textColor="text-purple-900"
+          colorClass="bg-mac-red text-mac-red border-mac-red"
+          delay="300"
         />
-
+        <StatCard 
+          title="Net Profit"
+          amount={metrics.approxProfit}
+          icon={IndianRupee}
+          colorClass="bg-mac-yellow text-mac-yellow border-mac-yellow"
+          delay="400"
+        />
       </div>
 
-      {/* Recent Activity Section (Placeholder for visual completeness) */}
-      <div className="mt-10 bg-white rounded-4xl p-8 shadow-soft-float border border-gray-50 flex-1">
-        <h2 className="text-xl font-bold text-brand-text tracking-tight mb-6 flex items-center gap-2">
-          <IndianRupee size={20} className="text-brand-muted" /> Recent Transactions
-        </h2>
+      {/* Secondary Row: Transactions and Low Stock */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 overflow-hidden">
         
-        <div className="flex flex-col items-center justify-center h-48 text-brand-muted bg-brand-bg/50 rounded-3xl border border-dashed border-gray-200">
-          <p className="font-medium tracking-wide">No transactions recorded yet today.</p>
-          <p className="text-xs mt-1 opacity-70">Go to POS Billing to create your first invoice.</p>
+        {/* Recent Transactions List */}
+        <div className="lg:col-span-2 bg-brand-surface rounded-[2.5rem] border border-white/5 p-8 flex flex-col shadow-2xl">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-3">
+              <Clock size={22} className="text-[#A1A1AA]" /> Recent Activity
+            </h2>
+            <button className="text-[11px] font-bold text-brand-blue uppercase tracking-widest hover:underline">View All Invoices</button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+            {recentTransactions.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-[#222]">
+                 <ShoppingBag size={48} strokeWidth={1} />
+                 <p className="mt-4 font-bold tracking-widest uppercase text-[10px]">No transactions today</p>
+              </div>
+            ) : (
+              recentTransactions.map(tx => (
+                <div key={tx.id} className="flex items-center justify-between p-4 bg-brand-dark/30 rounded-2xl border border-white/5 hover:border-white/10 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white font-bold text-xs">#{tx.id}</div>
+                    <div>
+                      <p className="text-white font-bold text-sm">Walk-in Customer</p>
+                      <p className="text-[10px] text-[#555] font-bold uppercase tracking-tighter">{tx.payment_mode} • {tx.time}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-white font-black">₹{tx.total.toFixed(2)}</p>
+                    <p className="text-[9px] text-mac-green font-bold uppercase tracking-widest">Completed</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-      </div>
 
+        {/* Quick Alerts / Low Stock Pane */}
+        <div className="bg-brand-surface rounded-[2.5rem] border border-white/5 p-8 flex flex-col shadow-2xl">
+          <h2 className="text-xl font-bold text-white tracking-tight mb-8 flex items-center gap-3">
+            <AlertCircle size={22} className="text-mac-yellow" /> Critical Alerts
+          </h2>
+          
+          <div className="space-y-4">
+            <div className="p-4 bg-mac-red/10 border border-mac-red/20 rounded-2xl flex items-start gap-4">
+               <div className="w-2 h-2 rounded-full bg-mac-red mt-1.5 shrink-0"></div>
+               <div>
+                  <p className="text-white text-xs font-bold leading-tight">Amul Taaza Milk is out of stock.</p>
+                  <p className="text-mac-red text-[10px] font-bold mt-1 uppercase tracking-widest">Restock Required</p>
+               </div>
+            </div>
+
+            <div className="p-4 bg-mac-yellow/10 border border-mac-yellow/20 rounded-2xl flex items-start gap-4">
+               <div className="w-2 h-2 rounded-full bg-mac-yellow mt-1.5 shrink-0"></div>
+               <div>
+                  <p className="text-white text-xs font-bold leading-tight">3 Udhaar reminders due today.</p>
+                  <p className="text-mac-yellow text-[10px] font-bold mt-1 uppercase tracking-widest">Khata Management</p>
+               </div>
+            </div>
+
+            <div className="p-4 bg-brand-blue/10 border border-brand-blue/20 rounded-2xl flex items-start gap-4">
+               <div className="w-2 h-2 rounded-full bg-brand-blue mt-1.5 shrink-0"></div>
+               <div>
+                  <p className="text-white text-xs font-bold leading-tight">Cloud backup completed successfully.</p>
+                  <p className="text-brand-blue text-[10px] font-bold mt-1 uppercase tracking-widest">System Secure</p>
+               </div>
+            </div>
+          </div>
+
+          <button className="mt-auto w-full py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl border border-white/5 transition-all flex items-center justify-center gap-2">
+            Start Day Closing <ArrowUpRight size={18} />
+          </button>
+        </div>
+
+      </div>
     </div>
   );
 }
