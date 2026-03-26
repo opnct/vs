@@ -5,8 +5,10 @@ import {
   RefreshCw, Plus, MoreHorizontal, MessageSquare, 
   Download, CreditCard, Banknote, BookOpen, QrCode
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Dashboard() {
+  const { t } = useLanguage();
   const [metrics, setMetrics] = useState({
     totalSales: 0.0,
     cashInHand: 0.0,
@@ -52,11 +54,11 @@ export default function Dashboard() {
       
       {/* LEFT COLUMN - Overview Panel */}
       <div className="w-[420px] shrink-0 bg-brand-surface rounded-6xl p-8 flex flex-col shadow-soft-3d border border-white/5 overflow-hidden">
-        <h1 className="text-4xl font-medium tracking-tight mb-10">Overview</h1>
+        <h1 className="text-4xl font-medium tracking-tight mb-10">{t('dash_overview')}</h1>
         
         {/* Card Management Section */}
         <div className="flex items-center justify-between mb-4">
-          <span className="text-[#888888] text-sm font-medium">Card management</span>
+          <span className="text-[#888888] text-sm font-medium">{t('dash_card_mgmt')}</span>
           <button className="text-[#888888] hover:text-white transition-colors w-6 h-6 rounded-full border border-[#888888] flex items-center justify-center">
             <Plus size={14} />
           </button>
@@ -87,7 +89,7 @@ export default function Dashboard() {
         
         {/* Last Transactions Section */}
         <div className="flex items-center justify-between mb-5">
-          <span className="text-[#888888] text-sm font-medium">Last transactions</span>
+          <span className="text-[#888888] text-sm font-medium">{t('dash_last_tx')}</span>
           <button className="text-[#888888] hover:text-white transition-colors"><Search size={18} /></button>
         </div>
         
@@ -114,7 +116,7 @@ export default function Dashboard() {
            ))}
            <button className="bg-[#252525] rounded-3xl p-5 flex flex-col items-center justify-center border border-white/5 hover:bg-[#2a2a2a] transition-all text-[#888888] hover:text-white group">
              <MoreHorizontal size={24} className="mb-2 group-hover:scale-110 transition-transform" />
-             <span className="text-xs font-medium">View more</span>
+             <span className="text-xs font-medium">{t('dash_view_more')}</span>
            </button>
         </div>
       </div>
@@ -126,7 +128,7 @@ export default function Dashboard() {
          <div className="flex items-center justify-between mb-10 pl-2">
             <div className="flex items-center gap-4 text-[#888888] hover:text-white focus-within:text-white transition-all w-72">
                <Search size={22} />
-               <input type="text" placeholder="Search" className="bg-transparent border-none outline-none text-base font-medium w-full placeholder:text-[#555]" />
+               <input type="text" placeholder={t('search_placeholder')} className="bg-transparent border-none outline-none text-base font-medium w-full placeholder:text-[#555]" />
             </div>
             <div className="flex items-center gap-7">
                <button className="text-[#888888] hover:text-white transition-all"><Zap size={22} /></button>
@@ -148,7 +150,7 @@ export default function Dashboard() {
             {/* Chart Section */}
             <div className="flex-1 flex flex-col pl-2">
                <div className="flex items-center justify-between mb-6 text-[#888888]">
-                  <span className="text-[15px] font-medium">Current Week Pulse</span>
+                  <span className="text-[15px] font-medium">{t('dash_pulse')}</span>
                   <Calendar size={20} />
                </div>
                <h2 className="text-[3.5rem] font-medium tracking-tighter mb-8 text-white flex items-baseline gap-2">
@@ -161,7 +163,6 @@ export default function Dashboard() {
                      <span>Avg</span>
                      <span>0</span>
                   </div>
-                  {/* Visual Bar representation mapping over dummy ratios to fit the visual aesthetic */}
                   {[0.4, 0.7, 1.0, 0.6, 0.9, 0.5, 0.8].map((val, i) => (
                     <div key={i} className="flex-1 flex flex-col justify-end gap-1 relative group h-full mr-12">
                        <div className="w-full bg-[#1A1A1A] rounded-md absolute bottom-0 z-0 h-full"></div>
@@ -175,8 +176,8 @@ export default function Dashboard() {
             {/* Control Panel Block */}
             <div className="w-[340px] bg-brand-surface border border-white/5 rounded-4xl p-7 flex flex-col justify-between shadow-soft-3d">
                <div className="flex gap-8 mb-8 border-b border-white/5 pb-2">
-                  <button className="text-white font-medium text-[17px] relative after:content-[''] after:absolute after:-bottom-2.5 after:left-0 after:w-full after:h-0.5 after:bg-white pb-1">Deposit</button>
-                  <button className="text-[#888888] font-medium text-[17px] hover:text-white transition-all pb-1">Exchange</button>
+                  <button className="text-white font-medium text-[17px] relative after:content-[''] after:absolute after:-bottom-2.5 after:left-0 after:w-full after:h-0.5 after:bg-white pb-1">{t('dash_deposit')}</button>
+                  <button className="text-[#888888] font-medium text-[17px] hover:text-white transition-all pb-1">{t('dash_exchange')}</button>
                </div>
                <div className="flex gap-3 mb-5">
                   <button className="flex-1 bg-brand-dark border border-white/5 rounded-2xl p-4 flex items-center justify-between text-[15px] hover:border-white/20 transition-all">
@@ -190,14 +191,14 @@ export default function Dashboard() {
                </div>
                <div className="bg-brand-dark border border-white/5 rounded-2xl p-5 flex items-center justify-between mb-3 focus-within:border-white/20 transition-all">
                   <input type="text" className="bg-transparent border-none outline-none text-white font-medium text-lg w-full" defaultValue="550.00" />
-                  <span className="text-[#555] text-[13px] font-medium uppercase tracking-widest">Amount</span>
+                  <span className="text-[#555] text-[13px] font-medium uppercase tracking-widest">{t('dash_amount')}</span>
                </div>
                <div className="flex justify-between text-[11px] text-[#555] font-medium mb-8 uppercase tracking-widest">
                   <span>min 100.00 INR</span>
                   <span>max 50,000.00 INR</span>
                </div>
                <button className="w-full bg-white text-black font-bold text-[15px] py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors active:scale-95 shadow-xl">
-                  <RefreshCw size={18} /> Review Transfer
+                  <RefreshCw size={18} /> {t('dash_review')}
                </button>
             </div>
          </div>
@@ -206,7 +207,7 @@ export default function Dashboard() {
          <div className="grid grid-cols-3 gap-6 mb-8">
             <div className="bg-pastel-blue rounded-[2rem] p-7 flex flex-col justify-between text-black transition-transform hover:-translate-y-1 shadow-lg cursor-default">
                <div className="flex justify-between items-start mb-6">
-                  <span className="text-[13px] font-semibold tracking-wide text-black/70">Total earning</span>
+                  <span className="text-[13px] font-semibold tracking-wide text-black/70">{t('dash_total_earning')}</span>
                   <div className="p-1 rounded-lg border border-black/10"><CreditCard size={18} strokeWidth={1.5} /></div>
                </div>
                <h3 className="text-4xl font-medium tracking-tighter">
@@ -216,7 +217,7 @@ export default function Dashboard() {
             
             <div className="bg-pastel-yellow rounded-[2rem] p-7 flex flex-col justify-between text-black transition-transform hover:-translate-y-1 shadow-lg cursor-default">
                <div className="flex justify-between items-start mb-6">
-                  <span className="text-[13px] font-semibold tracking-wide text-black/70">Total spendings</span>
+                  <span className="text-[13px] font-semibold tracking-wide text-black/70">{t('dash_total_spending')}</span>
                   <div className="p-1 rounded-lg border border-black/10"><Banknote size={18} strokeWidth={1.5} /></div>
                </div>
                <h3 className="text-4xl font-medium tracking-tighter">
@@ -226,7 +227,7 @@ export default function Dashboard() {
             
             <div className="bg-pastel-green rounded-[2rem] p-7 flex flex-col justify-between text-black transition-transform hover:-translate-y-1 shadow-lg cursor-default">
                <div className="flex justify-between items-start mb-6">
-                  <span className="text-[13px] font-semibold tracking-wide text-black/70">Spending goal</span>
+                  <span className="text-[13px] font-semibold tracking-wide text-black/70">{t('dash_spending_goal')}</span>
                   <div className="p-1 rounded-lg border border-black/10"><BookOpen size={18} strokeWidth={1.5} /></div>
                </div>
                <h3 className="text-4xl font-medium tracking-tighter">
@@ -241,7 +242,7 @@ export default function Dashboard() {
                <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-3">
                     <MessageSquare size={20} className="text-[#888888] group-hover:text-white transition-colors" />
-                    <span className="text-white font-medium text-lg tracking-tight">Support</span>
+                    <span className="text-white font-medium text-lg tracking-tight">{t('dash_support')}</span>
                   </div>
                   <div className="flex items-center gap-3 text-[#555]">
                      <MessageSquare size={18} className="hover:text-white transition-colors" />
@@ -249,7 +250,7 @@ export default function Dashboard() {
                   </div>
                </div>
                <div>
-                  <p className="text-[15px] text-[#888888] font-medium mb-1">Contact our Customer Care team</p>
+                  <p className="text-[15px] text-[#888888] font-medium mb-1">{t('dash_support_desc')}</p>
                   <p className="text-[15px] text-white font-medium">vyaparsetu.help.com</p>
                </div>
             </div>
@@ -257,11 +258,11 @@ export default function Dashboard() {
             <div className="bg-brand-dark rounded-[2rem] p-8 flex flex-col justify-between border border-white/5 shadow-soft-float group hover:border-white/10 transition-colors cursor-pointer">
                <div className="flex items-center gap-3 mb-4">
                  <Download size={20} className="text-[#888888] group-hover:text-white transition-colors" />
-                 <span className="text-white font-medium text-lg tracking-tight">Time to get paid</span>
+                 <span className="text-white font-medium text-lg tracking-tight">{t('dash_time_paid')}</span>
                </div>
                <div>
                   <p className="text-[15px] text-[#888888] font-medium leading-relaxed mb-3">
-                    Request payments from clients all over the world and get paid for your services
+                    {t('dash_time_paid_desc')}
                   </p>
                   <button className="text-[15px] text-white font-medium hover:underline">Request a payment</button>
                </div>
