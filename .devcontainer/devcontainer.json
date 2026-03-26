@@ -6,16 +6,7 @@
       "version": "20"
     }
   },
-  "overrideCommand": false,
-  "mounts": [
-    "source=/dev,target=/dev,type=bind"
-  ],
-  "runArgs": [
-    "--privileged",
-    "--device=/dev/ttyS0:/dev/ttyS0",
-    "--device=/dev/ttyUSB0:/dev/ttyUSB0"
-  ],
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y libudev-dev pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev && npm install",
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y libudev-dev pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev git-lfs && npm install",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -24,11 +15,7 @@
         "serayuzgur.crates",
         "tauri-apps.tauri-vscode",
         "dbaeumer.vscode-eslint"
-      ],
-      "settings": {
-        "rust-analyzer.cargo.features": "all",
-        "rust-analyzer.checkOnSave.command": "clippy"
-      }
+      ]
     }
   },
   "remoteUser": "vscode"
