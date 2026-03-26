@@ -27,7 +27,15 @@ export default function Settings() {
   const fetchSettings = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await invoke('get_settings');
+      
+      // SAFETY CHECK: Verify Tauri API is available before invoking Rust
+      let data = null;
+      if (window.__TAURI_IPC__) {
+        data = await invoke('get_settings');
+      } else {
+        console.warn("Running in standard browser. Tauri API unavailable.");
+      }
+      
       if (data) {
         setSettings(data);
       }
@@ -55,7 +63,12 @@ export default function Settings() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await invoke('update_settings', { settings });
+      // SAFETY CHECK
+      if (window.__TAURI_IPC__) {
+        await invoke('update_settings', { settings });
+      } else {
+        console.log("Browser mode: Settings save simulated.");
+      }
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
     } catch (error) {
@@ -68,8 +81,13 @@ export default function Settings() {
   const triggerCloudBackup = async () => {
     setIsBackingUp(true);
     try {
-      // Force immediate SQLite -> Firestore Mirroring
-      await invoke('sync_offline_pos', { payload: "manual_trigger" });
+      // SAFETY CHECK
+      if (window.__TAURI_IPC__) {
+        // Force immediate SQLite -> Firestore Mirroring
+        await invoke('sync_offline_pos', { payload: "manual_trigger" });
+      } else {
+        console.log("Browser mode: Cloud backup simulated.");
+      }
     } catch (error) {
       console.error("Backup failed:", error);
     } finally {
@@ -79,8 +97,13 @@ export default function Settings() {
 
   const exportGSTR1 = async () => {
     try {
-      // Logic: Rust fetches entries from 'gst_records' and writes a physical CSV
-      await invoke('export_gst_report');
+      // SAFETY CHECK
+      if (window.__TAURI_IPC__) {
+        // Logic: Rust fetches entries from 'gst_records' and writes a physical CSV
+        await invoke('export_gst_report');
+      } else {
+        console.log("Browser mode: GSTR-1 export simulated.");
+      }
     } catch (error) {
       console.error("Export failed:", error);
     }
