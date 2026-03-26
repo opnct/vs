@@ -7,13 +7,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Deep, modern dark mode palette replacing the old pastels
+        // Deep, modern dark mode palette matching the reference image layered design
         brand: {
-          dark: '#1a1a1a',     // Main app background (right panel)
-          surface: '#252525',  // Sidebar and Card background (left panel)
-          blue: '#007AFF',     // Vivid blue for the active menu pill
+          black: '#000000',    // Pure black for the rightmost/main content panel
+          dark: '#111111',     // Ultra-dark background for the sidebar
+          surface: '#1c1c1c',  // Elevated cards and middle panels
+          blue: '#007AFF',     // Vivid blue for active states
           text: '#ffffff',     // Main headings and primary text
-          muted: '#a1a1aa',    // Subtitles, search bar, and secondary text
+          muted: '#888888',    // Subtitles, search bar, and secondary text
+          border: '#2a2a2a',   // Subtle borders between elements
+        },
+        // Exact pastel accent colors from the reference dashboard
+        pastel: {
+          blue: '#e3ebff',     // Total earning card
+          yellow: '#ffeeba',   // Total spendings card
+          green: '#c5ecd7',    // Spending goal card
         },
         // macOS window control buttons
         mac: {
@@ -21,25 +29,27 @@ export default {
           yellow: '#FFBD2E',
           green: '#27C93F',
         },
-        // Status indicator dots from the reference image
+        // Status indicator dots and transaction text colors
         status: {
-          green: '#8BC34A',    // e.g., Shopping list dot
-          orange: '#F5A623',   // e.g., Guidance dot
-          purple: '#B39DDB',   // e.g., Design meeting dot
+          green: '#4ade80',    // Positive transactions (e.g. + $685.00)
+          red: '#f87171',      // Negative transactions (e.g. - $510.50)
+          orange: '#F5A623',   // Offline / Warning
+          purple: '#B39DDB',   // Miscellaneous accents
         }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       boxShadow: {
-        // Updated shadows to blend smoothly in dark mode
-        'soft-3d': '0 20px 40px -15px rgba(0, 0, 0, 0.6)',
-        'soft-float': '0 10px 30px -10px rgba(0, 0, 0, 0.4)',
+        // Updated shadows to blend smoothly into pure black layers
+        'soft-3d': '0 20px 40px -15px rgba(0, 0, 0, 0.8)',
+        'soft-float': '0 10px 30px -10px rgba(0, 0, 0, 0.6)',
       },
       borderRadius: {
-        // Keeping the soft, rounded feel but suited for dark mode
-        '4xl': '2rem',
-        '5xl': '2.5rem',
+        // Expanded to include the extreme rounded corners from the design
+        '4xl': '2rem',     // 32px
+        '5xl': '2.5rem',   // 40px
+        '6xl': '3rem',     // 48px - Highly rounded corners for main layout panels
       }
     },
   },
