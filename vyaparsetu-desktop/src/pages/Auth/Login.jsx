@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, LogIn, Loader2 } from 'lucide-react';
+import { Mail, Lock, LogIn, Loader2, MonitorOff, ChevronRight } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebase';
 
@@ -19,7 +19,7 @@ export default function Login() {
 
     try {
       await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      // On success, App.jsx's onAuthStateChanged will naturally pick up the session and reroute
+      localStorage.removeItem('vs_offline_mode'); // Clear offline flag if user chooses cloud login
       navigate('/');
     } catch (err) {
       console.error(err);
@@ -27,6 +27,13 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOfflineMode = () => {
+    localStorage.setItem('vs_offline_mode', 'true');
+    // Dispatch event to notify App.jsx listeners in the same window
+    window.dispatchEvent(new Event('storage'));
+    navigate('/');
   };
 
   return (
@@ -75,11 +82,29 @@ export default function Login() {
 
           <button 
             type="submit" disabled={loading}
-            className="w-full bg-[#007AFF] hover:bg-[#0066D6] text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 transition-colors disabled:opacity-70 mt-2"
+            className="w-full bg-[#007AFF] hover:bg-[#0066D6] text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 transition-colors disabled:opacity-70 mt-2 shadow-lg shadow-brand-blue/10"
           >
             {loading ? <Loader2 size={20} className="animate-spin" /> : <><LogIn size={20} /> Access POS</>}
           </button>
         </form>
+
+        <div className="relative my-8">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/5"></div>
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-[#252525] px-4 text-[#444] font-bold tracking-widest">Or continue locally</span>
+          </div>
+        </div>
+
+        <button 
+          onClick={handleOfflineMode}
+          className="w-full bg-white/5 hover:bg-white/10 border border-white/5 text-white font-medium py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 group"
+        >
+          <MonitorOff size={18} className="text-status-orange" />
+          <span>Offline Mode (No Cloud)</span>
+          <ChevronRight size={16} className="text-[#444] group-hover:text-white transition-colors" />
+        </button>
 
         <p className="mt-8 text-center text-sm text-[#A1A1AA]">
           New shop owner? <Link to="/signup" className="text-[#007AFF] hover:text-white transition-colors font-medium">Create an account</Link>
