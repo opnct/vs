@@ -3,29 +3,36 @@ import { invoke } from '@tauri-apps/api/core';
 import { 
   Search, Plus, Minus, Trash2, Printer, 
   Banknote, QrCode, BookDown, CheckCircle2,
-  PauseCircle, PlayCircle, Calculator, Percent
+  PauseCircle, PlayCircle, Calculator, Percent,
+  Loader2
 } from 'lucide-react';
 
-// Real-world Kirana items with HSN and GST defaults
-const QUICK_ITEMS = [
-  { id: 101, name: "Aashirvaad Atta 5kg", price: 245.00, gst: 5, hsn: "1101" },
-  { id: 102, name: "Tata Salt 1kg", price: 28.00, gst: 0, hsn: "2501" },
-  { id: 103, name: "Fortune Oil 1L", price: 155.00, gst: 5, hsn: "1512" },
-  { id: 104, name: "Maggi 140g", price: 30.00, gst: 12, hsn: "1902" },
-  { id: 105, name: "Amul Butter 100g", price: 56.00, gst: 12, hsn: "0405" },
-  { id: 106, name: "Red Label Tea 250g", price: 140.00, gst: 5, hsn: "0902" },
-  { id: 107, name: "Sugar 1kg", price: 44.00, gst: 5, hsn: "1701" },
-  { id: 108, name: "Surf Excel 1kg", price: 135.00, gst: 18, hsn: "3402" },
-];
-
 export default function POSBilling() {
+  const [inventory, setInventory] = useState([]);
   const [cart, setCart] = useState([]);
   const [holdQueue, setHoldQueue] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [paymentMode, setPaymentMode] = useState("CASH");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoadingItems, setIsLoadingItems] = useState(true);
   
   const searchInputRef = useRef(null);
+
+  // 1. Fetch Real Data from SQLite on mount
+  useEffect(() => {
+    const loadInventory = async () => {
+      try {
+        setIsLoadingItems(true);
+        const data = await invoke('get_all_products');
+        setInventory(data);
+      } catch (error) {
+        console.error("Failed to load inventory:", error);
+      } finally {
+        setIsLoadingItems(false);
+      }
+    };
+    loadInventory();
+  }, []);
 
   // Auto-focus for barcode scanners
   useEffect(() => {
@@ -41,12 +48,17 @@ export default function POSBilling() {
           item.id === product.id ? { ...item, qty: item.qty + 1 } : item
         );
       }
+      
+      // Map DB fields to Cart structure (handling price and default GST)
       return [...prev, { 
-        ...product, 
+        id: product.id,
+        name: product.name,
+        price: product.selling_price,
         qty: 1, 
         discountPercent: 0,
-        sgstPercent: product.gst / 2,
-        cgstPercent: product.gst / 2
+        sgstPercent: 2.5, // Defaulting to 5% split if not in DB
+        cgstPercent: 2.5,
+        hsn: product.hsn_code || "N/A"
       }];
     });
     setSearchQuery("");
@@ -74,7 +86,6 @@ export default function POSBilling() {
   const resumeBill = (holdId) => {
     const bill = holdQueue.find(b => b.id === holdId);
     if (cart.length > 0) {
-      // If current cart isn't empty, hold it first
       setHoldQueue(prev => [...prev.filter(b => b.id !== holdId), { id: Date.now(), items: cart, time: new Date().toLocaleTimeString() }]);
     } else {
       setHoldQueue(prev => prev.filter(b => b.id !== holdId));
@@ -102,14 +113,14 @@ export default function POSBilling() {
     setIsProcessing(true);
 
     try {
+      const savedSettings = JSON.parse(localStorage.getItem('vyaparsetu_settings') || '{}');
       const shopInfo = {
-        name: "VyaparSetu Retail Store",
-        address: "Main Market, Sector 12, India",
-        contact: "+91 9876543210",
-        gstin: "27AAAAA0000A1Z5"
+        name: savedSettings.shopName || "VyaparSetu Retail",
+        address: savedSettings.shopAddress || "Local Store",
+        contact: savedSettings.phone || "0000000000",
+        gstin: savedSettings.gstin || ""
       };
 
-      // 1. Save to SQLite via Rust
       await invoke('create_invoice', {
         customerId: null,
         subtotal: totals.subtotal,
@@ -121,7 +132,6 @@ export default function POSBilling() {
         status: paymentMode === 'UDHAAR' ? 'UNPAID' : 'PAID'
       });
 
-      // 2. Trigger Real Thermal Print Command
       await invoke('print_receipt', {
         receipt: {
           shop: shopInfo,
@@ -166,7 +176,10 @@ export default function POSBilling() {
             className="flex-1 bg-transparent border-none outline-none text-xl font-medium text-white placeholder-[#666]"
             onKeyDown={(e) => {
               if(e.key === 'Enter' && searchQuery) {
-                const item = QUICK_ITEMS.find(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
+                const item = inventory.find(i => 
+                  i.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                  (i.barcode && i.barcode === searchQuery)
+                );
                 if(item) addToCart(item);
               }
             }}
@@ -176,7 +189,7 @@ export default function POSBilling() {
         {/* Quick Items Grid */}
         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[#A1A1AA] font-bold text-sm uppercase tracking-widest">Fast Selling Items</h3>
+            <h3 className="text-[#A1A1AA] font-bold text-sm uppercase tracking-widest">Available Inventory</h3>
             {holdQueue.length > 0 && (
               <span className="bg-mac-yellow/20 text-mac-yellow text-[10px] px-2 py-1 rounded-full font-bold">
                 {holdQueue.length} BILLS ON HOLD
@@ -184,22 +197,30 @@ export default function POSBilling() {
             )}
           </div>
           
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {QUICK_ITEMS.map(item => (
-              <button
-                key={item.id}
-                onClick={() => addToCart(item)}
-                className="bg-brand-surface p-5 rounded-3xl border border-white/5 hover:border-brand-blue/40 hover:bg-white/5 transition-all text-left active:scale-95 group"
-              >
-                <div className="text-xs font-bold text-[#A1A1AA] mb-1 group-hover:text-brand-blue transition-colors uppercase">{item.hsn}</div>
-                <h4 className="text-white font-bold leading-tight line-clamp-2 mb-3 h-10">{item.name}</h4>
-                <div className="flex items-end justify-between">
-                   <span className="text-2xl font-black text-white">₹{item.price}</span>
-                   <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full text-[#A1A1AA]">{item.gst}% GST</span>
-                </div>
-              </button>
-            ))}
-          </div>
+          {isLoadingItems ? (
+            <div className="flex items-center justify-center h-48">
+              <Loader2 className="animate-spin text-brand-blue" size={32} />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {inventory.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => addToCart(item)}
+                  className="bg-brand-surface p-5 rounded-3xl border border-white/5 hover:border-brand-blue/40 hover:bg-white/5 transition-all text-left active:scale-95 group"
+                >
+                  <div className="text-xs font-bold text-[#A1A1AA] mb-1 group-hover:text-brand-blue transition-colors uppercase">{item.hsn_code || 'HSN'}</div>
+                  <h4 className="text-white font-bold leading-tight line-clamp-2 mb-3 h-10">{item.name}</h4>
+                  <div className="flex items-end justify-between">
+                     <span className="text-2xl font-black text-white">₹{item.selling_price}</span>
+                     <span className={`text-[10px] px-2 py-0.5 rounded-full ${item.stock_quantity > 5 ? 'bg-mac-green/10 text-mac-green' : 'bg-mac-red/10 text-mac-red'}`}>
+                       {item.stock_quantity} {item.unit}
+                     </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Hold Queue Section */}
           {holdQueue.length > 0 && (
@@ -233,14 +254,12 @@ export default function POSBilling() {
           <div className="flex gap-2">
             <button 
               onClick={holdCurrentBill}
-              title="Hold Bill"
               className="p-2.5 rounded-xl bg-white/5 text-[#A1A1AA] hover:text-mac-yellow hover:bg-mac-yellow/10 transition-all"
             >
               <PauseCircle size={20} />
             </button>
             <button 
               onClick={() => setCart([])}
-              title="Clear Cart"
               className="p-2.5 rounded-xl bg-white/5 text-[#A1A1AA] hover:text-mac-red hover:bg-mac-red/10 transition-all"
             >
               <Trash2 size={20} />
@@ -269,14 +288,12 @@ export default function POSBilling() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {/* Qty Control */}
                   <div className="flex items-center gap-2 bg-brand-dark px-2 py-1 rounded-xl border border-white/5">
                     <button onClick={() => updateItem(item.id, 'qty', Math.max(1, item.qty - 1))} className="text-[#A1A1AA] hover:text-white p-1"><Minus size={14}/></button>
                     <span className="w-6 text-center text-xs font-bold text-white">{item.qty}</span>
                     <button onClick={() => updateItem(item.id, 'qty', item.qty + 1)} className="text-[#A1A1AA] hover:text-white p-1"><Plus size={14}/></button>
                   </div>
                   
-                  {/* Discount Input */}
                   <div className="flex items-center gap-1.5 bg-brand-dark px-3 py-1 rounded-xl border border-white/5 flex-1">
                     <Percent size={12} className="text-[#666]" />
                     <input 
@@ -298,8 +315,6 @@ export default function POSBilling() {
 
         {/* Footer Summary & Checkout */}
         <div className="p-6 bg-black/20 border-t border-white/5 space-y-4">
-          
-          {/* Payment Tabs */}
           <div className="grid grid-cols-4 gap-2">
             {['CASH', 'UPI', 'UDHAAR', 'SPLIT'].map(mode => (
               <button 
@@ -347,7 +362,7 @@ export default function POSBilling() {
             }`}
           >
             {isProcessing ? (
-              <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              <Loader2 className="animate-spin" size={24} />
             ) : (
               <><Printer size={22} /> PRINT & SAVE</>
             )}
