@@ -2,50 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Native macOS Dark App Feel Variables */
-:root {
-  --app-bg: #1a1a1a;
-  --app-text: #ffffff;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  /* Prevents accidental text highlighting like a real desktop app */
-  user-select: none; 
-  -webkit-user-select: none;
-  /* Prevents whole-page window scrolling */
-  overflow: hidden; 
-  background-color: var(--app-bg);
-  color: var(--app-text);
-  /* Buttery smooth typography rendering for dark backgrounds */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Re-enable selection ONLY for billing input fields and search bars */
-input, textarea {
-  user-select: auto;
-  -webkit-user-select: auto;
-}
-
-/* Remove ugly default focus outlines, we will use Tailwind rings */
-*:focus {
-  outline: none;
-}
-
-/* Custom, ultra-minimal dark scrollbar for inner content areas */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent; 
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15); /* Subtle white thumb for dark mode */
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3); /* Brighter white on hover */
+/* Custom Scrollbar for the sleek dark mode UI */
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #333333;
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #555555;
+  }
 }
