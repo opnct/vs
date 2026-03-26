@@ -105,6 +105,21 @@ pub fn initialize_database(app_dir: &Path) -> Result<Connection> {
             FOREIGN KEY(supplier_id) REFERENCES suppliers(id)
         );
 
+        -- 6b. PURCHASE ITEMS (Line items in a purchase bill)
+        CREATE TABLE IF NOT EXISTS purchase_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            purchase_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            product_name TEXT NOT NULL,
+            quantity REAL NOT NULL,
+            purchase_price REAL NOT NULL,
+            mrp REAL NOT NULL,
+            tax_amount REAL DEFAULT 0.0,
+            total REAL NOT NULL,
+            FOREIGN KEY(purchase_id) REFERENCES purchases(id),
+            FOREIGN KEY(product_id) REFERENCES products(id)
+        );
+
         -- 7. STAFF (Role-based access controls)
         CREATE TABLE IF NOT EXISTS staff (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -134,11 +149,30 @@ pub fn initialize_database(app_dir: &Path) -> Result<Connection> {
             FOREIGN KEY(invoice_id) REFERENCES invoices(id),
             FOREIGN KEY(purchase_id) REFERENCES purchases(id)
         );
+
+        -- 9. INVENTORY LOGS (Audit trail for every stock movement)
+        CREATE TABLE IF NOT EXISTS inventory_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id INTEGER NOT NULL,
+            quantity_change REAL NOT NULL,
+            change_type TEXT NOT NULL, -- 'SALE', 'PURCHASE', 'ADJUSTMENT', 'RETURN'
+            reference_id INTEGER,      -- Linked Invoice ID or Purchase ID
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(product_id) REFERENCES products(id)
+        );
+
+        -- 10. INDEXES (Optimized for High-Speed Kirana Retail)
+        CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode);
+        CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone);
+        CREATE INDEX IF NOT EXISTS idx_suppliers_phone ON suppliers(phone);
+        CREATE INDEX IF NOT EXISTS idx_staff_phone ON staff(phone);
+        CREATE INDEX IF NOT EXISTS idx_invoices_date ON invoices(created_at);
+        CREATE INDEX IF NOT EXISTS idx_khata_customer ON khata(customer_id);
     ";
 
     conn.execute_batch(schema)?;
 
-    println!("✅ Offline Database Initialized Successfully with 16-Module Support at: {:?}", db_path);
+    println!("✅ Offline Database Initialized Successfully with Production Schema at: {:?}", db_path);
 
     Ok(conn)
 }
