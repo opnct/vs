@@ -5,8 +5,14 @@ import {
   Usb, FileText, Cloud, Download, ShieldCheck,
   Smartphone, MapPin, Info, RefreshCw, Loader2
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Settings() {
+  const { t } = useLanguage();
+  
+  // Detect offline mode from local state
+  const isOfflineMode = localStorage.getItem('vs_offline_mode') === 'true';
+
   // Real Database-backed state
   const [settings, setSettings] = useState({
     shopName: "",
@@ -63,7 +69,6 @@ export default function Settings() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // SAFETY CHECK
       if (window.__TAURI_IPC__) {
         await invoke('update_settings', { settings });
       } else {
@@ -79,14 +84,11 @@ export default function Settings() {
   };
 
   const triggerCloudBackup = async () => {
+    if (isOfflineMode) return;
     setIsBackingUp(true);
     try {
-      // SAFETY CHECK
       if (window.__TAURI_IPC__) {
-        // Force immediate SQLite -> Firestore Mirroring
         await invoke('sync_offline_pos', { payload: "manual_trigger" });
-      } else {
-        console.log("Browser mode: Cloud backup simulated.");
       }
     } catch (error) {
       console.error("Backup failed:", error);
@@ -97,12 +99,8 @@ export default function Settings() {
 
   const exportGSTR1 = async () => {
     try {
-      // SAFETY CHECK
       if (window.__TAURI_IPC__) {
-        // Logic: Rust fetches entries from 'gst_records' and writes a physical CSV
         await invoke('export_gst_report');
-      } else {
-        console.log("Browser mode: GSTR-1 export simulated.");
       }
     } catch (error) {
       console.error("Export failed:", error);
@@ -122,9 +120,9 @@ export default function Settings() {
       
       {/* Header with Production Save Trigger */}
       <div className="flex items-center justify-between mb-10">
-        <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Configuration Engine</h1>
-          <p className="text-[#A1A1AA] text-sm mt-1 font-medium">Manage hardware endpoints and shop credentials.</p>
+        <div className="animate-in fade-in slide-in-from-left-4 duration-500">
+          <h1 className="text-3xl font-bold text-white tracking-tight">{t('set_title')}</h1>
+          <p className="text-[#A1A1AA] text-sm mt-1 font-medium">{t('set_desc')}</p>
         </div>
         
         <button 
@@ -137,31 +135,31 @@ export default function Settings() {
           }`}
         >
           {isSaving ? <Loader2 className="animate-spin" size={20} /> : isSaved ? <CheckCircle2 size={20} /> : <Save size={20} />}
-          {isSaved ? 'DATABASE SYNCED' : 'COMMIT CHANGES'}
+          {isSaved ? t('set_synced') : t('set_commit')}
         </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* IDENTITY & PORTS */}
-        <div className="space-y-8">
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           
           <div className="bg-brand-surface rounded-[2.5rem] p-8 border border-white/5 shadow-xl relative overflow-hidden">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-12 h-12 bg-brand-blue/10 rounded-2xl flex items-center justify-center text-brand-blue border border-brand-blue/20">
                 <Store size={24} />
               </div>
-              <h2 className="text-xl font-bold text-white tracking-tight">Business Identity</h2>
+              <h2 className="text-xl font-bold text-white tracking-tight">{t('set_identity')}</h2>
             </div>
 
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-[#555] uppercase tracking-[0.2em] ml-1">Registered Trading Name</label>
+                <label className="text-[10px] font-black text-[#555] uppercase tracking-[0.2em] ml-1">{t('set_shop_name')}</label>
                 <input name="shopName" value={settings.shopName} onChange={handleChange} className="w-full bg-brand-dark p-4 rounded-2xl border border-white/5 text-white font-bold focus:border-brand-blue outline-none transition-all" />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-[#555] uppercase tracking-[0.2em] ml-1">Receipt Billing Address</label>
+                <label className="text-[10px] font-black text-[#555] uppercase tracking-[0.2em] ml-1">{t('set_address')}</label>
                 <div className="relative">
                   <MapPin className="absolute left-4 top-4 text-[#333]" size={18} />
                   <textarea name="shopAddress" value={settings.shopAddress} onChange={handleChange} rows="2" className="w-full bg-brand-dark p-4 pl-12 rounded-2xl border border-white/5 text-white font-bold focus:border-brand-blue outline-none resize-none transition-all"></textarea>
@@ -169,7 +167,7 @@ export default function Settings() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-[#555] uppercase tracking-[0.2em] ml-1">Customer Helpline</label>
+                <label className="text-[10px] font-black text-[#555] uppercase tracking-[0.2em] ml-1">{t('set_phone')}</label>
                 <div className="relative">
                   <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-[#333]" size={18} />
                   <input name="phone" value={settings.phone} onChange={handleChange} className="w-full bg-brand-dark p-4 pl-12 rounded-2xl border border-white/5 text-white font-bold focus:border-brand-blue outline-none transition-all" />
@@ -183,13 +181,13 @@ export default function Settings() {
               <div className="w-12 h-12 bg-mac-yellow/10 rounded-2xl flex items-center justify-center text-mac-yellow border border-mac-yellow/20">
                 <Printer size={24} />
               </div>
-              <h2 className="text-xl font-bold text-white tracking-tight">Hardware Peripherals</h2>
+              <h2 className="text-xl font-bold text-white tracking-tight">{t('set_hardware')}</h2>
             </div>
 
             <div className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-[#555] uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                  <Usb size={14}/> Communication Port (ESC/POS)
+                  <Usb size={14}/> {t('set_port')}
                 </label>
                 <select name="printerPort" value={settings.printerPort} onChange={handleChange} className="w-full bg-brand-dark p-4 rounded-2xl border border-white/5 text-white font-bold focus:border-brand-blue outline-none cursor-pointer">
                   <option value="USB001">Auto-Detect USB</option>
@@ -201,7 +199,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-[#555] uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                  <FileText size={14}/> Invoice Footer Text
+                  <FileText size={14}/> {t('set_footer')}
                 </label>
                 <input name="receiptFooter" value={settings.receiptFooter} onChange={handleChange} className="w-full bg-brand-dark p-4 rounded-2xl border border-white/5 text-white font-medium focus:border-brand-blue outline-none" />
               </div>
@@ -211,14 +209,14 @@ export default function Settings() {
         </div>
 
         {/* TAX & CLOUD */}
-        <div className="space-y-8">
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
           
           <div className="bg-brand-surface rounded-[2.5rem] p-8 border border-white/5 shadow-xl">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-12 h-12 bg-mac-red/10 rounded-2xl flex items-center justify-center text-mac-red border border-mac-red/20">
                 <Receipt size={24} />
               </div>
-              <h2 className="text-xl font-bold text-white tracking-tight">Compliance & GST</h2>
+              <h2 className="text-xl font-bold text-white tracking-tight">{t('set_compliance')}</h2>
             </div>
 
             <div className="space-y-6">
@@ -228,8 +226,8 @@ export default function Settings() {
                     <ShieldCheck size={20} />
                   </div>
                   <div>
-                    <p className="font-bold text-white text-sm">Active GST Invoicing</p>
-                    <p className="text-[9px] font-black text-[#444] mt-0.5 uppercase tracking-widest">Enables HSN & Tax Splits</p>
+                    <p className="font-bold text-white text-sm">{t('set_gst_active')}</p>
+                    <p className="text-[9px] font-black text-[#444] mt-0.5 uppercase tracking-widest">{t('set_gst_desc')}</p>
                   </div>
                 </div>
                 <input type="checkbox" name="gstEnabled" checked={settings.gstEnabled} onChange={handleChange} className="w-6 h-6 accent-mac-green" />
@@ -237,7 +235,7 @@ export default function Settings() {
 
               {settings.gstEnabled && (
                 <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
-                  <label className="text-[10px] font-black text-mac-yellow uppercase tracking-[0.2em] ml-1">Business GSTIN</label>
+                  <label className="text-[10px] font-black text-mac-yellow uppercase tracking-[0.2em] ml-1">{t('set_gstin')}</label>
                   <input name="gstin" value={settings.gstin} onChange={handleChange} placeholder="e.g. 27AAAAA0000A1Z5" className="w-full bg-brand-dark p-4 rounded-2xl border border-mac-yellow/20 text-mac-yellow font-black focus:border-mac-yellow outline-none uppercase tracking-widest" />
                   <div className="flex items-center gap-2 mt-2 px-1">
                     <Info size={12} className="text-[#333]" />
@@ -250,7 +248,7 @@ export default function Settings() {
                 onClick={exportGSTR1}
                 className="w-full flex items-center justify-center gap-3 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-bold border border-white/10 transition-all text-sm uppercase tracking-widest active:scale-95"
               >
-                <Download size={18} className="text-mac-green" /> Download GSTR-1 Archive
+                <Download size={18} className="text-mac-green" /> {t('set_download_gstr')}
               </button>
             </div>
           </div>
@@ -260,27 +258,38 @@ export default function Settings() {
               <div className="w-12 h-12 bg-status-purple/10 rounded-2xl flex items-center justify-center text-status-purple border border-status-purple/20">
                 <Cloud size={24} />
               </div>
-              <h2 className="text-xl font-bold text-white tracking-tight">Cloud Node Status</h2>
+              <h2 className="text-xl font-bold text-white tracking-tight">{t('set_cloud_status')}</h2>
             </div>
 
             <div className="p-6 bg-brand-dark/50 rounded-3xl border border-white/5 mb-6">
                <div className="flex items-center justify-between mb-4">
                   <span className="text-[10px] font-black text-[#555] uppercase tracking-widest">Ledger Mirroring</span>
-                  <span className="text-mac-green text-[10px] font-black uppercase tracking-widest">Active & Protected</span>
+                  <span className={`${isOfflineMode ? 'text-status-orange' : 'text-mac-green'} text-[10px] font-black uppercase tracking-widest`}>
+                    {isOfflineMode ? t('offline_badge') : t('set_cloud_active')}
+                  </span>
                </div>
                <p className="text-xs text-[#A1A1AA] leading-relaxed">
-                 All local retail data is incrementally mirrored to your VyaparSetu Cloud node. Use the button below only if data is missing on other devices.
+                 {isOfflineMode 
+                    ? t('set_cloud_offline_msg') 
+                    : t('set_cloud_online_msg')}
                </p>
             </div>
 
-            <button 
-              onClick={triggerCloudBackup}
-              disabled={isBackingUp}
-              className="w-full flex items-center justify-center gap-3 py-5 bg-status-purple text-white rounded-2xl font-black tracking-widest hover:bg-status-purple/80 transition-all shadow-xl shadow-status-purple/20 active:scale-95 disabled:opacity-50"
-            >
-              {isBackingUp ? <RefreshCw size={20} className="animate-spin" /> : <Cloud size={20} />}
-              {isBackingUp ? 'FORCING SYNC...' : 'FORCE CLOUD SYNC'}
-            </button>
+            {!isOfflineMode ? (
+              <button 
+                onClick={triggerCloudBackup}
+                disabled={isBackingUp}
+                className="w-full flex items-center justify-center gap-3 py-5 bg-status-purple text-white rounded-2xl font-black tracking-widest hover:bg-status-purple/80 transition-all shadow-xl shadow-status-purple/20 active:scale-95 disabled:opacity-50"
+              >
+                {isBackingUp ? <RefreshCw size={20} className="animate-spin" /> : <Cloud size={20} />}
+                {isBackingUp ? 'FORCING SYNC...' : t('set_force_sync')}
+              </button>
+            ) : (
+              <div className="w-full py-4 px-6 bg-status-orange/10 border border-status-orange/20 rounded-2xl flex items-center gap-3 text-status-orange text-xs font-bold uppercase tracking-widest">
+                <Info size={16} />
+                {t('local_only')}
+              </div>
+            )}
           </div>
 
         </div>
