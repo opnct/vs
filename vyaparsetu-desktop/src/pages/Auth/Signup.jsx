@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Store, Mail, Phone, ArrowRight, Loader2 } from 'lucide-react';
+import { Store, Mail, Phone, ArrowRight, Loader2, MonitorOff, ChevronRight } from 'lucide-react';
 import { generateOTP, sendOTP } from '../../emailjs.config';
 
 export default function Signup() {
@@ -27,7 +27,7 @@ export default function Signup() {
       const result = await sendOTP(formData.email, formData.shopName, otpCode);
 
       if (result.success) {
-        // Securely pass the OTP and data to the verification screen via router state
+        localStorage.removeItem('vs_offline_mode');
         navigate('/verify-email', { state: { ...formData, expectedOtp: otpCode } });
       } else {
         setError("Failed to send verification email. Please check your EmailJS setup.");
@@ -37,6 +37,12 @@ export default function Signup() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOfflineMode = () => {
+    localStorage.setItem('vs_offline_mode', 'true');
+    window.dispatchEvent(new Event('storage'));
+    navigate('/');
   };
 
   return (
@@ -50,6 +56,9 @@ export default function Signup() {
         </div>
 
         <div className="mt-8 mb-8 text-center">
+          <div className="w-16 h-16 bg-[#252525] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/10 shadow-sm">
+            <span className="text-2xl font-black text-white tracking-tighter">VS</span>
+          </div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">Create Account</h1>
           <p className="text-[#A1A1AA] text-sm">Register your Kirana store to get started.</p>
         </div>
@@ -90,11 +99,29 @@ export default function Signup() {
 
           <button 
             type="submit" disabled={loading}
-            className="w-full bg-[#007AFF] hover:bg-[#0066D6] text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 transition-colors disabled:opacity-70 mt-2"
+            className="w-full bg-[#007AFF] hover:bg-[#0066D6] text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 transition-colors disabled:opacity-70 mt-2 shadow-lg shadow-brand-blue/10"
           >
             {loading ? <Loader2 size={20} className="animate-spin" /> : <><ArrowRight size={20} /> Continue</>}
           </button>
         </form>
+
+        <div className="relative my-8">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/5"></div>
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-[#252525] px-4 text-[#444] font-bold tracking-widest">Or skip setup</span>
+          </div>
+        </div>
+
+        <button 
+          onClick={handleOfflineMode}
+          className="w-full bg-white/5 hover:bg-white/10 border border-white/5 text-white font-medium py-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 group"
+        >
+          <MonitorOff size={18} className="text-status-orange" />
+          <span>Offline Mode (No Cloud)</span>
+          <ChevronRight size={16} className="text-[#444] group-hover:text-white transition-colors" />
+        </button>
 
         <p className="mt-8 text-center text-sm text-[#A1A1AA]">
           Already have an account? <Link to="/login" className="text-[#007AFF] hover:text-white transition-colors font-medium">Log in</Link>
