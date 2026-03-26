@@ -1,13 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { invoke } from '@tauri-apps/api/core';
 import { auth } from './firebase';
-import { Lock, Key, ShieldAlert, X, ChevronRight } from 'lucide-react';
+import { Lock, UserCheck, ShieldAlert, MonitorOff } from 'lucide-react';
 
 // --- LAYOUT COMPONENTS ---
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+
+// --- SYSTEM PAGES ---
+import Onboarding from './pages/Onboarding';
 
 // --- AUTH PAGES ---
 import Login from './pages/Auth/Login';
@@ -39,7 +42,6 @@ const StaffPinLock = ({ onUnlock }) => {
     
     if (newPin.length === 4) {
       try {
-        // Logic: Verify PIN against local SQLite 'staff' table via Rust
         const attendant = await invoke('verify_staff_pin', { pin: newPin });
         if (attendant) {
           onUnlock(attendant);
@@ -68,7 +70,6 @@ const StaffPinLock = ({ onUnlock }) => {
           <p className="text-[#A1A1AA] text-sm mt-2">Enter 4-digit PIN to unlock billing</p>
         </div>
 
-        {/* PIN Dots */}
         <div className="flex justify-center gap-4 mb-10">
           {[1, 2, 3, 4].map(i => (
             <div key={i} className={`w-4 h-4 rounded-full border-2 transition-all ${
@@ -77,7 +78,6 @@ const StaffPinLock = ({ onUnlock }) => {
           ))}
         </div>
 
-        {/* Numeric Keypad */}
         <div className="grid grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, "C", 0].map((val, idx) => (
             <button
@@ -96,12 +96,11 @@ const StaffPinLock = ({ onUnlock }) => {
   );
 };
 
-// The main POS interface
-const MainLayout = ({ user }) => {
+// The main POS interface layout controller
+const MainLayout = ({ user, isOffline }) => {
   const [activeTab, setActiveTab] = useState('pos');
   const [activeStaff, setActiveStaff] = useState(null);
 
-  // Dynamic Page Renderer for all 9 core Production Modules
   const renderPage = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard />;
@@ -117,33 +116,33 @@ const MainLayout = ({ user }) => {
     }
   };
 
-  // Logic: Show Lock Screen if no staff is logged in (except for basic dashboard)
   if (!activeStaff && activeTab !== 'dashboard') {
     return <StaffPinLock onUnlock={(staff) => setActiveStaff(staff)} />;
   }
 
   return (
     <div className="flex h-screen w-full bg-brand-dark text-brand-text font-sans overflow-hidden">
-      
-      {/* 1. SIDEBAR: Production Navigation mapping */}
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         onLock={() => setActiveStaff(null)} 
+        isOffline={isOffline}
       />
 
       <div className="flex-1 flex flex-col h-full relative">
+        <Header user={user} staff={activeStaff} isOffline={isOffline} />
         
-        {/* 2. HEADER: Context provider */}
-        <Header user={user} staff={activeStaff} />
-
-        {/* 3. MAIN: Scrollable content injection */}
         <main className="flex-1 overflow-y-auto p-6 md:p-10 bg-brand-dark custom-scrollbar">
+          {isOffline && (
+            <div className="mb-6 bg-status-orange/10 border border-status-orange/20 p-3 rounded-2xl flex items-center gap-3 text-status-orange text-xs font-medium">
+              <MonitorOff size={14} />
+              Running in Local Offline Mode. Data is not being synced to Cloud.
+            </div>
+          )}
           <div className="max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
             {renderPage()}
           </div>
         </main>
-        
       </div>
     </div>
   );
@@ -152,8 +151,9 @@ const MainLayout = ({ user }) => {
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasSeenTutorial, setHasSeenTutorial] = useState(localStorage.getItem('vs_onboarding_done') === 'true');
+  const [isOfflineMode, setIsOfflineMode] = useState(localStorage.getItem('vs_offline_mode') === 'true');
 
-  // Global Session Manager & Cloud Sync Trigger
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
@@ -161,10 +161,9 @@ export default function App() {
 
       if (currentUser) {
         try {
-          // Initialize the Rust SQLite -> Firestore background sync thread
           await invoke('start_cloud_sync', { uid: currentUser.uid });
         } catch (error) {
-          console.error("Backend Sync Initialization Failed:", error);
+          console.error("Cloud Sync Worker failed to start:", error);
         }
       }
     });
@@ -172,11 +171,21 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // Listen for storage changes (Tutorial finish or Offline mode toggle)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setHasSeenTutorial(localStorage.getItem('vs_onboarding_done') === 'true');
+      setIsOfflineMode(localStorage.getItem('vs_offline_mode') === 'true');
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   if (loading) {
     return (
       <div className="h-screen w-full bg-brand-dark flex flex-col items-center justify-center">
         <div className="w-16 h-16 border-4 border-brand-blue border-t-transparent rounded-full animate-spin mb-6 shadow-[0_0_30px_rgba(59,130,246,0.3)]"></div>
-        <p className="text-[#A1A1AA] font-bold tracking-widest text-[10px] uppercase animate-pulse">Initializing Production Core</p>
+        <p className="text-brand-muted font-bold tracking-widest text-[10px] uppercase animate-pulse">VyaparSetu Terminal Initializing</p>
       </div>
     );
   }
@@ -184,13 +193,23 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        {/* AUTHENTICATION STACK */}
-        <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-        <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/" />} />
-        <Route path="/verify-email" element={!user ? <VerifyEmail /> : <Navigate to="/" />} />
+        {/* STAGE 1: ONBOARDING */}
+        <Route path="/onboarding" element={!hasSeenTutorial ? <Onboarding onComplete={() => setHasSeenTutorial(true)} /> : <Navigate to="/login" />} />
+
+        {/* STAGE 2: AUTH STACK */}
+        <Route path="/login" element={
+          !hasSeenTutorial ? <Navigate to="/onboarding" /> : 
+          (user || isOfflineMode) ? <Navigate to="/" /> : <Login />
+        } />
         
-        {/* PRODUCTION RETAIL STACK */}
-        <Route path="/" element={user ? <MainLayout user={user} /> : <Navigate to="/login" />} />
+        <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/" />} />
+        <Route path="/verify-email" element={user && !user.emailVerified ? <VerifyEmail /> : <Navigate to="/" />} />
+        
+        {/* STAGE 3: CORE APPLICATION (PROTECTED) */}
+        <Route path="/" element={
+          (!hasSeenTutorial) ? <Navigate to="/onboarding" /> :
+          (user || isOfflineMode) ? <MainLayout user={user} isOffline={isOfflineMode} /> : <Navigate to="/login" />
+        } />
         
         {/* FALLBACK */}
         <Route path="*" element={<Navigate to="/" />} />
