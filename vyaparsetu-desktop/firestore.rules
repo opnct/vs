@@ -1,7 +1,73 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // ---------------------------------------------------------
+    // CORE AUTHENTICATION CHECK
+    // ---------------------------------------------------------
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // ---------------------------------------------------------
+    // KIRANA SHOP DATA ISOLATION & ROLE-BASED ACCESS
+    // Data is securely stored under the Shop Owner's UID (ownerUid)
+    // ---------------------------------------------------------
+    match /shops/{ownerUid} {
+      
+      // Role Verification Helpers
+      function isOwner() {
+        return isAuthenticated() && request.auth.uid == ownerUid;
+      }
+      
+      function isStaff() {
+        // Verifies if the logged-in user exists in this specific shop's staff registry
+        return isAuthenticated() && exists(/databases/$(database)/documents/shops/$(ownerUid)/staff/$(request.auth.uid));
+      }
+
+      // Shop Metadata (Settings, GST details, etc.)
+      allow read: if isOwner() || isStaff();
+      allow write: if isOwner(); // Only owner can edit shop settings
+
+      // MODULES: Products, Inventory, Customers & Khata
+      // Staff needs full access to add walk-in customers, give Udhaar, and update stock
+      match /products/{docId} {
+        allow read, write: if isOwner() || isStaff();
+      }
+      match /customers/{docId} {
+        allow read, write: if isOwner() || isStaff();
+      }
+      match /khata/{docId} {
+        allow read, write: if isOwner() || isStaff();
+      }
+      
+      // MODULES: Purchases & Suppliers
+      match /suppliers/{docId} {
+        allow read, write: if isOwner() || isStaff();
+      }
+      match /purchases/{docId} {
+        allow read, write: if isOwner() || isStaff();
+      }
+
+      // MODULE: Invoices & Billing (STRICT SECURITY RULE)
+      match /invoices/{docId} {
+        // Staff can view, create new bills, and update them (e.g., mark 'Paid')
+        allow read, create, update: if isOwner() || isStaff();
+        // ONLY the Owner can delete a generated bill to prevent fraud/theft
+        allow delete: if isOwner(); 
+      }
+
+      // MODULE: Staff Management
+      match /staff/{staffUid} {
+        allow read: if isOwner() || isStaff();
+        allow write: if isOwner(); // Only owners can add, modify, or remove staff members
+      }
+    }
+
+    // ---------------------------------------------------------
+    // GLOBAL LOCKDOWN
+    // Deny all access to any path not explicitly defined above
+    // ---------------------------------------------------------
     match /{document=**} {
       allow read, write: if false;
     }
