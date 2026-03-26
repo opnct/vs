@@ -23,7 +23,15 @@ export default function POSBilling() {
     const loadInventory = async () => {
       try {
         setIsLoadingItems(true);
-        const data = await invoke('get_all_products');
+        
+        // SAFETY CHECK: Verify Tauri API is available before invoking Rust
+        let data = [];
+        if (window.__TAURI_IPC__) {
+          data = await invoke('get_all_products');
+        } else {
+          console.warn("Running in standard browser. Tauri API unavailable.");
+        }
+        
         setInventory(data);
       } catch (error) {
         console.error("Failed to load inventory:", error);
@@ -121,31 +129,36 @@ export default function POSBilling() {
         gstin: savedSettings.gstin || ""
       };
 
-      await invoke('create_invoice', {
-        customerId: null,
-        subtotal: totals.subtotal,
-        discountPercent: 0, 
-        discountAmount: totals.totalDiscount,
-        taxAmount: totals.totalTax,
-        totalAmount: totals.grandTotal,
-        paymentMode: paymentMode,
-        status: paymentMode === 'UDHAAR' ? 'UNPAID' : 'PAID'
-      });
+      // SAFETY CHECK: Only hit Rust backend if inside Tauri window
+      if (window.__TAURI_IPC__) {
+        await invoke('create_invoice', {
+          customerId: null,
+          subtotal: totals.subtotal,
+          discountPercent: 0, 
+          discountAmount: totals.totalDiscount,
+          taxAmount: totals.totalTax,
+          totalAmount: totals.grandTotal,
+          paymentMode: paymentMode,
+          status: paymentMode === 'UDHAAR' ? 'UNPAID' : 'PAID'
+        });
 
-      await invoke('print_receipt', {
-        receipt: {
-          shop: shopInfo,
-          items: cart.map(i => ({
-            name: i.name,
-            qty: i.qty,
-            price: i.price,
-            discount_percent: i.discountPercent,
-            sgst_percent: i.sgstPercent,
-            cgst_percent: i.cgstPercent
-          })),
-          payment_mode: paymentMode
-        }
-      });
+        await invoke('print_receipt', {
+          receipt: {
+            shop: shopInfo,
+            items: cart.map(i => ({
+              name: i.name,
+              qty: i.qty,
+              price: i.price,
+              discount_percent: i.discountPercent,
+              sgst_percent: i.sgstPercent,
+              cgst_percent: i.cgstPercent
+            })),
+            payment_mode: paymentMode
+          }
+        });
+      } else {
+        console.log("Browser mode: Checkout simulated successfully.");
+      }
 
       setCart([]);
       setPaymentMode("CASH");
