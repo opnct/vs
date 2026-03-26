@@ -2,10 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Native Windows App Feel Variables */
+/* Native macOS Dark App Feel Variables */
 :root {
-  --app-bg: #f8f9fb;
-  --app-text: #2a2845;
+  --app-bg: #1a1a1a;
+  --app-text: #ffffff;
 }
 
 body {
@@ -18,7 +18,7 @@ body {
   overflow: hidden; 
   background-color: var(--app-bg);
   color: var(--app-text);
-  /* Buttery smooth typography rendering */
+  /* Buttery smooth typography rendering for dark backgrounds */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -34,18 +34,18 @@ input, textarea {
   outline: none;
 }
 
-/* Custom, ultra-minimal soft scrollbar for inner content areas */
+/* Custom, ultra-minimal dark scrollbar for inner content areas */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent; 
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(142, 140, 159, 0.2); /* Soft muted gray */
+  background: rgba(255, 255, 255, 0.15); /* Subtle white thumb for dark mode */
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(142, 140, 159, 0.5); 
+  background: rgba(255, 255, 255, 0.3); /* Brighter white on hover */
 }
