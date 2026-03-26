@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { 
   Search, Plus, Package, AlertTriangle, 
   CheckCircle2, MoreHorizontal, Hash, 
-  Tag, Layers, Scale, X 
+  Tag, Layers, Scale, X, Loader2 
 } from 'lucide-react';
 
 export default function Inventory() {
@@ -12,7 +12,7 @@ export default function Inventory() {
   const [isAdding, setIsAdding] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // New Product Form State - Strict Kirana requirements
+  // New Product Form State
   const [newProduct, setNewProduct] = useState({ 
     name: '', 
     barcode: '', 
@@ -24,26 +24,22 @@ export default function Inventory() {
     hsn_code: ''
   });
 
-  // Fetch real data from SQLite on load
-  useEffect(() => {
-    fetchInventory();
-  }, []);
-
-  const fetchInventory = async () => {
+  // Fetch real data from SQLite
+  const fetchInventory = useCallback(async () => {
     try {
-      // Logic: Fetch all products from local SQLite
-      // Note: In a real flow, you'd use a dedicated command like 'get_all_products'
-      // For now, we interact with the existing Rust bridge
       setLoading(true);
-      // Simulated fetch for structure - replace with real invoke if command exists
-      // const data = await invoke('get_all_products');
-      // setProducts(data);
+      const data = await invoke('get_all_products');
+      setProducts(data || []);
     } catch (error) {
       console.error("Database Fetch Error:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
@@ -59,18 +55,14 @@ export default function Inventory() {
         hsnCode: newProduct.hsn_code || null
       });
 
-      // Update local state for immediate feedback
-      const addedItem = {
-        id: Date.now(),
-        ...newProduct,
-        selling_price: parseFloat(newProduct.selling_price),
-        mrp: parseFloat(newProduct.mrp) || parseFloat(newProduct.selling_price),
-        stock_quantity: parseFloat(newProduct.stock_quantity) || 0
-      };
-
-      setProducts([addedItem, ...products]);
+      // Reset form and refresh list from database
       setIsAdding(false);
-      setNewProduct({ name: '', barcode: '', category: 'Grocery', mrp: '', selling_price: '', stock_quantity: '', unit: 'pcs', hsn_code: '' });
+      setNewProduct({ 
+        name: '', barcode: '', category: 'Grocery', 
+        mrp: '', selling_price: '', stock_quantity: '', 
+        unit: 'pcs', hsn_code: '' 
+      });
+      await fetchInventory();
     } catch (error) {
       console.error("Database Error:", error);
     }
@@ -78,7 +70,8 @@ export default function Inventory() {
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (p.barcode && p.barcode.includes(searchQuery))
+    (p.barcode && p.barcode.includes(searchQuery)) ||
+    (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -109,7 +102,7 @@ export default function Inventory() {
         </button>
       </div>
 
-      {/* 2. Add Product Form (Dark Reference Style) */}
+      {/* 2. Add Product Form */}
       {isAdding && (
         <div className="bg-brand-surface p-8 rounded-[2rem] border border-white/5 shadow-2xl animate-in slide-in-from-top-4 duration-300 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-brand-blue"></div>
@@ -125,7 +118,7 @@ export default function Inventory() {
 
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Category</label>
-              <select value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue">
+              <select value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue outline-none">
                 <option>Grocery</option>
                 <option>Snacks</option>
                 <option>Dairy</option>
@@ -136,12 +129,12 @@ export default function Inventory() {
 
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Selling Price (₹) *</label>
-              <input required type="number" step="0.01" value={newProduct.selling_price} onChange={e => setNewProduct({...newProduct, selling_price: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-mac-green font-black focus:border-mac-green" placeholder="0.00" />
+              <input required type="number" step="0.01" value={newProduct.selling_price} onChange={e => setNewProduct({...newProduct, selling_price: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-mac-green font-black focus:border-mac-green outline-none" placeholder="0.00" />
             </div>
 
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Unit Type</label>
-              <select value={newProduct.unit} onChange={e => setNewProduct({...newProduct, unit: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue">
+              <select value={newProduct.unit} onChange={e => setNewProduct({...newProduct, unit: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue outline-none">
                 <option value="pcs">Pieces (pcs)</option>
                 <option value="kg">Kilogram (kg)</option>
                 <option value="gm">Grams (gm)</option>
@@ -152,12 +145,12 @@ export default function Inventory() {
 
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Barcode / HSN</label>
-              <input type="text" value={newProduct.barcode} onChange={e => setNewProduct({...newProduct, barcode: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue" placeholder="Scan or Type..." />
+              <input type="text" value={newProduct.barcode} onChange={e => setNewProduct({...newProduct, barcode: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue outline-none" placeholder="Scan or Type..." />
             </div>
 
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Initial Stock</label>
-              <input type="number" step="0.001" value={newProduct.stock_quantity} onChange={e => setNewProduct({...newProduct, stock_quantity: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue" placeholder="0.000" />
+              <input type="number" step="0.001" value={newProduct.stock_quantity} onChange={e => setNewProduct({...newProduct, stock_quantity: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue outline-none" placeholder="0.000" />
             </div>
 
             <button type="submit" className="bg-brand-blue text-white font-black py-4 rounded-xl hover:bg-brand-blue/80 transition-all uppercase tracking-widest text-[13px] shadow-lg shadow-brand-blue/20">
@@ -168,9 +161,14 @@ export default function Inventory() {
       )}
 
       {/* 3. Main Inventory Grid */}
-      <div className="flex-1 bg-brand-surface rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col shadow-2xl">
+      <div className="flex-1 bg-brand-surface rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col shadow-2xl relative">
         
-        {/* Visual Table Header */}
+        {loading && (
+          <div className="absolute inset-0 bg-brand-surface/50 backdrop-blur-sm z-10 flex items-center justify-center">
+            <Loader2 className="animate-spin text-brand-blue" size={40} />
+          </div>
+        )}
+
         <div className="grid grid-cols-12 gap-4 px-8 py-5 bg-brand-dark/30 border-b border-white/5 text-[11px] font-black text-[#666] uppercase tracking-[0.2em]">
           <div className="col-span-5">Product Details</div>
           <div className="col-span-2">Pricing</div>
@@ -178,12 +176,11 @@ export default function Inventory() {
           <div className="col-span-2 text-right">Actions</div>
         </div>
 
-        {/* Scrollable List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-          {filteredProducts.length === 0 ? (
+          {products.length === 0 && !loading ? (
             <div className="h-full flex flex-col items-center justify-center text-[#333]">
               <Layers size={64} strokeWidth={1} />
-              <p className="mt-4 font-bold tracking-widest uppercase text-xs">No products in stock</p>
+              <p className="mt-4 font-bold tracking-widest uppercase text-xs">No products in local database</p>
             </div>
           ) : (
             filteredProducts.map(product => {
@@ -194,7 +191,6 @@ export default function Inventory() {
               return (
                 <div key={product.id} className="grid grid-cols-12 gap-4 px-6 py-4 items-center bg-brand-dark/20 hover:bg-white/5 rounded-3xl border border-white/5 transition-all group">
                   
-                  {/* Name & Metadata */}
                   <div className="col-span-5 flex items-center gap-5">
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border border-white/5 ${
                       isOutOfStock ? 'bg-mac-red/10 text-mac-red' : 'bg-brand-dark text-[#A1A1AA]'
@@ -216,15 +212,13 @@ export default function Inventory() {
                     </div>
                   </div>
 
-                  {/* Pricing */}
                   <div className="col-span-2">
                     <div className="text-mac-green font-black text-xl leading-none">₹{product.selling_price.toFixed(2)}</div>
-                    {product.mrp > product.selling_price && (
-                      <div className="text-[11px] font-bold text-[#444] line-through mt-1">MRP ₹{product.mrp.toFixed(2)}</div>
+                    {product.purchase_price > 0 && (
+                      <div className="text-[11px] font-bold text-[#444] mt-1">Cost ₹{product.purchase_price.toFixed(2)}</div>
                     )}
                   </div>
 
-                  {/* Stock Status with Dot Colors from reference image */}
                   <div className="col-span-3 flex items-center gap-4">
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1.5 pr-4">
@@ -244,12 +238,12 @@ export default function Inventory() {
                             isLowStock ? 'bg-mac-yellow w-1/4' : 
                             'bg-mac-green w-full'
                           }`}
+                          style={{ width: isOutOfStock ? '0%' : isLowStock ? '25%' : '100%' }}
                         ></div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Actions */}
                   <div className="col-span-2 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
                     <button className="p-3 bg-white/5 hover:bg-white/10 text-[#A1A1AA] hover:text-white rounded-xl transition-all">
                       <Scale size={18} />
