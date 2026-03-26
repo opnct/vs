@@ -1,188 +1,292 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Search, Plus, Package, AlertTriangle, CheckCircle2, MoreHorizontal } from 'lucide-react';
-
-// Real-world Kirana initial inventory (Matches your database schema)
-const INITIAL_INVENTORY = [
-  { id: 1, name: "Aashirvaad Atta", barcode: "8901234567890", mrp: 260.00, selling_price: 240.00, stock: 4.0, unit: "packet", low_stock_alert: 5.0 },
-  { id: 2, name: "Toor Dal (Loose)", barcode: "", mrp: 180.00, selling_price: 160.00, stock: 12.5, unit: "kg", low_stock_alert: 5.0 },
-  { id: 3, name: "Tata Salt", barcode: "8901000000001", mrp: 28.00, selling_price: 28.00, stock: 45.0, unit: "packet", low_stock_alert: 10.0 },
-  { id: 4, name: "Sugar (Loose)", barcode: "", mrp: 45.00, selling_price: 42.00, stock: 2.3, unit: "kg", low_stock_alert: 15.0 },
-  { id: 5, name: "Amul Taaza Milk", barcode: "8901234560000", mrp: 27.00, selling_price: 27.00, stock: 0.0, unit: "packet", low_stock_alert: 10.0 },
-];
+import { 
+  Search, Plus, Package, AlertTriangle, 
+  CheckCircle2, MoreHorizontal, Hash, 
+  Tag, Layers, Scale, X 
+} from 'lucide-react';
 
 export default function Inventory() {
-  const [products, setProducts] = useState(INITIAL_INVENTORY);
+  const [products, setProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // New Product Form State
-  const [newProduct, setNewProduct] = useState({ name: '', barcode: '', mrp: '', selling_price: '', stock: '', unit: 'pcs' });
+  // New Product Form State - Strict Kirana requirements
+  const [newProduct, setNewProduct] = useState({ 
+    name: '', 
+    barcode: '', 
+    category: 'Grocery',
+    mrp: '', 
+    selling_price: '', 
+    stock_quantity: '', 
+    unit: 'pcs',
+    hsn_code: ''
+  });
 
-  // Filter logic
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (p.barcode && p.barcode.includes(searchQuery))
-  );
+  // Fetch real data from SQLite on load
+  useEffect(() => {
+    fetchInventory();
+  }, []);
 
-  // Real Database Logic
+  const fetchInventory = async () => {
+    try {
+      // Logic: Fetch all products from local SQLite
+      // Note: In a real flow, you'd use a dedicated command like 'get_all_products'
+      // For now, we interact with the existing Rust bridge
+      setLoading(true);
+      // Simulated fetch for structure - replace with real invoke if command exists
+      // const data = await invoke('get_all_products');
+      // setProducts(data);
+    } catch (error) {
+      console.error("Database Fetch Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddProduct = async (e) => {
     e.preventDefault();
-    if (!newProduct.name || !newProduct.selling_price) return alert("Name and Selling Price are required.");
+    if (!newProduct.name || !newProduct.selling_price) return;
     
     try {
       // Calls the actual SQLite database via Rust command
       await invoke('add_product', { 
         name: newProduct.name, 
         barcode: newProduct.barcode || null, 
-        sellingPrice: parseFloat(newProduct.selling_price) 
+        sellingPrice: parseFloat(newProduct.selling_price),
+        unit: newProduct.unit,
+        hsnCode: newProduct.hsn_code || null
       });
 
-      // Update local UI state
+      // Update local state for immediate feedback
       const addedItem = {
-        id: Date.now(), // Temporary ID until full refresh
+        id: Date.now(),
         ...newProduct,
-        mrp: parseFloat(newProduct.mrp) || parseFloat(newProduct.selling_price),
         selling_price: parseFloat(newProduct.selling_price),
-        stock: parseFloat(newProduct.stock) || 0,
-        low_stock_alert: 5.0
+        mrp: parseFloat(newProduct.mrp) || parseFloat(newProduct.selling_price),
+        stock_quantity: parseFloat(newProduct.stock_quantity) || 0
       };
 
       setProducts([addedItem, ...products]);
       setIsAdding(false);
-      setNewProduct({ name: '', barcode: '', mrp: '', selling_price: '', stock: '', unit: 'pcs' });
+      setNewProduct({ name: '', barcode: '', category: 'Grocery', mrp: '', selling_price: '', stock_quantity: '', unit: 'pcs', hsn_code: '' });
     } catch (error) {
-      alert("Database Error: " + error);
+      console.error("Database Error:", error);
     }
   };
 
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (p.barcode && p.barcode.includes(searchQuery))
+  );
+
   return (
-    <div className="flex flex-col h-full max-w-[1600px] mx-auto gap-6">
+    <div className="flex flex-col h-full gap-6 select-none font-sans">
       
-      {/* Header & Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 shrink-0">
+      {/* 1. Header & Dark Search Bar */}
+      <div className="flex items-center justify-between gap-6 shrink-0">
         <div className="flex-1 max-w-xl">
-          <div className="bg-white p-3 rounded-3xl shadow-soft-float border border-gray-100 flex items-center gap-4 transition-all focus-within:ring-4 ring-brand-bg">
-            <div className="w-10 h-10 bg-pastel-peach rounded-xl flex items-center justify-center shrink-0">
-              <Search size={20} className="text-orange-900" />
-            </div>
+          <div className="bg-brand-surface p-2 rounded-2xl border border-white/5 flex items-center gap-3 focus-within:border-brand-blue/50 transition-all">
+            <div className="pl-3 text-[#A1A1AA]"><Search size={20} /></div>
             <input 
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search product name or scan barcode..."
-              className="flex-1 bg-transparent text-lg font-bold text-brand-text placeholder-brand-muted/50 border-none outline-none"
+              placeholder="Search by name, category or scan barcode"
+              className="flex-1 bg-transparent border-none outline-none text-[15px] text-white placeholder-[#666] py-2"
             />
           </div>
         </div>
         
         <button 
           onClick={() => setIsAdding(!isAdding)}
-          className="bg-brand-text text-white hover:bg-black font-black tracking-wide uppercase py-4 px-8 rounded-3xl flex items-center justify-center gap-3 transition-transform active:scale-95 shadow-soft-3d shrink-0"
+          className={`flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold transition-all active:scale-95 ${
+            isAdding ? 'bg-mac-red/10 text-mac-red border border-mac-red/20' : 'bg-brand-blue text-white shadow-lg shadow-brand-blue/20'
+          }`}
         >
-          {isAdding ? 'CANCEL' : <><Plus size={20} /> ADD NEW PRODUCT</>}
+          {isAdding ? <><X size={20} /> Cancel</> : <><Plus size={20} /> Add Product</>}
         </button>
       </div>
 
-      {/* Add Product Form (Conditional) */}
+      {/* 2. Add Product Form (Dark Reference Style) */}
       {isAdding && (
-        <form onSubmit={handleAddProduct} className="bg-white p-8 rounded-4xl shadow-soft-float border border-gray-100 shrink-0 grid grid-cols-1 md:grid-cols-6 gap-6 items-end animate-in slide-in-from-top-4 duration-300">
-          <div className="md:col-span-2 space-y-2">
-            <label className="text-xs font-black text-brand-muted uppercase tracking-widest">Product Name *</label>
-            <input required type="text" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full bg-brand-bg p-4 rounded-2xl border border-gray-200 font-bold focus:outline-none focus:border-indigo-400" placeholder="e.g. Loose Sugar" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-black text-brand-muted uppercase tracking-widest">Barcode</label>
-            <input type="text" value={newProduct.barcode} onChange={e => setNewProduct({...newProduct, barcode: e.target.value})} className="w-full bg-brand-bg p-4 rounded-2xl border border-gray-200 font-bold focus:outline-none focus:border-indigo-400" placeholder="Scan..." />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-black text-brand-muted uppercase tracking-widest">MRP (₹)</label>
-            <input type="number" step="0.01" value={newProduct.mrp} onChange={e => setNewProduct({...newProduct, mrp: e.target.value})} className="w-full bg-brand-bg p-4 rounded-2xl border border-gray-200 font-bold focus:outline-none focus:border-indigo-400" placeholder="0.00" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-black text-brand-muted uppercase tracking-widest">Sell Price *</label>
-            <input required type="number" step="0.01" value={newProduct.selling_price} onChange={e => setNewProduct({...newProduct, selling_price: e.target.value})} className="w-full bg-brand-bg p-4 rounded-2xl border border-gray-200 font-bold focus:outline-none focus:border-indigo-400" placeholder="0.00" />
-          </div>
-          <button type="submit" className="bg-pastel-blue text-indigo-900 border border-indigo-200 font-black py-4 rounded-2xl hover:bg-indigo-100 transition-colors uppercase tracking-widest text-sm">
-            SAVE
-          </button>
-        </form>
+        <div className="bg-brand-surface p-8 rounded-[2rem] border border-white/5 shadow-2xl animate-in slide-in-from-top-4 duration-300 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-brand-blue"></div>
+          <h3 className="text-white font-bold text-lg mb-6 flex items-center gap-2">
+            <Package size={20} className="text-brand-blue" /> Product Registration
+          </h3>
+          
+          <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+            <div className="md:col-span-2 space-y-2">
+              <label className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Product Name *</label>
+              <input required type="text" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue transition-all" placeholder="e.g. Loose Sugar" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Category</label>
+              <select value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue">
+                <option>Grocery</option>
+                <option>Snacks</option>
+                <option>Dairy</option>
+                <option>Beverages</option>
+                <option>Personal Care</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Selling Price (₹) *</label>
+              <input required type="number" step="0.01" value={newProduct.selling_price} onChange={e => setNewProduct({...newProduct, selling_price: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-mac-green font-black focus:border-mac-green" placeholder="0.00" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Unit Type</label>
+              <select value={newProduct.unit} onChange={e => setNewProduct({...newProduct, unit: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue">
+                <option value="pcs">Pieces (pcs)</option>
+                <option value="kg">Kilogram (kg)</option>
+                <option value="gm">Grams (gm)</option>
+                <option value="packet">Packet</option>
+                <option value="ltr">Litre (L)</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Barcode / HSN</label>
+              <input type="text" value={newProduct.barcode} onChange={e => setNewProduct({...newProduct, barcode: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue" placeholder="Scan or Type..." />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Initial Stock</label>
+              <input type="number" step="0.001" value={newProduct.stock_quantity} onChange={e => setNewProduct({...newProduct, stock_quantity: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue" placeholder="0.000" />
+            </div>
+
+            <button type="submit" className="bg-brand-blue text-white font-black py-4 rounded-xl hover:bg-brand-blue/80 transition-all uppercase tracking-widest text-[13px] shadow-lg shadow-brand-blue/20">
+              Save Product
+            </button>
+          </form>
+        </div>
       )}
 
-      {/* Main Inventory Table */}
-      <div className="flex-1 bg-white rounded-4xl shadow-soft-float border border-gray-50 overflow-hidden flex flex-col">
-        {/* Table Header */}
-        <div className="grid grid-cols-12 gap-4 p-6 bg-gray-50/50 border-b border-gray-100 text-xs font-black text-brand-muted uppercase tracking-[0.2em]">
-          <div className="col-span-4">Product Name</div>
-          <div className="col-span-2">Price (MRP)</div>
-          <div className="col-span-2">Selling Price</div>
-          <div className="col-span-3">Stock Status</div>
-          <div className="col-span-1 text-center">Act</div>
+      {/* 3. Main Inventory Grid */}
+      <div className="flex-1 bg-brand-surface rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col shadow-2xl">
+        
+        {/* Visual Table Header */}
+        <div className="grid grid-cols-12 gap-4 px-8 py-5 bg-brand-dark/30 border-b border-white/5 text-[11px] font-black text-[#666] uppercase tracking-[0.2em]">
+          <div className="col-span-5">Product Details</div>
+          <div className="col-span-2">Pricing</div>
+          <div className="col-span-3">Stock Inventory</div>
+          <div className="col-span-2 text-right">Actions</div>
         </div>
 
-        {/* Table Body */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {filteredProducts.map(product => {
-            const isOutOfStock = product.stock <= 0;
-            const isLowStock = product.stock > 0 && product.stock <= product.low_stock_alert;
+        {/* Scrollable List */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+          {filteredProducts.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-[#333]">
+              <Layers size={64} strokeWidth={1} />
+              <p className="mt-4 font-bold tracking-widest uppercase text-xs">No products in stock</p>
+            </div>
+          ) : (
+            filteredProducts.map(product => {
+              const stockVal = parseFloat(product.stock_quantity || 0);
+              const isOutOfStock = stockVal <= 0;
+              const isLowStock = stockVal > 0 && stockVal <= 5;
 
-            return (
-              <div key={product.id} className="grid grid-cols-12 gap-4 p-4 items-center bg-brand-bg hover:bg-gray-50 rounded-3xl border border-transparent hover:border-gray-200 transition-all group">
-                
-                <div className="col-span-4 flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                    isOutOfStock ? 'bg-rose-100 text-rose-600' : 'bg-white shadow-sm text-brand-text'
-                  }`}>
-                    <Package size={20} />
+              return (
+                <div key={product.id} className="grid grid-cols-12 gap-4 px-6 py-4 items-center bg-brand-dark/20 hover:bg-white/5 rounded-3xl border border-white/5 transition-all group">
+                  
+                  {/* Name & Metadata */}
+                  <div className="col-span-5 flex items-center gap-5">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border border-white/5 ${
+                      isOutOfStock ? 'bg-mac-red/10 text-mac-red' : 'bg-brand-dark text-[#A1A1AA]'
+                    }`}>
+                      <Package size={24} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-[17px] leading-tight">{product.name}</h4>
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white/5 text-[#666] flex items-center gap-1 uppercase">
+                          <Tag size={10} /> {product.category || 'General'}
+                        </span>
+                        {product.barcode && (
+                          <span className="text-[10px] font-mono text-[#444] tracking-widest uppercase">
+                            <Hash size={10} className="inline mr-1" /> {product.barcode}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-bold text-brand-text text-base leading-tight">{product.name}</h4>
-                    <p className="text-[10px] font-mono tracking-widest text-brand-muted mt-1 uppercase">
-                      {product.barcode || 'NO BARCODE'} • {product.unit}
-                    </p>
+
+                  {/* Pricing */}
+                  <div className="col-span-2">
+                    <div className="text-mac-green font-black text-xl leading-none">₹{product.selling_price.toFixed(2)}</div>
+                    {product.mrp > product.selling_price && (
+                      <div className="text-[11px] font-bold text-[#444] line-through mt-1">MRP ₹{product.mrp.toFixed(2)}</div>
+                    )}
                   </div>
-                </div>
 
-                <div className="col-span-2 font-bold text-gray-400 line-through">
-                  ₹{product.mrp.toFixed(2)}
-                </div>
+                  {/* Stock Status with Dot Colors from reference image */}
+                  <div className="col-span-3 flex items-center gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1.5 pr-4">
+                        <span className={`text-[13px] font-black ${isOutOfStock ? 'text-mac-red' : 'text-white'}`}>
+                          {stockVal.toFixed(3)} {product.unit}
+                        </span>
+                        <span className={`w-2 h-2 rounded-full ${
+                          isOutOfStock ? 'bg-mac-red animate-pulse' : 
+                          isLowStock ? 'bg-mac-yellow' : 
+                          'bg-mac-green'
+                        }`}></span>
+                      </div>
+                      <div className="w-full h-1.5 bg-brand-dark rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-500 ${
+                            isOutOfStock ? 'w-0' : 
+                            isLowStock ? 'bg-mac-yellow w-1/4' : 
+                            'bg-mac-green w-full'
+                          }`}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
 
-                <div className="col-span-2 font-black text-brand-text text-lg">
-                  ₹{product.selling_price.toFixed(2)}
-                </div>
+                  {/* Actions */}
+                  <div className="col-span-2 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                    <button className="p-3 bg-white/5 hover:bg-white/10 text-[#A1A1AA] hover:text-white rounded-xl transition-all">
+                      <Scale size={18} />
+                    </button>
+                    <button className="p-3 bg-white/5 hover:bg-white/10 text-[#A1A1AA] hover:text-white rounded-xl transition-all">
+                      <MoreHorizontal size={18} />
+                    </button>
+                  </div>
 
-                <div className="col-span-3 flex items-center gap-3">
-                  {isOutOfStock ? (
-                    <span className="flex items-center gap-2 bg-rose-100 text-rose-800 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest border border-rose-200">
-                      <AlertTriangle size={14} /> Out of Stock
-                    </span>
-                  ) : isLowStock ? (
-                    <>
-                      <span className="font-black text-orange-600">{product.stock} {product.unit}</span>
-                      <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border border-orange-200">Low</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="font-black text-brand-text">{product.stock} {product.unit}</span>
-                      <span className="bg-green-100 text-green-700 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border border-green-200">
-                        <CheckCircle2 size={12} className="inline mr-1" /> OK
-                      </span>
-                    </>
-                  )}
                 </div>
-
-                <div className="col-span-1 flex justify-center">
-                  <button className="p-2 text-gray-400 hover:text-brand-text transition-colors">
-                    <MoreHorizontal size={20} />
-                  </button>
-                </div>
-
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
+
+        {/* Footer Summary Bar */}
+        <div className="px-8 py-4 bg-brand-dark/50 border-t border-white/5 flex items-center justify-between">
+          <div className="flex gap-6">
+             <div className="flex items-center gap-2">
+               <span className="w-2 h-2 rounded-full bg-mac-red"></span>
+               <span className="text-[11px] font-bold text-[#666] uppercase tracking-widest">Out of stock</span>
+             </div>
+             <div className="flex items-center gap-2">
+               <span className="w-2 h-2 rounded-full bg-mac-yellow"></span>
+               <span className="text-[11px] font-bold text-[#666] uppercase tracking-widest">Low stock</span>
+             </div>
+             <div className="flex items-center gap-2">
+               <span className="w-2 h-2 rounded-full bg-mac-green"></span>
+               <span className="text-[11px] font-bold text-[#666] uppercase tracking-widest">Available</span>
+             </div>
+          </div>
+          <div className="text-[11px] font-black text-brand-blue uppercase tracking-[0.2em]">
+            Total SKUs: {products.length}
+          </div>
+        </div>
+
       </div>
-
     </div>
   );
 }
