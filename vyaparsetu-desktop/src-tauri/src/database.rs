@@ -161,7 +161,23 @@ pub fn initialize_database(app_dir: &Path) -> Result<Connection> {
             FOREIGN KEY(product_id) REFERENCES products(id)
         );
 
-        -- 10. INDEXES (Optimized for High-Speed Kirana Retail)
+        -- 10. SETTINGS (Shop Identity & Hardware Config)
+        CREATE TABLE IF NOT EXISTS settings (
+            id INTEGER PRIMARY KEY CHECK (id = 1), -- Ensures only one row exists
+            shop_name TEXT NOT NULL,
+            shop_address TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            gst_enabled BOOLEAN NOT NULL DEFAULT 0,
+            gstin TEXT,
+            printer_port TEXT NOT NULL DEFAULT 'USB001',
+            receipt_footer TEXT
+        );
+
+        -- Seed default settings if the table is empty
+        INSERT OR IGNORE INTO settings (id, shop_name, shop_address, phone, gst_enabled, gstin, printer_port, receipt_footer)
+        VALUES (1, 'VyaparSetu Retail', 'Main Market', '9876543210', 0, '', 'USB001', 'Thank you for shopping! Visit again.');
+
+        -- 11. INDEXES (Optimized for High-Speed Kirana Retail)
         CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode);
         CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone);
         CREATE INDEX IF NOT EXISTS idx_suppliers_phone ON suppliers(phone);
