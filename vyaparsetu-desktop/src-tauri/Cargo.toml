@@ -24,3 +24,9 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-global-shortcut = "2"
 rusqlite = { version = "0.31.0", features = ["bundled"] }
+
+# --- Production Capabilities (Hardware & Cloud) ---
+serialport = "4.3.0"           # Native communication with Thermal Printers & Scales
+reqwest = { version = "0.12", features = ["json"] } # Secure REST Sync for Firebase Cloud
+chrono = { version = "0.4", features = ["serde"] }   # Precise Ledger & SQL Datetime handling
+tokio = { version = "1", features = ["full"] }      # Async runtime for background sync engine
