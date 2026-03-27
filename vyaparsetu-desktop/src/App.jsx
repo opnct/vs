@@ -5,6 +5,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { auth } from './firebase';
 import { Lock, UserCheck, ShieldAlert, MonitorOff } from 'lucide-react';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
+import { useAuthStore } from './store/useAuthStore';
 
 // --- LAYOUT COMPONENTS ---
 import Sidebar from './components/Sidebar';
@@ -29,6 +30,11 @@ import Suppliers from './pages/Suppliers';
 import Reports from './pages/Reports';
 import Staff from './pages/Staff';
 
+// --- NEW MODULE PLACEHOLDERS (To be replaced with real files later) ---
+const DailyOps = () => <div className="flex items-center justify-center h-full text-[#888888] font-bold text-xl tracking-widest uppercase animate-pulse">Daily Operations Module Initializing...</div>;
+const Delivery = () => <div className="flex items-center justify-center h-full text-[#888888] font-bold text-xl tracking-widest uppercase animate-pulse">Delivery Management Module Initializing...</div>;
+const Communications = () => <div className="flex items-center justify-center h-full text-[#888888] font-bold text-xl tracking-widest uppercase animate-pulse">Communications Module Initializing...</div>;
+
 /**
  * STAFF PIN LOCK SCREEN
  * A production-grade security barrier that protects the POS from unauthorized access.
@@ -45,7 +51,7 @@ const StaffPinLock = ({ onUnlock }) => {
     if (newPin.length === 4) {
       // Master override PIN to prevent lockouts before database setup
       if (newPin === '1234') {
-        onUnlock({ id: 'master', name: 'Master Admin', role: 'owner' });
+        onUnlock({ id: 'master', username: 'Master Admin', role: 'OWNER', permissions: ['ALL'] });
         return;
       }
 
@@ -108,7 +114,11 @@ const StaffPinLock = ({ onUnlock }) => {
 const MainLayout = ({ user, isOffline }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('pos');
-  const [activeStaff, setActiveStaff] = useState(null);
+  
+  // Wire up Global RBAC Auth Store
+  const activeStaff = useAuthStore(state => state.staff);
+  const loginStaff = useAuthStore(state => state.loginStaff);
+  const logoutStaff = useAuthStore(state => state.logoutStaff);
 
   const renderPage = () => {
     switch (activeTab) {
@@ -121,12 +131,18 @@ const MainLayout = ({ user, isOffline }) => {
       case 'reports':   return <Reports />;
       case 'staff':     return <Staff />;
       case 'settings':  return <Settings />;
-      default:          return <POSBilling />;
+      case 'daily-ops': return <DailyOps />;
+      case 'delivery':  return <Delivery />;
+      case 'communications': return <Communications />;
+      default:          return <POSBilling staff={activeStaff} />;
     }
   };
 
-  if (!activeStaff && activeTab !== 'dashboard') {
-    return <StaffPinLock onUnlock={(staff) => setActiveStaff(staff)} />;
+  // Safe Public Routes that DO NOT require a Staff PIN to view
+  const isPublicTab = ['dashboard', 'settings', 'daily-ops', 'delivery', 'communications'].includes(activeTab);
+
+  if (!activeStaff && !isPublicTab) {
+    return <StaffPinLock onUnlock={(staff) => loginStaff(staff)} />;
   }
 
   return (
@@ -134,7 +150,7 @@ const MainLayout = ({ user, isOffline }) => {
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
-        onLock={() => setActiveStaff(null)} 
+        onLock={logoutStaff} 
         isOffline={isOffline}
       />
 
@@ -148,7 +164,7 @@ const MainLayout = ({ user, isOffline }) => {
               {t('set_cloud_offline_msg')}
             </div>
           )}
-          <div className="max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500 h-full">
             {renderPage()}
           </div>
         </main>
