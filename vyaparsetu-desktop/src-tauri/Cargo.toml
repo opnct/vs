@@ -30,3 +30,5 @@ serialport = "4.3.0"           # Native communication with Thermal Printers & Sc
 reqwest = { version = "0.12", features = ["json"] } # Secure REST Sync for Firebase Cloud
 chrono = { version = "0.4", features = ["serde"] }   # Precise Ledger & SQL Datetime handling
 tokio = { version = "1", features = ["full"] }      # Async runtime for background sync engine
+r2d2 = "0.8.10"
+r2d2_sqlite = "0.33.0"
