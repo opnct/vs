@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  CheckCircle2, Lock, KeyRound, Loader2, 
-  Mail, ShieldCheck, ArrowRight, ChevronLeft 
-} from 'lucide-react';
+import { ChevronLeft, MonitorOff } from 'lucide-react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
+import PremiumInput from '../../components/ui/PremiumInput';
+import PremiumButton from '../../components/ui/PremiumButton';
 
 export default function VerifyEmail() {
   const location = useLocation();
@@ -72,143 +71,177 @@ export default function VerifyEmail() {
     }
   };
 
+  const handleOfflineMode = () => {
+    localStorage.setItem('vs_offline_mode', 'true');
+    window.dispatchEvent(new Event('storage'));
+    navigate('/');
+  };
+
   if (!state) return null;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-8 font-sans text-white selection:bg-[#007AFF]/30">
+    <div className="min-h-screen bg-white font-sans text-brand-text flex flex-col selection:bg-brand-blue/30">
       
-      {/* Decorative Background Glow */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[500px] bg-[#007AFF]/5 blur-[120px] rounded-full pointer-events-none"></div>
+      {/* Top Black Banner */}
+      <div className="h-16 bg-brand-black flex items-center px-8 w-full shrink-0">
+        <h1 className="text-white text-2xl font-bold tracking-tight">
+          VyaparSetu Verification Portal
+        </h1>
+      </div>
 
-      <div className="w-full max-w-[480px] z-10">
+      {/* Floating Feedback Tab (Left Edge) */}
+      <div className="fixed left-0 top-1/3 bg-[#4279a6] text-white text-xs font-bold py-3 px-2 rounded-r-md cursor-pointer hover:bg-[#326086] transition-colors z-50 shadow-md flex items-center justify-center" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+        Feedback
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 w-full max-w-[1100px] mx-auto py-12 px-8 flex flex-col lg:flex-row gap-16 animate-in fade-in duration-500">
         
-        {/* Header Section with Custom Illustration */}
-        <div className="mb-12 text-center">
-          <div className="relative inline-flex items-center justify-center mb-8">
-            {/* Pulsing Blue Ring Animation */}
-            <motion.div 
-              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
-              transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-              className="absolute inset-0 bg-[#007AFF]/20 rounded-full blur-xl"
-            ></motion.div>
-            
-            <div className="relative w-24 h-24 rounded-[2rem] bg-[#1c1c1e] border border-white/5 shadow-2xl flex items-center justify-center">
-              <AnimatePresence mode="wait">
-                {step === 1 ? (
-                  <motion.div
-                    key="mail-icon"
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.5, opacity: 0 }}
-                  >
-                    <Mail size={40} className="text-[#007AFF]" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="shield-icon"
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                  >
-                    <ShieldCheck size={40} className="text-[#4ade80]" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+        {/* Left Column: Form Section */}
+        <div className="flex-1">
+          <div className="border-b border-gray-200 pb-4 mb-8">
+            <h2 className="text-2xl font-light text-[#2c3e50]">
+              Identity Verification <span className="text-brand-muted text-lg ml-2">| {step === 1 ? 'Step 1 of 2' : 'Final Step'}</span>
+            </h2>
           </div>
 
-          <h1 className="text-5xl font-black tracking-tighter leading-none mb-4">
-            {step === 1 ? 'Verify Identity' : 'Secure Vault'}
-          </h1>
-          <p className="text-[#888888] font-medium tracking-wide uppercase text-[11px]">
-            {step === 1 ? `Sent to ${state.email}` : 'Establish shop administrator password'}
-          </p>
-        </div>
-
-        {/* Action Card */}
-        <div className="bg-[#1c1c1e] rounded-[2.5rem] p-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/5 relative overflow-hidden">
-          
           {error && (
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-[#f87171]/10 border border-[#f87171]/20 text-[#f87171] p-4 rounded-2xl text-xs font-bold mb-8 text-center uppercase tracking-widest"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 text-status-red p-4 rounded-md text-sm font-semibold mb-6 border border-red-200"
             >
               {error}
             </motion.div>
           )}
 
-          <AnimatePresence mode="wait">
-            {step === 1 ? (
-              <motion.div
-                key="otp-step"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-8"
-              >
-                <form onSubmit={handleVerifyOtp} className="space-y-8">
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-[#666] uppercase tracking-[0.2em] text-center block w-full">Enter 6-Digit Passcode</label>
-                    <input 
-                      required autoFocus type="text" maxLength="6"
-                      value={enteredOtp} onChange={(e) => setEnteredOtp(e.target.value)}
-                      placeholder="••••••" 
-                      className="w-full bg-[#0a0a0a] text-white text-center text-4xl font-black tracking-[0.5em] py-6 rounded-2xl border-none outline-none focus:ring-2 focus:ring-[#007AFF]/50 transition-all placeholder:text-[#222]"
+          <div className="relative min-h-[300px]">
+            <AnimatePresence mode="wait">
+              {step === 1 ? (
+                <motion.div
+                  key="otp-step"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6 absolute top-0 left-0 w-full"
+                >
+                  <p className="text-sm font-semibold text-brand-muted mb-4">
+                    A 6-digit security passcode has been dispatched to: <br/>
+                    <span className="text-brand-text font-bold">{state.email}</span>
+                  </p>
+
+                  <form onSubmit={handleVerifyOtp} className="space-y-6">
+                    <PremiumInput
+                      label="6-Digit Passcode:"
+                      required={true}
+                      value={enteredOtp}
+                      onChange={(val) => setEnteredOtp(val)}
+                      placeholder="••••••"
+                      className="text-center text-2xl tracking-[0.5em] font-black"
                     />
-                  </div>
-                  <button 
-                    type="submit"
-                    className="w-full bg-[#007AFF] hover:bg-[#0084FF] text-white font-black py-5 rounded-[1.5rem] flex items-center justify-center gap-3 transition-all shadow-[0_10px_30px_-10px_rgba(0,122,255,0.5)] active:scale-[0.98] uppercase tracking-widest text-xs"
-                  >
-                    Authenticate Terminal <ArrowRight size={18} />
-                  </button>
-                </form>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="password-step"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="space-y-8"
-              >
-                <form onSubmit={handleCreateAccount} className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-[#666] uppercase tracking-[0.2em] ml-1">Administrator Password</label>
-                    <div className="relative group">
-                      <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-[#444] group-focus-within:text-[#4ade80] transition-colors" size={18} />
-                      <input 
-                        required autoFocus type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••" 
-                        className="w-full bg-[#0a0a0a] text-white pl-14 pr-6 py-5 rounded-2xl border-none outline-none focus:ring-2 focus:ring-[#4ade80]/50 transition-all placeholder:text-[#333] font-bold text-sm"
-                      />
+
+                    <div className="pt-4 flex items-center gap-6">
+                      <PremiumButton 
+                        type="submit" 
+                        variant="primary" 
+                        className="px-10 rounded-sm"
+                      >
+                        AUTHENTICATE
+                      </PremiumButton>
+
+                      <button 
+                        type="button" 
+                        onClick={() => navigate('/signup')}
+                        className="flex items-center gap-1 text-sm font-semibold text-brand-muted hover:text-brand-text transition-colors px-4 py-2"
+                      >
+                        <ChevronLeft size={16} /> Incorrect Email?
+                      </button>
                     </div>
-                  </div>
-                  <button 
-                    type="submit" disabled={loading}
-                    className="w-full bg-[#4ade80] hover:bg-[#22c55e] text-[#052e16] font-black py-5 rounded-[1.5rem] flex items-center justify-center gap-3 transition-all disabled:opacity-50 mt-4 shadow-[0_10px_30px_-10px_rgba(74,222,128,0.5)] active:scale-[0.98] uppercase tracking-widest text-xs"
-                  >
-                    {loading ? <Loader2 size={20} className="animate-spin" /> : "Complete Shop License Setup"}
-                  </button>
-                </form>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  </form>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="password-step"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="space-y-6 absolute top-0 left-0 w-full"
+                >
+                  <p className="text-sm font-semibold text-brand-muted mb-4">
+                    Identity verified. Please establish your shop administrator password to secure your local vault.
+                  </p>
+
+                  <form onSubmit={handleCreateAccount} className="space-y-6">
+                    <PremiumInput
+                      label="Administrator Password:"
+                      type="password"
+                      required={true}
+                      value={password}
+                      onChange={(val) => setPassword(val)}
+                      placeholder="••••••••"
+                    />
+
+                    <div className="pt-4 flex items-center gap-6">
+                      <PremiumButton 
+                        type="submit" 
+                        variant="success" 
+                        isLoading={loading}
+                        className="px-10 rounded-sm"
+                      >
+                        COMPLETE SETUP
+                      </PremiumButton>
+                    </div>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Footer & Offline Mode */}
+          <div className="mt-[320px] pt-6 border-t border-gray-100 flex flex-col gap-4">
+            <span className="text-sm text-brand-muted">
+              Already registered? <Link to="/login" className="text-brand-blue font-semibold hover:underline">Login to Terminal</Link>
+            </span>
+            <button 
+              onClick={handleOfflineMode}
+              className="flex items-center gap-2 text-sm text-brand-muted hover:text-brand-text transition-colors self-start"
+            >
+              <MonitorOff size={16} /> Bypass to Offline Mode
+            </button>
+          </div>
         </div>
 
-        {/* Footer Navigation */}
-        <div className="mt-10 text-center">
-          <button 
-            onClick={() => navigate('/signup')}
-            className="flex items-center justify-center gap-2 mx-auto text-[13px] font-bold text-[#555] hover:text-white transition-colors"
-          >
-            <ChevronLeft size={16} /> Incorrect details? Restart registration
-          </button>
-        </div>
-      </div>
+        {/* Right Column: Security Protocols Card */}
+        <div className="w-full lg:w-[420px] shrink-0">
+          <div className="bg-brand-surface border border-brand-border rounded-md p-8 shadow-sm h-full">
+            
+            <div className="flex items-center gap-2 mb-8 text-sm font-semibold text-[#2c3e50]">
+              <span className="text-status-red text-xl leading-none">•</span> Required field
+            </div>
 
-      {/* Version Tag */}
-      <div className="fixed bottom-8 right-8 text-[10px] font-black text-[#222] uppercase tracking-[0.5em]">
-        SECURE CHANNEL v2.5.0
+            <div className="space-y-8">
+              <div>
+                <h3 className="text-base font-bold text-[#2c3e50] mb-4">Security Protocols:</h3>
+                <ul className="space-y-3 text-sm text-[#4a5568] list-disc pl-5 marker:text-gray-400">
+                  <li className="pl-1">All fields must exactly match your registration profile.</li>
+                  <li className="pl-1">Passwords are case-sensitive.</li>
+                  <li className="pl-1">System will temporarily lock out after 5 consecutive failed attempts.</li>
+                  <li className="pl-1">Do not share your credentials with unauthorized personnel.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-base font-bold text-[#2c3e50] mb-4">Troubleshooting:</h3>
+                <ul className="space-y-3 text-sm text-[#4a5568] list-disc pl-5 marker:text-gray-400">
+                  <li className="pl-1">Ensure caps lock is disabled.</li>
+                  <li className="pl-1">Clear your browser cache if you experience infinite loading.</li>
+                  <li className="pl-1">Use the Feedback tab for technical assistance.</li>
+                </ul>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </div>
   );
