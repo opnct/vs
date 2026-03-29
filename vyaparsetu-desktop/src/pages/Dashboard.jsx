@@ -3,12 +3,10 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { 
-  Search, Zap, Bell, ChevronDown, Calendar, 
-  RefreshCw, Plus, MoreHorizontal, MessageSquare, 
-  Download, CreditCard, Banknote, BookOpen, QrCode,
-  ArrowUpRight, ArrowDownRight, TrendingUp
+  RefreshCw, TrendingUp, Banknote, CreditCard,
+  ArrowUpRight, ArrowDownRight, MessageSquare, ArrowRight
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { invoke } from '@tauri-apps/api/core';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Dashboard() {
@@ -25,35 +23,33 @@ export default function Dashboard() {
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Real Data Aggregator using Electron IPC
+  // Native Rust Backend Data Aggregator using Tauri IPC
   const fetchDashboardData = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      if (window.electronAPI) {
-        const stats = await window.electronAPI.invoke('get_daily_stats').catch(() => ({
-          total_sales: 0, cash: 0, upi: 0, udhaar: 0, profit: 0
-        }));
-        
-        setMetrics({
-          totalSales: stats.total_sales,
-          cashInHand: stats.cash,
-          upiCollected: stats.upi,
-          udhaarGiven: stats.udhaar,
-          approxProfit: stats.profit
-        });
+      const stats = await invoke('get_daily_stats').catch(() => ({
+        total_sales: 0, cash: 0, upi: 0, udhaar: 0, profit: 0
+      }));
+      
+      setMetrics({
+        totalSales: stats.total_sales,
+        cashInHand: stats.cash,
+        upiCollected: stats.upi,
+        udhaarGiven: stats.udhaar,
+        approxProfit: stats.profit
+      });
 
-        // Fetching real hourly/daily data for the Pulse Chart
-        const pulse = await window.electronAPI.invoke('get_sales_pulse').catch(() => []);
-        setChartData(pulse.length > 0 ? pulse : [
-          { name: 'Mon', value: 400 }, { name: 'Tue', value: 700 }, 
-          { name: 'Wed', value: 1000 }, { name: 'Thu', value: 600 }, 
-          { name: 'Fri', value: 900 }, { name: 'Sat', value: 500 }, 
-          { name: 'Sun', value: 800 }
-        ]);
+      // Fetching real hourly/daily data for the Pulse Chart
+      const pulse = await invoke('get_sales_pulse').catch(() => []);
+      setChartData(pulse.length > 0 ? pulse : [
+        { name: 'Mon', value: 400 }, { name: 'Tue', value: 700 }, 
+        { name: 'Wed', value: 1000 }, { name: 'Thu', value: 600 }, 
+        { name: 'Fri', value: 900 }, { name: 'Sat', value: 500 }, 
+        { name: 'Sun', value: 800 }
+      ]);
 
-        const transactions = await window.electronAPI.invoke('get_recent_invoices', { limit: 10 }).catch(() => []);
-        setRecentTransactions(transactions);
-      }
+      const transactions = await invoke('get_recent_invoices', { limit: 10 }).catch(() => []);
+      setRecentTransactions(transactions);
     } catch (error) {
       console.error("Dashboard Data Sync Error:", error);
     } finally {
@@ -65,113 +61,78 @@ export default function Dashboard() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // StatCard Sub-component for the pastel blocks (Reference Image Style)
-  const StatCard = ({ label, value, icon: Icon, colorClass, trend, isTrendUp = true }) => (
-    <motion.div 
-      whileHover={{ y: -6, scale: 1.01 }}
-      className={`${colorClass} rounded-[2.5rem] p-8 flex flex-col justify-between text-[#0a0a0a] shadow-xl h-48 cursor-default`}
-    >
+  // Flat, high-contrast StatCard replacing the pastel design
+  const StatCard = ({ label, value, icon: Icon, trend, isTrendUp = true }) => (
+    <div className="bg-[#111111] border border-white/10 rounded-sm p-6 flex flex-col justify-between text-white hover:border-brand-blue/50 transition-colors h-40">
       <div className="flex justify-between items-start">
-        <span className="text-[11px] font-black tracking-[0.1em] opacity-60 uppercase">{label}</span>
-        <div className="p-2.5 rounded-2xl bg-black/5 border border-black/5">
-          <Icon size={20} strokeWidth={2.5} />
+        <span className="text-xs font-bold tracking-widest text-gray-400 uppercase">{label}</span>
+        <div className="text-brand-blue">
+          <Icon size={20} strokeWidth={2} />
         </div>
       </div>
       <div>
-        <div className="flex items-baseline gap-2">
-          <h3 className="text-4xl font-black tracking-tighter leading-none">
+        <div className="flex items-baseline gap-3">
+          <h3 className="text-3xl font-black tracking-tighter">
             ₹{value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </h3>
           {trend && (
-            <div className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-black ${
-              isTrendUp ? 'bg-black/10 text-black' : 'bg-red-500/10 text-red-700'
+            <div className={`flex items-center gap-0.5 text-xs font-bold ${
+              isTrendUp ? 'text-status-green' : 'text-status-red'
             }`}>
-              {isTrendUp ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+              {isTrendUp ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
               {trend}%
             </div>
           )}
         </div>
-        <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest mt-2">Since last settlement</p>
+        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Since last settlement</p>
       </div>
-    </motion.div>
+    </div>
   );
 
   return (
-    <div className="flex h-full w-full gap-8 select-none font-sans text-white">
+    <div className="flex h-full w-full gap-6 select-none font-sans text-white bg-brand-black overflow-y-auto custom-scrollbar p-6">
       
-      {/* LEFT COLUMN - Financial Control Panel */}
-      <div className="w-[420px] shrink-0 bg-[#1c1c1e] rounded-[3rem] p-10 flex flex-col shadow-[0_20px_40px_-15px_rgba(0,0,0,0.8)] border border-white/5 overflow-hidden">
-        <h1 className="text-4xl font-black tracking-tight mb-10">{t('dash_overview')}</h1>
+      {/* LEFT COLUMN - AI Core & Workspace */}
+      <div className="flex-1 flex flex-col min-w-0 gap-6">
         
-        {/* Black Terminal Card */}
-        <div className="bg-[#0a0a0a] rounded-[2rem] p-8 mb-8 shadow-2xl border border-white/5 relative overflow-hidden group">
-          <div className="absolute -right-10 -top-10 w-40 h-40 bg-[#007AFF]/10 rounded-full blur-3xl group-hover:bg-[#007AFF]/20 transition-all duration-1000"></div>
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-5 h-5 rounded-full border-2 border-[#FF5F56] flex items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-[#FF5F56]"></div>
-            </div>
-            <span className="font-bold text-lg tracking-tight uppercase">VyaparSetu</span>
-            <span className="ml-auto text-[10px] text-[#888888] tracking-widest font-black">POS TERMINAL</span>
+        {/* VYAPAR AI CORE HEADER (Replicating Image Reference) */}
+        <div className="bg-[#0a0a0a] border border-white/10 p-10 rounded-sm relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700">
+          <div className="absolute right-0 top-0 opacity-30 pointer-events-none">
+            <div className="w-[600px] h-[400px] bg-brand-blue/20 blur-[100px] rounded-full absolute -top-20 -right-20"></div>
           </div>
-          <p className="text-[#888888] text-[10px] font-black uppercase tracking-widest mb-1">Net Sales Today</p>
-          <h2 className="text-[2.75rem] font-black tracking-tighter mb-8 flex items-baseline gap-2">
-            ₹{metrics.totalSales.toLocaleString('en-IN', {minimumFractionDigits: 2})}
-          </h2>
-          <div className="flex justify-between items-center text-[#888888] text-[10px] font-black tracking-[0.2em]">
-            <span>STATION: 01</span>
-            <span>{new Date().toLocaleDateString()}</span>
+          
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 bg-white text-black px-3 py-1 rounded-sm text-[10px] font-black tracking-widest uppercase mb-6">
+              <MessageSquare size={12} /> Interactive
+            </div>
+            
+            <div className="flex items-center gap-4 mb-4">
+              <h1 className="text-5xl lg:text-6xl font-black text-white tracking-tighter uppercase border-b-4 border-brand-blue pb-1">
+                Vyapar AI Core
+              </h1>
+              <button className="w-12 h-12 bg-brand-blue rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors shrink-0">
+                <ArrowRight size={24} />
+              </button>
+            </div>
+            
+            <p className="text-gray-400 text-sm max-w-xl leading-relaxed">
+              Interact directly with the VyaparSetu AI Assistant. Issue voice commands to generate bills, analyze market trends, and navigate complex inventory data in real-time.
+            </p>
           </div>
         </div>
 
-        {/* Transaction Feed */}
-        <div className="flex items-center justify-between mb-6">
-          <span className="text-[#888888] text-[11px] font-black uppercase tracking-[0.2em]">{t('dash_last_tx')}</span>
-          <button onClick={fetchDashboardData} className={`text-[#888888] hover:text-white transition-all ${isRefreshing ? 'animate-spin' : ''}`}>
-            <RefreshCw size={16} />
-          </button>
-        </div>
-        
-        <div className="space-y-3 overflow-y-auto custom-scrollbar flex-1 pr-1">
-           {recentTransactions.map(tx => (
-             <div key={tx.id} className="bg-[#252525]/40 rounded-2xl p-5 flex items-center justify-between border border-white/5 hover:border-[#007AFF]/30 transition-all group cursor-pointer">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-[#0a0a0a] flex items-center justify-center text-[10px] font-black text-[#888888] group-hover:text-[#007AFF] transition-colors border border-white/5">
-                    {tx.customer_name ? tx.customer_name[0].toUpperCase() : 'W'}
-                  </div>
-                  <div>
-                    <h4 className="text-[14px] font-bold text-white truncate w-32 capitalize">{tx.customer_name || 'Walk-in'}</h4>
-                    <p className="text-[10px] text-[#555] font-bold uppercase tracking-widest">
-                      {new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                   <div className={`text-[15px] font-black tracking-tight ${tx.status === 'PAID' ? 'text-[#4ade80]' : 'text-[#f87171]'}`}>
-                      {tx.status === 'PAID' ? '+' : '-'} ₹{tx.total_amount.toFixed(2)}
-                   </div>
-                </div>
-             </div>
-           ))}
-        </div>
-      </div>
-      
-      {/* RIGHT COLUMN - Workspace & Pulse Charts */}
-      <div className="flex-1 flex flex-col min-w-0">
-        
-        {/* Metric Grid (Pastel Cards Matching Reference) */}
-        <div className="grid grid-cols-3 gap-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
+        {/* Metric Grid (High-Contrast Flat Cards) */}
+        <div className="grid grid-cols-3 gap-6 animate-in fade-in duration-700 delay-150">
           <StatCard 
             label={t('dash_total_earning')} 
             value={metrics.totalSales} 
             icon={TrendingUp} 
-            colorClass="bg-[#e3ebff]" 
             trend="12"
           />
           <StatCard 
             label={t('dash_total_spending')} 
             value={metrics.udhaarGiven} 
             icon={Banknote} 
-            colorClass="bg-[#ffeeba]" 
             trend="5"
             isTrendUp={false}
           />
@@ -179,85 +140,124 @@ export default function Dashboard() {
             label={t('dash_spending_goal')} 
             value={metrics.cashInHand} 
             icon={CreditCard} 
-            colorClass="bg-[#c5ecd7]" 
           />
         </div>
 
         {/* Analytics Pulse Section */}
-        <div className="flex-1 bg-[#1c1c1e] rounded-[3rem] p-10 flex flex-col border border-white/5 shadow-2xl relative overflow-hidden">
+        <div className="flex-1 bg-[#0a0a0a] rounded-sm p-8 flex flex-col border border-white/10 relative overflow-hidden">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h3 className="text-xl font-bold tracking-tight mb-1">{t('dash_pulse')}</h3>
-              <p className="text-[#888888] text-xs font-medium uppercase tracking-widest">Revenue Flow Momentum</p>
+              <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Revenue Flow Momentum</p>
             </div>
             <div className="flex gap-2">
-              <button className="px-4 py-2 bg-[#0a0a0a] rounded-xl text-[10px] font-black text-white uppercase tracking-widest border border-white/5 hover:bg-[#252525] transition-all">Weekly</button>
-              <button className="px-4 py-2 bg-[#252525] rounded-xl text-[10px] font-black text-[#888888] uppercase tracking-widest border border-transparent">Monthly</button>
+              <button className="px-4 py-2 bg-white text-black rounded-sm text-xs font-black uppercase tracking-widest transition-all">Weekly</button>
+              <button className="px-4 py-2 bg-transparent text-gray-500 rounded-sm text-xs font-black uppercase tracking-widest border border-transparent hover:text-white transition-all">Monthly</button>
             </div>
           </div>
 
-          {/* Area Chart Implementation (Fixed SVG Imports) */}
           <div className="flex-1 min-h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                {/* Standard SVG definitions used directly in JSX */}
                 <defs>
                   <linearGradient id="colorPulse" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#007AFF" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#007AFF" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#0056b3" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#0056b3" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <XAxis 
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#555', fontSize: 11, fontWeight: 'bold' }} 
+                  tick={{ fill: '#6c757d', fontSize: 12, fontWeight: 'bold' }} 
                   dy={15}
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#555', fontSize: 11, fontWeight: 'bold' }} 
+                  tick={{ fill: '#6c757d', fontSize: 12, fontWeight: 'bold' }} 
                 />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: '#1c1c1e', 
+                    backgroundColor: '#111111', 
                     border: '1px solid rgba(255,255,255,0.1)', 
-                    borderRadius: '16px',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                    borderRadius: '4px',
+                    color: '#ffffff'
                   }}
-                  itemStyle={{ color: '#fff', fontWeight: 'bold' }}
+                  itemStyle={{ color: '#ffffff', fontWeight: 'bold' }}
                 />
                 <Area 
                   type="monotone" 
                   dataKey="value" 
-                  stroke="#007AFF" 
-                  strokeWidth={4}
+                  stroke="#0056b3" 
+                  strokeWidth={3}
                   fillOpacity={1} 
                   fill="url(#colorPulse)" 
-                  animationDuration={2000}
+                  animationDuration={1500}
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      </div>
 
-          {/* Chart Summary Footer */}
-          <div className="mt-8 pt-8 border-t border-white/5 grid grid-cols-4 gap-4">
-             {[
-               { label: 'Digital Share', val: '64%', color: 'text-[#007AFF]' },
-               { label: 'Cash Ratio', val: '28%', color: 'text-[#4ade80]' },
-               { label: 'Risk Profile', val: '8%', color: 'text-[#f87171]' },
-               { label: 'Avg Ticket', val: '₹420', color: 'text-white' }
-             ].map((stat, idx) => (
-               <div key={idx} className="flex flex-col">
-                 <span className="text-[10px] font-bold text-[#555] uppercase tracking-widest mb-1">{stat.label}</span>
-                 <span className={`text-lg font-black ${stat.color}`}>{stat.val}</span>
-               </div>
-             ))}
+      {/* RIGHT COLUMN - Financial Terminal & Feed */}
+      <div className="w-[380px] shrink-0 bg-[#0a0a0a] rounded-sm p-8 flex flex-col border border-white/10">
+        <h2 className="text-2xl font-black tracking-tight mb-8">Financial Terminal</h2>
+        
+        {/* High-Contrast POS Card */}
+        <div className="bg-[#111111] border border-white/10 rounded-sm p-6 mb-8 relative overflow-hidden group">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-3 h-3 rounded-full bg-status-red animate-pulse"></div>
+            <span className="font-black text-sm tracking-widest uppercase">Live Node</span>
+            <span className="ml-auto text-[10px] text-brand-blue tracking-widest font-black border border-brand-blue/30 px-2 py-1 rounded-sm">POS-01</span>
+          </div>
+          <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">Net Sales Today</p>
+          <h2 className="text-4xl font-black tracking-tighter mb-6">
+            ₹{metrics.totalSales.toLocaleString('en-IN', {minimumFractionDigits: 2})}
+          </h2>
+          <div className="flex justify-between items-center text-gray-500 text-[10px] font-black tracking-[0.2em] border-t border-white/10 pt-4">
+            <span>{new Date().toLocaleDateString()}</span>
+            <span>SECURE SYNC</span>
           </div>
         </div>
 
+        {/* Transaction Feed */}
+        <div className="flex items-center justify-between mb-6">
+          <span className="text-gray-500 text-[11px] font-black uppercase tracking-[0.2em]">Live Ledger</span>
+          <button onClick={fetchDashboardData} className={`text-brand-blue hover:text-white transition-all ${isRefreshing ? 'animate-spin' : ''}`}>
+            <RefreshCw size={14} />
+          </button>
+        </div>
+        
+        <div className="space-y-2 overflow-y-auto custom-scrollbar flex-1 pr-2">
+           {recentTransactions.length > 0 ? recentTransactions.map(tx => (
+             <div key={tx.id} className="bg-[#111111] rounded-sm p-4 flex items-center justify-between border border-white/5 hover:border-brand-blue/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-sm bg-[#222222] flex items-center justify-center text-[10px] font-black text-white">
+                    {tx.customer_name ? tx.customer_name[0].toUpperCase() : 'W'}
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white truncate w-24 capitalize">{tx.customer_name || 'Walk-in'}</h4>
+                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">
+                      {new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                   <div className={`text-sm font-black tracking-tight ${tx.status === 'PAID' ? 'text-status-green' : 'text-status-red'}`}>
+                      {tx.status === 'PAID' ? '+' : '-'} ₹{tx.total_amount.toFixed(2)}
+                   </div>
+                </div>
+             </div>
+           )) : (
+             <div className="text-center py-10 text-gray-600 text-xs font-bold uppercase tracking-widest">
+               No transactions yet
+             </div>
+           )}
+        </div>
       </div>
+      
     </div>
   );
 }
