@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, 
-  defs, linearGradient, stop 
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { 
   Search, Zap, Bell, ChevronDown, Calendar, 
@@ -9,7 +8,7 @@ import {
   Download, CreditCard, Banknote, BookOpen, QrCode,
   ArrowUpRight, ArrowDownRight, TrendingUp
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Dashboard() {
@@ -66,27 +65,33 @@ export default function Dashboard() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // StatCard Sub-component for the pastel blocks
-  const StatCard = ({ label, value, icon: Icon, colorClass, trend }) => (
+  // StatCard Sub-component for the pastel blocks (Reference Image Style)
+  const StatCard = ({ label, value, icon: Icon, colorClass, trend, isTrendUp = true }) => (
     <motion.div 
-      whileHover={{ y: -5 }}
-      className={`${colorClass} rounded-[2.5rem] p-8 flex flex-col justify-between text-black shadow-lg cursor-default h-48`}
+      whileHover={{ y: -6, scale: 1.01 }}
+      className={`${colorClass} rounded-[2.5rem] p-8 flex flex-col justify-between text-[#0a0a0a] shadow-xl h-48 cursor-default`}
     >
       <div className="flex justify-between items-start">
-        <span className="text-[13px] font-bold tracking-wide opacity-70 uppercase">{label}</span>
-        <div className="p-2 rounded-xl bg-black/5 border border-black/5">
-          <Icon size={20} strokeWidth={2} />
+        <span className="text-[11px] font-black tracking-[0.1em] opacity-60 uppercase">{label}</span>
+        <div className="p-2.5 rounded-2xl bg-black/5 border border-black/5">
+          <Icon size={20} strokeWidth={2.5} />
         </div>
       </div>
       <div>
         <div className="flex items-baseline gap-2">
-          <h3 className="text-4xl font-black tracking-tighter">₹{value.toLocaleString('en-IN')}</h3>
+          <h3 className="text-4xl font-black tracking-tighter leading-none">
+            ₹{value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+          </h3>
           {trend && (
-            <span className="text-[11px] font-bold flex items-center gap-0.5">
-              <TrendingUp size={12} /> {trend}%
-            </span>
+            <div className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-black ${
+              isTrendUp ? 'bg-black/10 text-black' : 'bg-red-500/10 text-red-700'
+            }`}>
+              {isTrendUp ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+              {trend}%
+            </div>
           )}
         </div>
+        <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest mt-2">Since last settlement</p>
       </div>
     </motion.div>
   );
@@ -150,23 +155,25 @@ export default function Dashboard() {
         </div>
       </div>
       
-      {/* RIGHT COLUMN - Workspace & Charts */}
+      {/* RIGHT COLUMN - Workspace & Pulse Charts */}
       <div className="flex-1 flex flex-col min-w-0">
         
-        {/* Metric Grid (Requested Pastel Cards) */}
+        {/* Metric Grid (Pastel Cards Matching Reference) */}
         <div className="grid grid-cols-3 gap-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
           <StatCard 
             label={t('dash_total_earning')} 
             value={metrics.totalSales} 
             icon={TrendingUp} 
             colorClass="bg-[#e3ebff]" 
-            trend="+12"
+            trend="12"
           />
           <StatCard 
             label={t('dash_total_spending')} 
             value={metrics.udhaarGiven} 
             icon={Banknote} 
             colorClass="bg-[#ffeeba]" 
+            trend="5"
+            isTrendUp={false}
           />
           <StatCard 
             label={t('dash_spending_goal')} 
@@ -181,7 +188,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h3 className="text-xl font-bold tracking-tight mb-1">{t('dash_pulse')}</h3>
-              <p className="text-[#888888] text-xs font-medium uppercase tracking-widest">Live Revenue Stream</p>
+              <p className="text-[#888888] text-xs font-medium uppercase tracking-widest">Revenue Flow Momentum</p>
             </div>
             <div className="flex gap-2">
               <button className="px-4 py-2 bg-[#0a0a0a] rounded-xl text-[10px] font-black text-white uppercase tracking-widest border border-white/5 hover:bg-[#252525] transition-all">Weekly</button>
@@ -189,12 +196,13 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Area Chart Implementation */}
+          {/* Area Chart Implementation (Fixed SVG Imports) */}
           <div className="flex-1 min-h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                {/* Standard SVG definitions used directly in JSX */}
                 <defs>
-                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="colorPulse" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#007AFF" stopOpacity={0.3}/>
                     <stop offset="95%" stopColor="#007AFF" stopOpacity={0}/>
                   </linearGradient>
@@ -226,7 +234,7 @@ export default function Dashboard() {
                   stroke="#007AFF" 
                   strokeWidth={4}
                   fillOpacity={1} 
-                  fill="url(#colorValue)" 
+                  fill="url(#colorPulse)" 
                   animationDuration={2000}
                 />
               </AreaChart>
@@ -236,9 +244,9 @@ export default function Dashboard() {
           {/* Chart Summary Footer */}
           <div className="mt-8 pt-8 border-t border-white/5 grid grid-cols-4 gap-4">
              {[
-               { label: 'UPI Share', val: '64%', color: 'text-[#007AFF]' },
-               { label: 'Cash Flow', val: '28%', color: 'text-[#4ade80]' },
-               { label: 'Udhaar', val: '8%', color: 'text-[#f87171]' },
+               { label: 'Digital Share', val: '64%', color: 'text-[#007AFF]' },
+               { label: 'Cash Ratio', val: '28%', color: 'text-[#4ade80]' },
+               { label: 'Risk Profile', val: '8%', color: 'text-[#f87171]' },
                { label: 'Avg Ticket', val: '₹420', color: 'text-white' }
              ].map((stat, idx) => (
                <div key={idx} className="flex flex-col">

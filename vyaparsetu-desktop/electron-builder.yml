@@ -1,5 +1,6 @@
 appId: com.vyaparsetu.pos
 productName: VyaparSetu POS
+publish: null
 directories:
   output: dist_electron
   buildResources: build
@@ -10,6 +11,13 @@ files:
 win:
   target: nsis
   # icon: build/icon.ico # Uncomment and add an icon.ico to a build/ folder later
+nsis:
+  oneClick: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: "VyaparSetu POS"
 mac:
   target: dmg
 linux:
