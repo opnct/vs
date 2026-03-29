@@ -1,0 +1,36 @@
+[package]
+name = "vyaparsetu-desktop"
+version = "0.1.0"
+description = "VyaparSetu Enterprise Kirana POS System"
+authors = ["VyaparSetu Development Team"]
+edition = "2021"
+rust-version = "1.70"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+tauri-build = "2.0.0"
+
+[dependencies]
+# Core Tauri framework
+tauri = { version = "2.0.0", features = [] }
+
+# Serialization/Deserialization for seamless IPC communication (React <-> Rust)
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Native SQLite Database Driver
+# Using the "bundled" feature forces compilation of SQLite from source,
+# preventing "missing sqlite3.dll/so" errors across different operating systems.
+rusqlite = { version = "0.31.0", features = ["bundled"] }
+
+# Asynchronous runtime for non-blocking I/O and heavy database queries
+tokio = { version = "1.36.0", features = ["rt-multi-thread", "macros", "sync"] }
+
+# Date and time utilities for precise transactional logging
+chrono = { version = "0.4", features = ["serde"] }
+
+[features]
+# This feature is used for production builds where a local dev server is not available.
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

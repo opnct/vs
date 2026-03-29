@@ -19,12 +19,13 @@
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "@fontsource/inter": "^5.2.8",
+    "@fontsource/montserrat": "^5.2.8",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tanstack/react-table": "^8.21.3",
-    "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/api": "^2.10.1",
     "better-sqlite3": "^12.8.0",
     "clsx": "^2.1.1",
     "firebase": "^12.11.0",
@@ -38,7 +39,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.0.0",
+    "@tauri-apps/cli": "^2.10.1",
     "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "^10.4.27",
     "postcss": "^8.5.8",
