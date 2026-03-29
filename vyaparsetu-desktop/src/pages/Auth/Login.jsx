@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  Mail, Lock, LogIn, Loader2, 
-  MonitorOff, ChevronRight, ShieldCheck 
-} from 'lucide-react';
+import { Eye, EyeOff, MonitorOff } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebase';
+import PremiumInput from '../../components/ui/PremiumInput';
+import PremiumButton from '../../components/ui/PremiumButton';
 
 export default function Login() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  // Added username to match the UI, though Firebase auth primarily uses email/password
+  const [formData, setFormData] = useState({ username: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (name, value) => {
+    setFormData({ ...formData, [name]: value });
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -39,122 +42,135 @@ export default function Login() {
     navigate('/');
   };
 
-  // Animation variants for staggered entrance
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1, delayChildren: 0.2 }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }
-  };
-
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-8 font-sans text-white selection:bg-[#007AFF]/30">
+    <div className="min-h-screen bg-white font-sans text-brand-text flex flex-col selection:bg-brand-blue/30">
       
-      {/* Decorative Background Glow */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[500px] bg-[#007AFF]/5 blur-[120px] rounded-full pointer-events-none"></div>
+      {/* Top Black Banner */}
+      <div className="h-16 bg-brand-black flex items-center px-8 w-full shrink-0">
+        <h1 className="text-white text-2xl font-bold tracking-tight">
+          VyaparSetu Login Portal
+        </h1>
+      </div>
 
-      <motion.div 
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="w-full max-w-[480px] z-10"
-      >
-        {/* Header: Oversized Typography */}
-        <motion.div variants={itemVariants} className="mb-12 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#1c1c1e] rounded-[1.5rem] border border-white/5 shadow-2xl mb-8">
-            <ShieldCheck size={32} className="text-[#007AFF]" />
+      {/* Floating Feedback Tab (Left Edge) */}
+      <div className="fixed left-0 top-1/3 bg-[#4279a6] text-white text-xs font-bold py-3 px-2 rounded-r-md cursor-pointer hover:bg-[#326086] transition-colors z-50 shadow-md flex items-center justify-center" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+        Feedback
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 w-full max-w-[1100px] mx-auto py-12 px-8 flex flex-col lg:flex-row gap-16 animate-in fade-in duration-500">
+        
+        {/* Left Column: Form Section */}
+        <div className="flex-1">
+          <div className="border-b border-gray-200 pb-4 mb-8">
+            <h2 className="text-2xl font-light text-[#2c3e50]">Existing User Login</h2>
           </div>
-          <h1 className="text-5xl font-black tracking-tighter leading-none mb-4">
-            Welcome Back
-          </h1>
-          <p className="text-[#888888] font-medium tracking-wide uppercase text-[11px]">
-            Kirana Intelligence & POS Terminal
-          </p>
-        </motion.div>
 
-        {/* Form Card */}
-        <motion.div 
-          variants={itemVariants}
-          className="bg-[#1c1c1e] rounded-[2.5rem] p-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/5 relative overflow-hidden"
-        >
           {error && (
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-[#f87171]/10 border border-[#f87171]/20 text-[#f87171] p-4 rounded-2xl text-xs font-bold mb-8 text-center uppercase tracking-widest"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 text-status-red p-4 rounded-md text-sm font-semibold mb-6 border border-red-200"
             >
               {error}
             </motion.div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-[#666] uppercase tracking-[0.2em] ml-1">Email Identifier</label>
-              <div className="relative group">
-                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-[#444] group-focus-within:text-[#007AFF] transition-colors" size={18} />
-                <input 
-                  required type="email" name="email" value={formData.email} onChange={handleChange}
-                  placeholder="name@business.com" 
-                  className="w-full bg-[#0a0a0a] text-white pl-14 pr-6 py-5 rounded-2xl border-none outline-none focus:ring-2 focus:ring-[#007AFF]/50 transition-all placeholder:text-[#333] font-bold text-sm"
-                />
-              </div>
+            <PremiumInput
+              label="Username:"
+              required={true}
+              value={formData.username}
+              onChange={(val) => handleChange('username', val)}
+              placeholder="Enter assigned username"
+            />
+
+            <PremiumInput
+              label="Registered Email:"
+              type="email"
+              required={true}
+              value={formData.email}
+              onChange={(val) => handleChange('email', val)}
+              placeholder="retailer@domain.com"
+            />
+
+            <div className="relative">
+              <PremiumInput
+                label="Password:"
+                type={showPassword ? "text" : "password"}
+                required={true}
+                value={formData.password}
+                onChange={(val) => handleChange('password', val)}
+                placeholder="••••••••••••"
+              />
+              <button 
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-[38px] text-brand-blue hover:text-blue-800 transition-colors"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-[#666] uppercase tracking-[0.2em] ml-1">Security Key</label>
-              <div className="relative group">
-                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-[#444] group-focus-within:text-[#007AFF] transition-colors" size={18} />
-                <input 
-                  required type="password" name="password" value={formData.password} onChange={handleChange}
-                  placeholder="••••••••" 
-                  className="w-full bg-[#0a0a0a] text-white pl-14 pr-6 py-5 rounded-2xl border-none outline-none focus:ring-2 focus:ring-[#007AFF]/50 transition-all placeholder:text-[#333] font-bold text-sm"
-                />
-              </div>
+            <div className="pt-4 flex items-center gap-6">
+              <PremiumButton 
+                type="submit" 
+                variant="success" 
+                isLoading={loading}
+                className="px-10 rounded-sm"
+              >
+                LOGIN
+              </PremiumButton>
+              
+              <span className="text-sm text-brand-muted">
+                Need an account? <Link to="/signup" className="text-brand-blue font-semibold hover:underline">Register here</Link>
+              </span>
             </div>
-
-            <button 
-              type="submit" disabled={loading}
-              className="w-full bg-[#007AFF] hover:bg-[#0084FF] text-white font-black py-5 rounded-[1.5rem] flex items-center justify-center gap-3 transition-all disabled:opacity-50 mt-4 shadow-[0_10px_30px_-10px_rgba(0,122,255,0.5)] active:scale-[0.98] uppercase tracking-widest text-xs"
-            >
-              {loading ? <Loader2 size={20} className="animate-spin" /> : <><LogIn size={18} /> Enter Dashboard</>}
-            </button>
           </form>
 
-          {/* Local Mode Trigger */}
-          <div className="relative my-10">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/5"></div>
-            </div>
-            <div className="relative flex justify-center text-[9px] uppercase font-black tracking-[0.3em]">
-              <span className="bg-[#1c1c1e] px-4 text-[#444]">Or Bypass Cloud</span>
-            </div>
+          {/* Offline Fallback Link */}
+          <div className="mt-12 pt-6 border-t border-gray-100">
+            <button 
+              onClick={handleOfflineMode}
+              className="flex items-center gap-2 text-sm text-brand-muted hover:text-brand-text transition-colors"
+            >
+              <MonitorOff size={16} /> Bypass to Offline Mode
+            </button>
           </div>
+        </div>
 
-          <button 
-            onClick={handleOfflineMode}
-            className="w-full bg-[#0a0a0a] hover:bg-[#252525] border border-white/5 text-[#888888] hover:text-white font-bold py-5 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 group"
-          >
-            <MonitorOff size={18} className="text-[#FFBD2E]" />
-            <span className="text-xs uppercase tracking-widest">Offline Access</span>
-            <ChevronRight size={14} className="text-[#333] group-hover:translate-x-1 transition-transform" />
-          </button>
-        </motion.div>
+        {/* Right Column: Security Protocols Card */}
+        <div className="w-full lg:w-[420px] shrink-0">
+          <div className="bg-brand-surface border border-brand-border rounded-md p-8 shadow-sm h-full">
+            
+            <div className="flex items-center gap-2 mb-8 text-sm font-semibold text-[#2c3e50]">
+              <span className="text-status-red text-xl leading-none">•</span> Required field
+            </div>
 
-        {/* Footer Navigation */}
-        <motion.p variants={itemVariants} className="mt-10 text-center text-[13px] font-medium text-[#555] tracking-wide">
-          Don't have a commercial license? <Link to="/signup" className="text-[#007AFF] hover:text-white transition-colors font-black">Register Shop</Link>
-        </motion.p>
-      </motion.div>
+            <div className="space-y-8">
+              <div>
+                <h3 className="text-base font-bold text-[#2c3e50] mb-4">Security Protocols:</h3>
+                <ul className="space-y-3 text-sm text-[#4a5568] list-disc pl-5 marker:text-gray-400">
+                  <li className="pl-1">All fields must exactly match your registration profile.</li>
+                  <li className="pl-1">Passwords are case-sensitive.</li>
+                  <li className="pl-1">System will temporarily lock out after 5 consecutive failed attempts.</li>
+                  <li className="pl-1">Do not share your credentials with unauthorized personnel.</li>
+                </ul>
+              </div>
 
-      {/* Version Tag */}
-      <div className="fixed bottom-8 right-8 text-[10px] font-black text-[#222] uppercase tracking-[0.5em]">
-        VyaparSetu v2.5.0
+              <div>
+                <h3 className="text-base font-bold text-[#2c3e50] mb-4">Troubleshooting:</h3>
+                <ul className="space-y-3 text-sm text-[#4a5568] list-disc pl-5 marker:text-gray-400">
+                  <li className="pl-1">Ensure caps lock is disabled.</li>
+                  <li className="pl-1">Clear your browser cache if you experience infinite loading.</li>
+                  <li className="pl-1">Use the Feedback tab for technical assistance.</li>
+                </ul>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </div>
   );
