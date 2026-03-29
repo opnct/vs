@@ -14,17 +14,17 @@ import {
   RefreshCw,
   Lock,
   LogOut,
-  UserCircle,
   CalendarDays
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
+import { auth } from '../firebase';
+import { signOut } from 'firebase/auth';
 
 export default function Sidebar({ activeTab, setActiveTab, onLock, isOffline }) {
   const { t } = useLanguage();
   
   // Sync Status State: 'synced' | 'syncing' | 'offline'
-  // Real logic: We check the window.navigator.onLine status in real-time
   const [syncStatus, setSyncStatus] = useState(isOffline ? 'offline' : 'synced');
 
   useEffect(() => {
@@ -42,10 +42,17 @@ export default function Sidebar({ activeTab, setActiveTab, onLock, isOffline }) 
     };
   }, [isOffline]);
 
-  // Handle exiting guest mode to sign in
-  const handleSignInRequest = () => {
-    localStorage.removeItem('vs_offline_mode');
-    window.dispatchEvent(new Event('storage'));
+  const handleSignOut = async () => {
+    if (isOffline) {
+      localStorage.removeItem('vs_offline_mode');
+      window.dispatchEvent(new Event('storage'));
+    } else {
+      try {
+        await signOut(auth);
+      } catch (error) {
+        console.error("Error logging out:", error);
+      }
+    }
   };
 
   // Organized production navigation mapping
@@ -79,108 +86,103 @@ export default function Sidebar({ activeTab, setActiveTab, onLock, isOffline }) 
   ];
 
   return (
-    <aside className="w-[100px] h-full bg-[#0a0a0a] flex flex-col items-center py-8 shrink-0 z-20 select-none border-none">
+    <aside className="w-[100px] h-full bg-[#000000] flex flex-col items-center py-6 shrink-0 z-20 select-none border-r border-white/10">
       
-      {/* 1. macOS Window Decorations */}
-      <div className="flex gap-2 mb-12">
-        <div className="w-3 h-3 rounded-full bg-[#FF5F56] shadow-inner opacity-80 hover:opacity-100 transition-opacity"></div>
-        <div className="w-3 h-3 rounded-full bg-[#FFBD2E] shadow-inner opacity-80 hover:opacity-100 transition-opacity"></div>
-        <div className="w-3 h-3 rounded-full bg-[#27C93F] shadow-inner opacity-80 hover:opacity-100 transition-opacity"></div>
-      </div>
-
-      {/* 2. Scrollable Icon Nav */}
-      <div className="flex-1 w-full flex flex-col items-center gap-8 overflow-y-auto custom-scrollbar px-2">
+      {/* Scrollable Icon Nav */}
+      <div className="flex-1 w-full flex flex-col items-center gap-6 overflow-y-auto custom-scrollbar px-0 mt-4">
         {sections.map((section, sIdx) => (
-          <div key={sIdx} className="w-full flex flex-col items-center gap-4">
+          <div key={sIdx} className="w-full flex flex-col items-center gap-2">
             {section.items.map((item) => {
               const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className="group relative flex flex-col items-center"
+                  className="group relative flex flex-col items-center w-full py-2"
                 >
-                  <motion.div
-                    initial={false}
-                    animate={{
-                      backgroundColor: isActive ? '#007AFF' : 'transparent',
-                      scale: isActive ? 1.05 : 1,
-                    }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                    className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 relative ${
-                      isActive 
-                        ? 'text-white shadow-glow-blue' 
-                        : 'text-[#A1A1AA] hover:text-white hover:bg-white/5'
-                    }`}
-                  >
+                  <div className="relative w-12 h-12 flex items-center justify-center transition-all duration-200">
                     <item.icon 
-                      size={24} 
+                      size={22} 
                       strokeWidth={isActive ? 2.5 : 2}
-                      className="transition-transform group-hover:scale-110"
+                      className={`transition-colors duration-200 z-10 ${
+                        isActive ? 'text-brand-blue' : 'text-gray-500 group-hover:text-white'
+                      }`}
                     />
                     
-                    {/* Active Floating Indicator */}
+                    {/* Flat Geometric Active Highlight */}
                     {isActive && (
                       <motion.div 
-                        layoutId="active-pill"
-                        className="absolute -right-1 w-1 h-6 bg-[#007AFF] rounded-full shadow-[0_0_10px_#007AFF]"
+                        layoutId="active-highlight"
+                        className="absolute inset-0 bg-brand-blue/10 border border-brand-blue/20 rounded-sm"
+                        transition={{ type: 'tween', duration: 0.2 }}
                       />
                     )}
-                  </motion.div>
+                  </div>
                   
-                  {/* Tooltip Label (Visible on hover) */}
-                  <div className="absolute left-[70px] bg-[#1c1c1e] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 translate-x-[-10px] group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-50 shadow-2xl border border-white/5">
+                  {/* Flat Corporate Edge Indicator */}
+                  {isActive && (
+                    <motion.div 
+                      layoutId="active-edge"
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-brand-blue"
+                      transition={{ type: 'tween', duration: 0.2 }}
+                    />
+                  )}
+                  
+                  {/* Tooltip Label (Stark, Flat Style) */}
+                  <div className="absolute left-[85px] bg-white text-black text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-sm opacity-0 group-hover:opacity-100 translate-x-[-5px] group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-50 shadow-corporate border border-gray-200">
                     {item.label}
                   </div>
                 </button>
               );
             })}
             
-            {/* Section Divider */}
+            {/* Minimal Section Divider */}
             {sIdx !== sections.length - 1 && (
-              <div className="w-6 h-px bg-white/5 rounded-full mt-2"></div>
+              <div className="w-8 h-px bg-white/10 my-2"></div>
             )}
           </div>
         ))}
       </div>
 
-      {/* 3. Action Footer */}
-      <div className="mt-8 flex flex-col items-center gap-5 w-full">
+      {/* Action Footer */}
+      <div className="mt-6 flex flex-col items-center gap-5 w-full">
         
-        {/* Sync / Connectivity Status */}
+        {/* Flat Sync/Connectivity Status */}
         <div className="relative group">
           <div 
-            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 bg-[#1c1c1e] border border-white/5 ${
-              syncStatus === 'synced' ? 'text-[#27C93F]' : syncStatus === 'offline' ? 'text-[#FF5F56]' : 'text-[#007AFF]'
+            className={`w-10 h-10 rounded-sm flex items-center justify-center transition-all duration-300 bg-[#111111] border border-white/10 ${
+              syncStatus === 'synced' ? 'text-status-green' : syncStatus === 'offline' ? 'text-status-orange' : 'text-brand-blue'
             }`}
           >
-            {syncStatus === 'synced' && <CloudCheck size={20} />}
-            {syncStatus === 'syncing' && <RefreshCw size={20} className="animate-spin" />}
-            {syncStatus === 'offline' && <CloudOff size={20} />}
+            {syncStatus === 'synced' && <CloudCheck size={18} />}
+            {syncStatus === 'syncing' && <RefreshCw size={18} className="animate-spin" />}
+            {syncStatus === 'offline' && <CloudOff size={18} />}
           </div>
           
-          {/* Status Glow Dot */}
-          <div className={`absolute top-0 right-0 w-3 h-3 rounded-full border-2 border-[#0a0a0a] ${
-            syncStatus === 'synced' ? 'bg-[#27C93F] shadow-[0_0_8px_#27C93F]' : 'bg-[#FF5F56] shadow-[0_0_8px_#FF5F56]'
+          {/* Solid Status Dot (No Glow) */}
+          <div className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-black ${
+            syncStatus === 'synced' ? 'bg-status-green' : 'bg-status-orange'
           }`}></div>
         </div>
 
-        {/* Lock & Security Controls */}
-        <div className="flex flex-col gap-3 bg-[#1c1c1e]/50 p-2 rounded-3xl border border-white/5">
+        {/* Flat Security Controls */}
+        <div className="flex flex-col gap-2 bg-[#111111] p-1.5 rounded-sm border border-white/10 w-12 items-center">
           <button 
             onClick={onLock}
-            className="w-10 h-10 rounded-2xl flex items-center justify-center text-[#A1A1AA] hover:text-[#FFBD2E] hover:bg-[#FFBD2E]/10 transition-all active:scale-90"
+            className="w-9 h-9 rounded-sm flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 transition-colors"
             title="Lock Terminal"
           >
-            <Lock size={18} />
+            <Lock size={16} />
           </button>
           
+          <div className="w-6 h-px bg-white/10"></div>
+          
           <button 
-            onClick={() => {/* Global Sign-out logic */}}
-            className="w-10 h-10 rounded-2xl flex items-center justify-center text-[#A1A1AA] hover:text-[#FF5F56] hover:bg-[#FF5F56]/10 transition-all active:scale-90"
+            onClick={handleSignOut}
+            className="w-9 h-9 rounded-sm flex items-center justify-center text-gray-500 hover:text-status-red hover:bg-status-red/10 transition-colors"
             title="Sign Out"
           >
-            <LogOut size={18} />
+            <LogOut size={16} />
           </button>
         </div>
 

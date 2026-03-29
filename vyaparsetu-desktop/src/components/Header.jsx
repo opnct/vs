@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Cloud, User, LogOut, MonitorOff, ChevronDown, Users } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Search, Cloud, User, LogOut, MonitorOff, Clock } from 'lucide-react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useLanguage } from '../context/LanguageContext';
+import PremiumButton from './ui/PremiumButton';
 
 export default function Header({ user, staff, isOffline }) {
   const { language, setLanguage, t } = useLanguage();
@@ -16,12 +16,9 @@ export default function Header({ user, staff, isOffline }) {
   }, []);
 
   const displayName = staff?.username || (isOffline ? t('guest_owner') : (user?.email?.split('@')[0] || t('guest_owner')));
-  const initials = displayName.substring(0, 2).toUpperCase();
-
-  // Typography Formatting matching Image Reference
+  
   const smallTopDate = currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); 
   const timeString = currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); 
-  const largeDateString = currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }); 
 
   const handleAction = async () => {
     if (isOffline) {
@@ -43,69 +40,51 @@ export default function Header({ user, staff, isOffline }) {
   ];
 
   return (
-    <header className="flex items-center justify-between px-10 py-10 bg-[#0a0a0a] shrink-0 select-none">
+    <header className="flex items-center justify-between px-10 py-6 bg-[#000000] border-b border-white/10 shrink-0 select-none">
       
-      {/* 1. LEFT: Oversized Date Typography Hierarchy */}
-      <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-left-6 duration-700">
-        <span className="text-[10px] font-black text-[#666] tracking-[0.25em] uppercase">
-          {timeString} • {smallTopDate}
-        </span>
-        <div className="flex items-center gap-4 group cursor-pointer">
-          <h1 className="text-4xl font-black text-white tracking-tight leading-none">
-            {largeDateString}
-          </h1>
-          <div className="p-1.5 rounded-full bg-[#1c1c1e] text-[#888] group-hover:text-white group-hover:bg-[#252525] transition-all">
-            <ChevronDown size={20} strokeWidth={3} />
-          </div>
+      {/* 1. LEFT: Corporate VyaparSetu Logo */}
+      <div className="flex items-center animate-in fade-in slide-in-from-left-6 duration-700">
+        <h1 className="text-3xl font-black text-white tracking-tighter">
+          VyaparSetu
+        </h1>
+      </div>
+
+      {/* 2. MIDDLE: Nav-style Corporate Links */}
+      <div className="hidden xl:flex items-center gap-8 animate-in fade-in duration-1000 delay-150">
+        <div className="flex items-center gap-2 text-sm font-bold text-white hover:text-brand-blue transition-colors cursor-pointer">
+          <User size={16} /> <span className="uppercase tracking-widest">{displayName}</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm font-bold text-gray-400">
+          <Clock size={16} /> <span className="uppercase tracking-widest">{timeString} • {smallTopDate}</span>
+        </div>
+        <div className={`flex items-center gap-2 text-sm font-bold uppercase tracking-widest ${isOffline ? 'text-status-orange' : 'text-brand-green'}`}>
+          {isOffline ? <><MonitorOff size={16}/> Local Session</> : <><Cloud size={16}/> Cloud Synced</>}
         </div>
       </div>
 
-      {/* 2. MIDDLE: Staff Pills (Resource Roster Style) */}
-      <div className="hidden xl:flex items-center gap-4 animate-in fade-in duration-1000 delay-150">
-        <div className="flex items-center gap-3 bg-[#1c1c1e] p-1.5 pr-5 rounded-2xl border border-white/5 shadow-lg group cursor-pointer hover:border-[#007AFF]/30 transition-all">
-          <div className="w-10 h-10 rounded-xl bg-[#007AFF] flex items-center justify-center text-[11px] font-black text-white tracking-widest shadow-glow-blue">
-            {initials}
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[13px] font-bold text-white leading-tight">{displayName}</span>
-            <span className="text-[9px] font-bold text-[#555] uppercase tracking-widest">Active</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 bg-transparent p-1.5 pr-5 rounded-2xl border border-dashed border-white/10 opacity-40 hover:opacity-100 hover:bg-[#1c1c1e] transition-all cursor-pointer group">
-          <div className="w-10 h-10 rounded-xl bg-[#252525] flex items-center justify-center text-[11px] font-black text-[#444] group-hover:text-[#888] tracking-widest">
-            SYS
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[13px] font-bold text-[#444] group-hover:text-[#888] leading-tight">Terminal</span>
-            <span className="text-[9px] font-bold text-[#333] uppercase tracking-widest">Standby</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. RIGHT: Search & Utility Dock */}
-      <div className="flex items-center gap-5 animate-in fade-in slide-in-from-right-6 duration-700">
+      {/* 3. RIGHT: Search, Lang, and Primary Action */}
+      <div className="flex items-center gap-6 animate-in fade-in slide-in-from-right-6 duration-700">
         
-        {/* Sleek Dark Pill Search */}
-        <div className="relative group">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555] group-focus-within:text-[#007AFF] transition-colors" />
+        {/* Sleek Dark Corporate Search */}
+        <div className="relative group hidden md:block">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-brand-blue transition-colors" />
           <input 
             type="text"
             placeholder="Universal Search..."
-            className="w-72 bg-[#252525] hover:bg-[#2a2a2a] py-3.5 pl-12 pr-6 rounded-2xl border border-transparent focus:border-[#007AFF]/50 focus:ring-4 focus:ring-[#007AFF]/10 outline-none text-[14px] font-bold text-white placeholder-[#555] transition-all"
+            className="w-64 bg-[#111111] hover:bg-[#1a1a1a] py-2.5 pl-10 pr-4 rounded-sm border border-white/10 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-sm font-bold text-white placeholder-gray-500 transition-all"
           />
         </div>
 
-        {/* Language Selection Pill */}
-        <div className="flex bg-[#1c1c1e] p-1.5 rounded-2xl border border-white/5">
+        {/* Flat Language Selection Nav */}
+        <div className="flex gap-1">
           {languages.map((lang) => (
             <button
               key={lang.code}
               onClick={() => setLanguage(lang.code)}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${
+              className={`px-3 py-1.5 rounded-sm text-xs font-black tracking-widest transition-all ${
                 language === lang.code 
-                  ? 'bg-[#007AFF] text-white shadow-glow-blue' 
-                  : 'text-[#555] hover:text-[#888]'
+                  ? 'bg-white text-black' 
+                  : 'text-gray-400 hover:text-white'
               }`}
             >
               {lang.label}
@@ -113,20 +92,15 @@ export default function Header({ user, staff, isOffline }) {
           ))}
         </div>
 
-        {/* System Sync State */}
-        <div className="flex items-center justify-center w-12 h-12 bg-[#1c1c1e] border border-white/5 rounded-2xl text-[#888] relative">
-          {isOffline ? <MonitorOff size={20} className="text-[#FFBD2E]" /> : <Cloud size={20} className="text-[#27C93F]" />}
-          <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-[#0a0a0a] ${isOffline ? 'bg-[#FFBD2E]' : 'bg-[#27C93F] animate-pulse'}`}></div>
-        </div>
-
-        {/* Auth Toggle */}
-        <button 
+        {/* Primary Auth Action (GET STARTED Style) */}
+        <PremiumButton 
           onClick={handleAction}
-          className="w-12 h-12 bg-[#1c1c1e] border border-white/5 rounded-2xl flex items-center justify-center text-[#888] hover:text-[#FF5F56] hover:bg-[#FF5F56]/10 transition-all relative group overflow-hidden"
+          variant="primary"
+          icon={isOffline ? Cloud : LogOut}
+          className="rounded-sm px-8 py-3 text-xs tracking-widest shadow-none border-none"
         >
-          <User size={20} className="group-hover:translate-y-10 transition-all duration-500" />
-          <LogOut size={20} className="absolute -top-10 group-hover:top-1/2 group-hover:-translate-y-1/2 transition-all duration-500" />
-        </button>
+          {isOffline ? 'GO ONLINE' : 'SYSTEM LOGOUT'}
+        </PremiumButton>
 
       </div>
     </header>
