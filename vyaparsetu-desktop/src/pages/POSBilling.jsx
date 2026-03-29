@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { 
   Search, Plus, Minus, Trash2, Printer, 
   Banknote, QrCode, BookDown, CheckCircle2,
@@ -34,15 +33,15 @@ export default function POSBilling() {
     const loadData = async () => {
       try {
         setIsLoadingItems(true);
-        if (window.__TAURI_IPC__) {
+        if (window.electronAPI) {
           const [productsData, customersData] = await Promise.all([
-            invoke('get_all_products'),
-            invoke('get_all_customers')
+            window.electronAPI.invoke('get_all_products'),
+            window.electronAPI.invoke('get_all_customers')
           ]);
           setInventory(productsData || []);
           setCustomers(customersData || []);
         } else {
-          console.warn("Running in standard browser. Tauri API unavailable.");
+          console.warn("Running in standard browser. Electron API unavailable.");
         }
       } catch (error) {
         console.error("Failed to load POS data:", error);
@@ -94,7 +93,7 @@ export default function POSBilling() {
         ? posStore.splitPayments
         : [{ mode: posStore.paymentMode, amount: totals.grandTotal }];
 
-      // Construct Strict Payload for Rust DB Engine
+      // Construct Strict Payload for Node DB Engine
       const payload = {
         customer_id: posStore.customerId || null,
         items: posStore.cart.map(i => ({
@@ -109,13 +108,13 @@ export default function POSBilling() {
         payments: payments
       };
 
-      if (window.__TAURI_IPC__) {
+      if (window.electronAPI) {
         // Execute ACID-Compliant Database Checkout
-        await invoke('cmd_process_checkout', { payload });
+        await window.electronAPI.invoke('cmd_process_checkout', { payload });
 
         // Print Logic
         const savedSettings = JSON.parse(localStorage.getItem('vyaparsetu_settings') || '{}');
-        await invoke('print_receipt', {
+        await window.electronAPI.invoke('print_receipt', {
           receipt: {
             shop: {
               shop_name: savedSettings.shopName || "VyaparSetu Retail",

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { 
   Search, User, Phone, MessageCircle, 
   ArrowUpRight, ArrowDownRight, Plus, 
@@ -22,11 +21,11 @@ export default function KhataLedger() {
   const [txnModal, setTxnModal] = useState({ isOpen: false, type: null }); // type: 'CREDIT_GIVEN' | 'PAYMENT_RECEIVED'
   const [newTxn, setNewTxn] = useState({ amount: '', remarks: '' });
 
-  // 1. Fetch All Customers with Balances from SQLite
+  // 1. Fetch All Customers with Balances from SQLite via Electron IPC
   const fetchCustomers = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await invoke('get_all_customers');
+      const data = await window.electronAPI.invoke('get_all_customers');
       setCustomers(data || []);
       
       // Update active customer balance silently if it was open
@@ -45,7 +44,7 @@ export default function KhataLedger() {
   const fetchLedger = useCallback(async (customerId) => {
     try {
       setLedgerLoading(true);
-      const data = await invoke('get_customer_ledger', { customerId });
+      const data = await window.electronAPI.invoke('get_customer_ledger', { customerId });
       setLedgerEntries(data || []);
     } catch (error) {
       console.error("Failed to fetch ledger:", error);
@@ -78,7 +77,7 @@ export default function KhataLedger() {
     if (!newCustomer.name) return;
     
     try {
-      await invoke('create_customer', {
+      await window.electronAPI.invoke('create_customer', {
         c: {
           id: Date.now().toString(),
           name: newCustomer.name,
@@ -107,7 +106,7 @@ export default function KhataLedger() {
     const defaultRemark = txnModal.type === 'CREDIT_GIVEN' ? 'Manual Udhaar / Items Taken' : 'Payment Received';
 
     try {
-      await invoke('log_payment', {
+      await window.electronAPI.invoke('log_payment', {
         p: {
           id: Date.now().toString(),
           entity_type: 'CUSTOMER',

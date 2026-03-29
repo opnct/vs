@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { 
   Store, Printer, Receipt, Save, CheckCircle2, 
   Usb, FileText, Cloud, Download, ShieldCheck,
@@ -29,17 +28,17 @@ export default function Settings() {
   const [isSaved, setIsSaved] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
 
-  // 1. Fetch real settings from SQLite via Rust
+  // 1. Fetch real settings from SQLite via Electron IPC
   const fetchSettings = useCallback(async () => {
     try {
       setIsLoading(true);
       
-      // SAFETY CHECK: Verify Tauri API is available before invoking Rust
+      // SAFETY CHECK: Verify Electron API is available
       let data = null;
-      if (window.__TAURI_IPC__) {
-        data = await invoke('get_settings');
+      if (window.electronAPI) {
+        data = await window.electronAPI.invoke('get_settings');
       } else {
-        console.warn("Running in standard browser. Tauri API unavailable.");
+        console.warn("Running in standard browser. Electron API unavailable.");
       }
       
       if (data) {
@@ -65,12 +64,12 @@ export default function Settings() {
     setIsSaved(false);
   };
 
-  // 2. Persist to SQLite Database
+  // 2. Persist to SQLite Database via Electron IPC
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      if (window.__TAURI_IPC__) {
-        await invoke('update_settings', { settings });
+      if (window.electronAPI) {
+        await window.electronAPI.invoke('update_settings', { settings });
       } else {
         console.log("Browser mode: Settings save simulated.");
       }
@@ -87,8 +86,8 @@ export default function Settings() {
     if (isOfflineMode) return;
     setIsBackingUp(true);
     try {
-      if (window.__TAURI_IPC__) {
-        await invoke('sync_offline_pos', { payload: "manual_trigger" });
+      if (window.electronAPI) {
+        await window.electronAPI.invoke('sync_offline_pos', { payload: "manual_trigger" });
       }
     } catch (error) {
       console.error("Backup failed:", error);
@@ -99,8 +98,8 @@ export default function Settings() {
 
   const exportGSTR1 = async () => {
     try {
-      if (window.__TAURI_IPC__) {
-        await invoke('export_gst_report');
+      if (window.electronAPI) {
+        await window.electronAPI.invoke('export_gst_report');
       }
     } catch (error) {
       console.error("Export failed:", error);
