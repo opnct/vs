@@ -7,55 +7,34 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Deep, modern dark mode palette matching the reference image layered design
+        // Flat Enterprise Corporate Palette matching the reference images
         brand: {
-          black: '#000000',    // Pure black for the rightmost/main content panel
-          dark: '#0a0a0a',     // Ultra-dark background for the sidebar
-          surface: '#1c1c1e',  // Elevated cards and middle panels
-          blue: '#007AFF',     // Vivid blue for active states and glowing popovers
-          text: '#ffffff',     // Main headings and primary text
-          muted: '#888888',    // Subtitles, search bar, and secondary text
-          border: '#2a2a2a',   // Subtle borders between elements
+          black: '#000000',      // Pure black for headers and AI Core sections
+          white: '#ffffff',      // Stark white for forms and main foregrounds
+          blue: '#0056b3',       // Corporate Enterprise Blue (Buttons, Accents)
+          green: '#2ecc71',      // Success Green (Login button, positive actions)
+          surface: '#f8f9fa',    // Form Grey (Security Protocols card, background panels)
+          text: '#333333',       // Main document text
+          muted: '#6c757d',      // Secondary text and hints
+          border: '#dee2e6',     // Standard corporate borders
+          focus: '#80bdff',      // Input focus ring color (Light blue outline)
         },
-        // Exact pastel accent colors from the reference dashboard
-        pastel: {
-          blue: '#e3ebff',     // Total earning card
-          yellow: '#ffeeba',   // Total spendings card
-          green: '#c5ecd7',    // Spending goal card
-        },
-        // macOS window control buttons
-        mac: {
-          red: '#FF5F56',
-          yellow: '#FFBD2E',
-          green: '#27C93F',
-        },
-        // Status indicator dots and transaction text colors
         status: {
-          green: '#4ade80',    // Positive transactions (e.g. + $685.00)
-          red: '#f87171',      // Negative transactions (e.g. - $510.50)
-          orange: '#F5A623',   // Offline / Warning
-          purple: '#B39DDB',   // Miscellaneous accents
+          green: '#2ecc71',
+          red: '#dc3545',
+          orange: '#f39c12',
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Montserrat', 'system-ui', '-apple-system', 'sans-serif'],
       },
       boxShadow: {
-        // Updated shadows to blend smoothly into pure black layers
-        'soft-3d': '0 20px 40px -15px rgba(0, 0, 0, 0.8)',
-        'soft-float': '0 10px 30px -10px rgba(0, 0, 0, 0.6)',
-        // Glowing popover shadows for the vibrant blue floating action menus
-        'glow-blue': '0 10px 40px -10px rgba(0, 122, 255, 0.5), 0 0 20px 5px rgba(0, 122, 255, 0.2)',
-        'popover': '0 20px 40px -10px rgba(0,0,0,0.8), 0 0 20px -5px rgba(0,0,0,0.5)',
-      },
-      borderRadius: {
-        // Expanded to include the extreme rounded corners from the design
-        '4xl': '2rem',     // 32px
-        '5xl': '2.5rem',   // 40px
-        '6xl': '3rem',     // 48px - Highly rounded corners for main layout panels
+        // Clean, minimal shadows replacing the old glowing neon effects
+        'corporate': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        'corporate-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
       },
       keyframes: {
-        // Smooth fade-ins and scale-up modal animations for premium micro-interactions
+        // Retained smooth micro-interactions for UI responsiveness
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
