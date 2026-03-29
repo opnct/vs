@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { 
   Search, Zap, Bell, ChevronDown, Calendar, 
   RefreshCw, Plus, MoreHorizontal, MessageSquare, 
@@ -20,11 +19,11 @@ export default function Dashboard() {
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Real Data Aggregator
+  // Real Data Aggregator using Electron IPC
   const fetchDashboardData = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      const stats = await invoke('get_daily_stats').catch(() => ({
+      const stats = await window.electronAPI.invoke('get_daily_stats').catch(() => ({
         total_sales: 0, cash: 0, upi: 0, udhaar: 0, profit: 0
       }));
       
@@ -36,7 +35,7 @@ export default function Dashboard() {
         approxProfit: stats.profit
       });
 
-      const transactions = await invoke('get_recent_invoices', { limit: 10 }).catch(() => []);
+      const transactions = await window.electronAPI.invoke('get_recent_invoices', { limit: 10 }).catch(() => []);
       setRecentTransactions(transactions);
     } catch (error) {
       console.error("Dashboard Data Sync Error:", error);

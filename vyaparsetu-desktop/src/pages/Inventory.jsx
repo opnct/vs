@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { createColumnHelper } from '@tanstack/react-table';
 import { 
   Plus, Package, MoreHorizontal, Hash, 
@@ -13,7 +12,7 @@ export default function Inventory() {
   const [isAdding, setIsAdding] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Strict mapping to Rust `ProductInput` DTO
+  // Strict mapping to Rust `ProductInput` DTO (now handled by Node backend)
   const defaultProductState = { 
     name: '', 
     sku: '',
@@ -30,11 +29,11 @@ export default function Inventory() {
 
   const [newProduct, setNewProduct] = useState(defaultProductState);
 
-  // 1. Fetch real data from SQLite
+  // 1. Fetch real data from SQLite via Electron IPC
   const fetchInventory = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await invoke('get_all_products');
+      const data = await window.electronAPI.invoke('get_all_products');
       setProducts(data || []);
     } catch (error) {
       console.error("Database Fetch Error:", error);
@@ -47,7 +46,7 @@ export default function Inventory() {
     fetchInventory();
   }, [fetchInventory]);
 
-  // 2. Insert real data into SQLite via Rust
+  // 2. Insert real data into SQLite via Electron IPC
   const handleAddProduct = async (e) => {
     e.preventDefault();
     if (!newProduct.name || !newProduct.selling_price) return;
@@ -68,7 +67,7 @@ export default function Inventory() {
         tax_rate: parseFloat(newProduct.tax_rate) || 0.0,
       };
 
-      await invoke('create_product', { p: payload });
+      await window.electronAPI.invoke('create_product', { p: payload });
 
       setIsAdding(false);
       setNewProduct(defaultProductState);
