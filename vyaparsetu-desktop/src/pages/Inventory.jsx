@@ -2,17 +2,18 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createColumnHelper } from '@tanstack/react-table';
 import { 
   Plus, Package, MoreHorizontal, Hash, 
-  Tag, Scale, X, Loader2, IndianRupee, Percent
+  Tag, X, Loader2, IndianRupee, Percent, Search
 } from 'lucide-react';
-import DataTable from '../components/DataTable';
+import PremiumTable from '../components/ui/PremiumTable';
+import GlassModal from '../components/ui/GlassModal';
 import PermissionGate from '../components/PermissionGate';
 
 export default function Inventory() {
   const [products, setProducts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Strict mapping to Rust `ProductInput` DTO (now handled by Node backend)
   const defaultProductState = { 
     name: '', 
     sku: '',
@@ -33,8 +34,10 @@ export default function Inventory() {
   const fetchInventory = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await window.electronAPI.invoke('get_all_products');
-      setProducts(data || []);
+      if (window.electronAPI) {
+        const data = await window.electronAPI.invoke('get_all_products');
+        setProducts(data || []);
+      }
     } catch (error) {
       console.error("Database Fetch Error:", error);
     } finally {
@@ -52,34 +55,43 @@ export default function Inventory() {
     if (!newProduct.name || !newProduct.selling_price) return;
     
     try {
-      const payload = {
-        id: Date.now().toString(),
-        name: newProduct.name,
-        sku: newProduct.sku || null,
-        barcode: newProduct.barcode || null,
-        category: newProduct.category || null,
-        unit: newProduct.unit,
-        cost_price: parseFloat(newProduct.cost_price) || 0.0,
-        selling_price: parseFloat(newProduct.selling_price) || 0.0,
-        stock_quantity: parseFloat(newProduct.stock_quantity) || 0.0,
-        min_stock: parseFloat(newProduct.min_stock) || 0.0,
-        hsn_code: newProduct.hsn_code || null,
-        tax_rate: parseFloat(newProduct.tax_rate) || 0.0,
-      };
+      if (window.electronAPI) {
+        const payload = {
+          id: Date.now().toString(),
+          name: newProduct.name,
+          sku: newProduct.sku || null,
+          barcode: newProduct.barcode || null,
+          category: newProduct.category || null,
+          unit: newProduct.unit,
+          cost_price: parseFloat(newProduct.cost_price) || 0.0,
+          selling_price: parseFloat(newProduct.selling_price) || 0.0,
+          stock_quantity: parseFloat(newProduct.stock_quantity) || 0.0,
+          min_stock: parseFloat(newProduct.min_stock) || 0.0,
+          hsn_code: newProduct.hsn_code || null,
+          tax_rate: parseFloat(newProduct.tax_rate) || 0.0,
+        };
 
-      await window.electronAPI.invoke('create_product', { p: payload });
-
-      setIsAdding(false);
-      setNewProduct(defaultProductState);
-      await fetchInventory();
+        await window.electronAPI.invoke('create_product', { p: payload });
+        setIsAdding(false);
+        setNewProduct(defaultProductState);
+        await fetchInventory();
+      }
     } catch (error) {
       console.error("Database Insertion Error:", error);
     }
   };
 
-  // 3. Define Virtualized DataTable Columns
-  const columnHelper = createColumnHelper();
+  // 3. Filtered Data for Table
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => 
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.barcode && p.barcode.includes(searchQuery)) ||
+      (p.hsn_code && p.hsn_code.includes(searchQuery))
+    );
+  }, [products, searchQuery]);
 
+  // 4. Table Column Definitions
+  const columnHelper = createColumnHelper();
   const columns = useMemo(() => [
     columnHelper.accessor('name', {
       header: 'Product Details',
@@ -87,21 +99,21 @@ export default function Inventory() {
         const product = info.row.original;
         const isOutOfStock = product.stock_quantity <= 0;
         return (
-          <div className="flex items-center gap-5">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border border-white/5 ${
-              isOutOfStock ? 'bg-mac-red/10 text-mac-red' : 'bg-brand-dark text-[#A1A1AA]'
+          <div className="flex items-center gap-4">
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border border-white/5 ${
+              isOutOfStock ? 'bg-[#f87171]/10 text-[#f87171]' : 'bg-[#0a0a0a] text-[#888888]'
             }`}>
-              <Package size={20} />
+              <Package size={18} />
             </div>
-            <div>
-              <h4 className="font-bold text-white text-[15px] leading-tight">{product.name}</h4>
-              <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white/5 text-[#666] flex items-center gap-1 uppercase">
-                  <Tag size={10} /> {product.category || 'General'}
+            <div className="overflow-hidden">
+              <h4 className="font-bold text-white text-[14px] leading-tight truncate">{product.name}</h4>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-white/5 text-[#555] uppercase tracking-widest">
+                  {product.category || 'General'}
                 </span>
                 {product.barcode && (
-                  <span className="text-[10px] font-mono text-[#444] tracking-widest uppercase flex items-center gap-1">
-                    <Hash size={10} /> {product.barcode}
+                  <span className="text-[9px] font-mono text-[#444] tracking-widest uppercase">
+                    #{product.barcode}
                   </span>
                 )}
               </div>
@@ -111,59 +123,43 @@ export default function Inventory() {
       }
     }),
     columnHelper.accessor('selling_price', {
-      header: 'Pricing & Tax',
+      header: 'Pricing',
       cell: info => {
         const product = info.row.original;
         return (
-          <div>
-            <div className="text-mac-green font-black text-lg leading-none flex items-center gap-1">
-              ₹{product.selling_price.toFixed(2)}
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              {product.cost_price > 0 && (
-                <span className="text-[11px] font-bold text-[#555]">Cost ₹{product.cost_price.toFixed(2)}</span>
-              )}
-              {product.tax_rate > 0 && (
-                <span className="text-[9px] font-black text-brand-blue bg-brand-blue/10 px-1.5 py-0.5 rounded uppercase tracking-widest">
-                  GST {product.tax_rate}%
-                </span>
-              )}
-            </div>
+          <div className="flex flex-col">
+            <span className="text-[#4ade80] font-black text-[15px]">₹{product.selling_price.toFixed(2)}</span>
+            <span className="text-[10px] font-bold text-[#444] uppercase tracking-tighter">
+              Cost: ₹{product.cost_price.toFixed(2)}
+            </span>
           </div>
         );
       }
     }),
+    columnHelper.accessor('tax_rate', {
+      header: 'Tax (%)',
+      cell: info => (
+        <span className="bg-[#007AFF]/10 text-[#007AFF] text-[10px] font-black px-2 py-1 rounded-lg border border-[#007AFF]/20">
+          {info.getValue()}% GST
+        </span>
+      )
+    }),
     columnHelper.accessor('stock_quantity', {
-      header: 'Stock Inventory',
+      header: 'Inventory',
       cell: info => {
         const product = info.row.original;
-        const stockVal = parseFloat(product.stock_quantity || 0);
-        const minStock = parseFloat(product.min_stock || 0);
-        const isOutOfStock = stockVal <= 0;
-        const isLowStock = stockVal > 0 && stockVal <= minStock;
-
+        const stock = parseFloat(product.stock_quantity || 0);
+        const isLow = stock <= parseFloat(product.min_stock || 0);
         return (
-          <div className="w-48">
-            <div className="flex items-center justify-between mb-1.5 pr-2">
-              <span className={`text-[13px] font-black ${isOutOfStock ? 'text-mac-red' : 'text-white'}`}>
-                {stockVal.toFixed(2)} {product.unit}
-              </span>
-              <span className={`w-2 h-2 rounded-full ${
-                isOutOfStock ? 'bg-mac-red animate-pulse' : 
-                isLowStock ? 'bg-mac-yellow' : 
-                'bg-mac-green'
-              }`}></span>
-            </div>
-            <div className="w-full h-1.5 bg-brand-dark rounded-full overflow-hidden">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-1.5 w-24 bg-[#0a0a0a] rounded-full overflow-hidden">
               <div 
-                className={`h-full transition-all duration-500 ${
-                  isOutOfStock ? 'w-0' : 
-                  isLowStock ? 'bg-mac-yellow w-1/4' : 
-                  'bg-mac-green w-full'
-                }`}
-                style={{ width: isOutOfStock ? '0%' : isLowStock ? '25%' : '100%' }}
+                className={`h-full transition-all duration-700 ${stock <= 0 ? 'bg-[#f87171] w-0' : isLow ? 'bg-[#FFBD2E] w-1/3' : 'bg-[#4ade80] w-full'}`}
               ></div>
             </div>
+            <span className={`text-[12px] font-black whitespace-nowrap ${stock <= 0 ? 'text-[#f87171]' : isLow ? 'text-[#FFBD2E]' : 'text-white'}`}>
+              {stock} {product.unit}
+            </span>
           </div>
         );
       }
@@ -171,62 +167,80 @@ export default function Inventory() {
     columnHelper.display({
       id: 'actions',
       header: () => <div className="text-right">Actions</div>,
-      cell: info => (
-        <div className="flex justify-end gap-2">
-          <PermissionGate permission="EDIT_INVENTORY" type="inline">
-            <button className="p-2.5 bg-brand-dark hover:bg-white/10 text-[#A1A1AA] hover:text-white rounded-xl transition-all border border-white/5">
-              <Scale size={16} />
-            </button>
-            <button className="p-2.5 bg-brand-dark hover:bg-white/10 text-[#A1A1AA] hover:text-white rounded-xl transition-all border border-white/5">
-              <MoreHorizontal size={16} />
-            </button>
-          </PermissionGate>
+      cell: () => (
+        <div className="flex justify-end">
+          <button className="p-2 rounded-xl hover:bg-white/5 text-[#444] hover:text-white transition-colors">
+            <MoreHorizontal size={18} />
+          </button>
         </div>
       )
     })
   ], []);
 
   return (
-    <div className="flex flex-col h-full gap-6 select-none font-sans">
+    <div className="flex flex-col h-full gap-6 select-none font-sans text-white">
       
-      {/* 1. Header & Controls */}
+      {/* 1. Header & Quick Search */}
       <div className="flex items-center justify-between gap-6 shrink-0">
-        <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Inventory Engine</h1>
-          <p className="text-[#A1A1AA] text-sm mt-1 font-medium">Manage stock, pricing, and compliance rules.</p>
+        <div className="animate-in fade-in slide-in-from-left-4 duration-500">
+          <h1 className="text-3xl font-bold tracking-tight">Inventory Engine</h1>
+          <p className="text-[#888888] text-sm mt-1 font-medium">Real-time stock control and compliance.</p>
         </div>
-        
-        <PermissionGate permission="ADD_INVENTORY" type="inline">
-          <button 
-            onClick={() => setIsAdding(!isAdding)}
-            className={`flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold transition-all active:scale-95 shadow-xl ${
-              isAdding ? 'bg-brand-dark text-white border border-white/10 hover:bg-white/5' : 'bg-brand-blue text-white shadow-brand-blue/20'
-            }`}
-          >
-            {isAdding ? <><X size={20} /> Close Form</> : <><Plus size={20} /> Add Product</>}
-          </button>
-        </PermissionGate>
+
+        <div className="flex items-center gap-4">
+          <div className="bg-[#1c1c1e] p-1.5 rounded-2xl flex items-center gap-3 focus-within:ring-1 focus-within:ring-[#007AFF]/50 transition-all w-64 border border-white/5">
+            <div className="pl-2 text-[#555]"><Search size={18} /></div>
+            <input 
+              type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Quick search..."
+              className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-white placeholder-[#444] py-1.5"
+            />
+          </div>
+          
+          <PermissionGate permission="ADD_INVENTORY" type="inline">
+            <button 
+              onClick={() => setIsAdding(true)}
+              className="flex items-center gap-2 px-6 py-3.5 bg-[#007AFF] text-white rounded-2xl font-black text-sm tracking-widest uppercase shadow-glow-blue hover:bg-[#007AFF]/80 transition-all active:scale-95"
+            >
+              <Plus size={18} /> Add Product
+            </button>
+          </PermissionGate>
+        </div>
       </div>
 
-      {/* 2. Add Product Form (Connected to SQLite) */}
-      {isAdding && (
-        <div className="bg-brand-surface p-8 rounded-[2rem] border border-white/5 shadow-2xl animate-in slide-in-from-top-4 duration-300 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-brand-blue"></div>
-          <h3 className="text-white font-bold text-lg mb-6 flex items-center gap-2">
-            <Package size={20} className="text-brand-blue" /> Master Catalog Entry
-          </h3>
-          
-          <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
-            
-            {/* Row 1: Identity */}
-            <div className="md:col-span-2 space-y-2">
-              <label className="text-[10px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Product Name *</label>
-              <input required type="text" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-bold focus:border-brand-blue transition-all outline-none" placeholder="e.g. Loose Sugar" />
+      {/* 2. Premium Data Table Container */}
+      <div className="flex-1 bg-[#1c1c1e] rounded-[2.5rem] border border-white/5 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col relative">
+        {loading && (
+          <div className="absolute inset-0 bg-[#1c1c1e]/60 backdrop-blur-sm z-50 flex items-center justify-center">
+            <Loader2 className="animate-spin text-[#007AFF]" size={40} />
+          </div>
+        )}
+        <PremiumTable 
+          data={filteredProducts} 
+          columns={columns} 
+          onRowClick={(p) => console.log("Product selected:", p)}
+        />
+      </div>
+
+      {/* 3. Add Product GlassModal */}
+      <GlassModal 
+        isOpen={isAdding} 
+        onClose={() => setIsAdding(false)} 
+        title="Master Catalog Entry"
+        maxWidth="max-w-3xl"
+      >
+        <form onSubmit={handleAddProduct} className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-[10px] font-black text-[#888888] uppercase tracking-[0.2em] ml-1">Product Name *</label>
+              <input required autoFocus type="text" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full bg-[#0a0a0a] p-4 rounded-2xl border-none outline-none text-white font-bold focus:ring-2 focus:ring-[#007AFF] transition-all" placeholder="e.g. Loose Sugar" />
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Category</label>
-              <select value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue outline-none cursor-pointer">
+              <label className="text-[10px] font-black text-[#888888] uppercase tracking-[0.2em] ml-1">Category</label>
+              <select value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} className="w-full bg-[#0a0a0a] p-4 rounded-2xl border-none outline-none text-white font-bold focus:ring-2 focus:ring-[#007AFF] cursor-pointer">
                 <option>Grocery</option>
                 <option>Snacks</option>
                 <option>Dairy</option>
@@ -236,87 +250,62 @@ export default function Inventory() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Barcode / SKU</label>
+              <label className="text-[10px] font-black text-[#888888] uppercase tracking-[0.2em] ml-1">Barcode / SKU</label>
               <div className="relative">
-                <Hash size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#555]" />
-                <input type="text" value={newProduct.barcode} onChange={e => setNewProduct({...newProduct, barcode: e.target.value})} className="w-full bg-brand-dark p-3.5 pl-9 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue outline-none" placeholder="Scan..." />
+                <Hash size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#444]" />
+                <input type="text" value={newProduct.barcode} onChange={e => setNewProduct({...newProduct, barcode: e.target.value})} className="w-full bg-[#0a0a0a] p-4 pl-12 rounded-2xl border-none outline-none text-white font-medium focus:ring-2 focus:ring-[#007AFF]" placeholder="Scan..." />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Unit</label>
-              <select value={newProduct.unit} onChange={e => setNewProduct({...newProduct, unit: e.target.value})} className="w-full bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue outline-none cursor-pointer">
-                <option value="pcs">Pieces (pcs)</option>
-                <option value="kg">Kilogram (kg)</option>
-                <option value="gm">Grams (gm)</option>
-                <option value="ltr">Litre (L)</option>
-                <option value="box">Box</option>
-              </select>
-            </div>
-
-            {/* Row 2: Finance & Compliance */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Cost Price (₹)</label>
+              <label className="text-[10px] font-black text-[#888888] uppercase tracking-[0.2em] ml-1">Cost Price (₹)</label>
               <div className="relative">
-                <IndianRupee size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#555]" />
-                <input type="number" step="0.01" value={newProduct.cost_price} onChange={e => setNewProduct({...newProduct, cost_price: e.target.value})} className="w-full bg-brand-dark p-3.5 pl-9 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue outline-none" placeholder="0.00" />
+                <IndianRupee size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#444]" />
+                <input type="number" step="0.01" value={newProduct.cost_price} onChange={e => setNewProduct({...newProduct, cost_price: e.target.value})} className="w-full bg-[#0a0a0a] p-4 pl-12 rounded-2xl border-none outline-none text-white font-medium focus:ring-2 focus:ring-[#007AFF]" placeholder="0.00" />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1">Selling Price (₹) *</label>
+              <label className="text-[10px] font-black text-[#888888] uppercase tracking-[0.2em] ml-1">Selling Price (₹) *</label>
               <div className="relative">
-                <IndianRupee size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-mac-green" />
-                <input required type="number" step="0.01" value={newProduct.selling_price} onChange={e => setNewProduct({...newProduct, selling_price: e.target.value})} className="w-full bg-brand-dark p-3.5 pl-9 rounded-xl border border-mac-green/30 text-mac-green font-black focus:border-mac-green outline-none" placeholder="0.00" />
+                <IndianRupee size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#4ade80]" />
+                <input required type="number" step="0.01" value={newProduct.selling_price} onChange={e => setNewProduct({...newProduct, selling_price: e.target.value})} className="w-full bg-[#0a0a0a] p-4 pl-12 rounded-2xl border-none outline-none text-[#4ade80] font-black focus:ring-2 focus:ring-[#4ade80]" placeholder="0.00" />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1 flex justify-between">
-                <span>HSN Code</span>
-                <span className="text-brand-blue">GST %</span>
+              <label className="text-[10px] font-black text-[#888888] uppercase tracking-[0.2em] ml-1 flex justify-between">
+                <span>Initial Stock</span>
+                <span className="text-[#FFBD2E]">Min Alert</span>
               </label>
-              <div className="flex gap-2">
-                <input type="text" value={newProduct.hsn_code} onChange={e => setNewProduct({...newProduct, hsn_code: e.target.value})} className="w-2/3 bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-medium focus:border-brand-blue outline-none uppercase" placeholder="HSN" />
+              <div className="flex gap-3">
+                <input type="number" step="0.01" value={newProduct.stock_quantity} onChange={e => setNewProduct({...newProduct, stock_quantity: e.target.value})} className="w-1/2 bg-[#0a0a0a] p-4 rounded-2xl border-none outline-none text-white font-black focus:ring-2 focus:ring-[#007AFF]" placeholder="0.00" />
+                <input type="number" step="0.01" value={newProduct.min_stock} onChange={e => setNewProduct({...newProduct, min_stock: e.target.value})} className="w-1/2 bg-[#0a0a0a] p-4 rounded-2xl border-none outline-none text-[#FFBD2E] font-bold focus:ring-2 focus:ring-[#FFBD2E]" placeholder="5" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-[#888888] uppercase tracking-[0.2em] ml-1">HSN & Tax (%)</label>
+              <div className="flex gap-3">
+                <input type="text" value={newProduct.hsn_code} onChange={e => setNewProduct({...newProduct, hsn_code: e.target.value})} className="w-2/3 bg-[#0a0a0a] p-4 rounded-2xl border-none outline-none text-white font-medium focus:ring-2 focus:ring-[#007AFF] uppercase" placeholder="HSN" />
                 <div className="w-1/3 relative">
-                  <Percent size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555]" />
-                  <input type="number" step="0.1" value={newProduct.tax_rate} onChange={e => setNewProduct({...newProduct, tax_rate: e.target.value})} className="w-full bg-brand-dark p-3.5 pr-8 rounded-xl border border-white/5 text-brand-blue font-black focus:border-brand-blue outline-none" placeholder="0" />
+                  <Percent size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#007AFF]" />
+                  <input type="number" step="0.1" value={newProduct.tax_rate} onChange={e => setNewProduct({...newProduct, tax_rate: e.target.value})} className="w-full bg-[#0a0a0a] p-4 rounded-2xl border-none outline-none text-[#007AFF] font-black focus:ring-2 focus:ring-[#007AFF]" placeholder="0" />
                 </div>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-[#A1A1AA] uppercase tracking-widest ml-1 flex justify-between">
-                <span>Initial Stock</span>
-                <span className="text-mac-yellow">Min Alert</span>
-              </label>
-              <div className="flex gap-2">
-                <input type="number" step="0.01" value={newProduct.stock_quantity} onChange={e => setNewProduct({...newProduct, stock_quantity: e.target.value})} className="w-1/2 bg-brand-dark p-3.5 rounded-xl border border-white/5 text-white font-black focus:border-brand-blue outline-none" placeholder="0.00" />
-                <input type="number" step="0.01" value={newProduct.min_stock} onChange={e => setNewProduct({...newProduct, min_stock: e.target.value})} className="w-1/2 bg-brand-dark/50 p-3.5 rounded-xl border border-white/5 text-mac-yellow font-bold focus:border-mac-yellow outline-none" placeholder="5" />
-              </div>
-            </div>
-
-            <button type="submit" className="bg-brand-blue text-white font-black py-4 rounded-xl hover:bg-brand-blue/80 transition-all uppercase tracking-widest text-[13px] shadow-xl shadow-brand-blue/20 active:scale-95">
-              COMMIT
-            </button>
-
-          </form>
-        </div>
-      )}
-
-      {/* 3. High-Performance Virtualized DataTable */}
-      <div className="flex-1 relative h-full">
-        {loading && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-brand-black/50 backdrop-blur-sm rounded-[2rem]">
-            <Loader2 className="animate-spin text-brand-blue" size={40} />
           </div>
-        )}
-        <DataTable 
-          data={products} 
-          columns={columns} 
-          searchPlaceholder="Search products, barcode, or HSN code..." 
-        />
-      </div>
+
+          <div className="pt-4 flex gap-4">
+            <button type="button" onClick={() => setIsAdding(false)} className="flex-1 py-5 bg-[#252525] hover:bg-[#333] text-[#888888] font-bold rounded-[2rem] uppercase tracking-widest text-[11px] transition-all">
+              Cancel
+            </button>
+            <button type="submit" className="flex-[2] py-5 bg-[#007AFF] text-white font-black rounded-[2rem] uppercase tracking-widest text-[11px] shadow-glow-blue hover:bg-[#007AFF]/80 transition-all active:scale-95">
+              Commit to Database
+            </button>
+          </div>
+        </form>
+      </GlassModal>
 
     </div>
   );
