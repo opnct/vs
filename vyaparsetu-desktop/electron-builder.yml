@@ -23,5 +23,5 @@ mac:
 linux:
   target: AppImage
 # CRITICAL: Forces electron-builder to recompile better-sqlite3 native C code for Windows
-buildDependenciesFromSource: true
+buildDependenciesFromSource: false
 npmRebuild: true
