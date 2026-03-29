@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.tauri.app/2.0.0/tauri.conf.json",
+  "productName": "VyaparSetu POS",
+  "version": "0.1.0",
+  "identifier": "com.vyaparsetu.pos",
+  "build": {
+    "beforeDevCommand": "npm run vite:dev",
+    "beforeBuildCommand": "npm run vite:build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "VyaparSetu Login Portal",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1280,
+        "minHeight": 720,
+        "center": true,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "publisher": "VyaparSetu Development Team",
+    "shortDescription": "Premium Kirana POS & Inventory Management System"
+  }
+}
