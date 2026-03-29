@@ -37,7 +37,7 @@
     "cross-env": "^10.1.0",
     "electron": "^41.1.0",
     "electron-builder": "^26.8.1",
-    "electron-rebuild": "^3.2.9",
+    "electron-rebuild": "^2.0.3",
     "postcss": "^8.5.8",
     "tailwindcss": "^3.4.19",
     "tailwindcss-animate": "^1.0.7",
