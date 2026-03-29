@@ -1,75 +1,49 @@
 {
-"name": "vyaparsetu-desktop",
-"private": true,
-"version": "0.1.0",
-"description": "Kirana POS & Inventory Management System",
-"author": "VyaparSetu Development Team",
-"repository": {
-"type": "git",
-"url": "https://github.com/vyaparsetu/vyaparsetu-desktop.git"
-},
-"type": "module",
-"main": "electron/main.js",
-"scripts": {
-"dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && electron .\"",
-"build": "vite build && electron-builder",
-"build-win": "vite build && electron-builder --windows",
-"preview": "vite preview",
-"rebuild": "electron-rebuild -f -w better-sqlite3"
-},
-"build": {
-"appId": "com.vyaparsetu.pos",
-"productName": "VyaparSetu POS",
-"copyright": "Copyright © 2026 VyaparSetu",
-"publish": null,
-"directories": {
-"output": "dist_electron"
-},
-"files": [
-"dist/**/*",
-"electron/**/*",
-"package.json"
-],
-"linux": {
-"target": "AppImage",
-"category": "Office"
-},
-"win": {
-"target": "nsis"
-}
-},
-"dependencies": {
-"@emailjs/browser": "^4.4.1",
-"@fontsource/inter": "^5.2.8",
-"@radix-ui/react-dialog": "^1.1.15",
-"@radix-ui/react-popover": "^1.1.15",
-"@radix-ui/react-switch": "^1.2.6",
-"@radix-ui/react-tooltip": "^1.2.8",
-"@tanstack/react-table": "^8.21.3",
-"better-sqlite3": "^12.8.0",
-"clsx": "^2.1.1",
-"firebase": "^12.11.0",
-"framer-motion": "^12.38.0",
-"lucide-react": "^1.7.0",
-"react": "^19.1.0",
-"react-dom": "^19.1.0",
-"react-router-dom": "^7.13.2",
-"recharts": "^3.8.1",
-"tailwind-merge": "^3.5.0",
-"zustand": "^5.0.12"
-},
-"devDependencies": {
-"@vitejs/plugin-react": "^4.6.0",
-"autoprefixer": "^10.4.27",
-"concurrently": "^9.2.1",
-"cross-env": "^10.1.0",
-"electron": "^41.1.0",
-"electron-builder": "^26.8.1",
-"electron-rebuild": "^2.0.3",
-"postcss": "^8.5.8",
-"tailwindcss": "^3.4.19",
-"tailwindcss-animate": "^1.0.7",
-"vite": "^7.0.4",
-"wait-on": "^9.0.4"
-}
+  "name": "vyaparsetu-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Kirana POS & Inventory Management System",
+  "author": "VyaparSetu Development Team",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vyaparsetu/vyaparsetu-desktop.git"
+  },
+  "type": "module",
+  "scripts": {
+    "vite:dev": "vite",
+    "vite:build": "vite build",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@emailjs/browser": "^4.4.1",
+    "@fontsource/inter": "^5.2.8",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-popover": "^1.1.15",
+    "@radix-ui/react-switch": "^1.2.6",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "@tanstack/react-table": "^8.21.3",
+    "@tauri-apps/api": "^2.0.0",
+    "better-sqlite3": "^12.8.0",
+    "clsx": "^2.1.1",
+    "firebase": "^12.11.0",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.7.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.13.2",
+    "recharts": "^3.8.1",
+    "tailwind-merge": "^3.5.0",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
+    "@vitejs/plugin-react": "^4.6.0",
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^3.4.19",
+    "tailwindcss-animate": "^1.0.7",
+    "vite": "^7.0.4"
+  }
 }
