@@ -6,8 +6,33 @@
 
 @layer base {
   html, body {
-    @apply bg-brand-surface text-brand-text font-sans antialiased;
+    /* Strictly #141414 (bg) and #FEFFFE (text) */
+    @apply bg-brand-bg text-brand-text font-sans antialiased;
     /* Prevents the elastic bounce effect on Mac for a native app feel */
     overscroll-behavior: none; 
+  }
+}
+
+/* Custom Scrollbar using STRICTLY authorized palette */
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-brand-bg; /* #141414 */
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-brand-border rounded-full; /* #58595A */
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-brand-primary; /* #005FA3 */
+  }
+  
+  /* Firefox Support */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    /* #58595A thumb, #141414 track */
+    scrollbar-color: #58595A #141414; 
   }
 }

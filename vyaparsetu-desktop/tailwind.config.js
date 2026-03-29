@@ -7,31 +7,24 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Flat Enterprise Corporate Palette matching the reference images
+        // Strict 7-Color Corporate Enterprise Palette
         brand: {
-          black: '#000000',      // Pure black for headers and AI Core sections
-          white: '#ffffff',      // Stark white for forms and main foregrounds
-          blue: '#0056b3',       // Corporate Enterprise Blue (Buttons, Accents)
-          green: '#2ecc71',      // Success Green (Login button, positive actions)
-          surface: '#f8f9fa',    // Form Grey (Security Protocols card, background panels)
-          text: '#333333',       // Main document text
-          muted: '#6c757d',      // Secondary text and hints
-          border: '#dee2e6',     // Standard corporate borders
-          focus: '#80bdff',      // Input focus ring color (Light blue outline)
-        },
-        status: {
-          green: '#2ecc71',
-          red: '#dc3545',
-          orange: '#f39c12',
+          primary: '#005FA3', // Active states, primary buttons, accents
+          border: '#58595A',  // Dividers, input borders, structural lines
+          bg: '#141414',      // Main application background
+          muted: '#A6B5C3',   // Secondary text, inactive icons, placeholders
+          light: '#DBE9F2',   // Hover states, subtle highlights
+          surface: '#1D1F20', // Cards, modals, floating panels
+          text: '#FEFFFE',    // Primary headings and main body text
         }
       },
       fontFamily: {
         sans: ['Montserrat', 'system-ui', '-apple-system', 'sans-serif'],
       },
       boxShadow: {
-        // Clean, minimal shadows replacing the old glowing neon effects
-        'corporate': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        'corporate-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        // Flat/minimal corporate depth (Strictly no neon glows)
+        'corporate': '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1)',
+        'corporate-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15)',
       },
       keyframes: {
         // Retained smooth micro-interactions for UI responsiveness
