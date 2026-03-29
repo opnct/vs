@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { 
   Search, Truck, Phone, MapPin, 
   Plus, Hash, FileText, CreditCard,
@@ -24,12 +23,14 @@ export default function Suppliers() {
     address: ''
   });
 
-  // 1. Fetch all suppliers from SQLite
+  // 1. Fetch all suppliers from SQLite via Electron API
   const fetchSuppliers = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await invoke('get_all_suppliers');
-      setSuppliers(data || []);
+      if (window.electronAPI) {
+        const data = await window.electronAPI.invoke('get_all_suppliers');
+        setSuppliers(data || []);
+      }
     } catch (error) {
       console.error("Database error:", error);
     } finally {
@@ -37,12 +38,14 @@ export default function Suppliers() {
     }
   }, []);
 
-  // 2. Fetch purchase history for specific supplier
+  // 2. Fetch purchase history for specific supplier via Electron API
   const fetchHistory = useCallback(async (supplierId) => {
     try {
       setHistoryLoading(true);
-      const history = await invoke('get_supplier_purchases', { supplierId });
-      setPurchaseHistory(history || []);
+      if (window.electronAPI) {
+        const history = await window.electronAPI.invoke('get_supplier_purchases', { supplierId });
+        setPurchaseHistory(history || []);
+      }
     } catch (error) {
       console.error("History fetch error:", error);
     } finally {
@@ -70,11 +73,13 @@ export default function Suppliers() {
     if (!newSupplier.name || !newSupplier.phone) return;
 
     try {
-      await invoke('add_supplier', { 
-        name: newSupplier.name, 
-        phone: newSupplier.phone, 
-        gstin: newSupplier.gstin || null 
-      });
+      if (window.electronAPI) {
+        await window.electronAPI.invoke('add_supplier', { 
+          name: newSupplier.name, 
+          phone: newSupplier.phone, 
+          gstin: newSupplier.gstin || null 
+        });
+      }
       setIsAdding(false);
       setNewSupplier({ name: '', phone: '', gstin: '', address: '' });
       await fetchSuppliers();
@@ -133,7 +138,7 @@ export default function Suppliers() {
                 onClick={() => setActiveSupplier(s)}
                 className={`w-full text-left px-4 py-3 rounded-2xl flex items-center gap-4 transition-all ${
                   activeSupplier?.id === s.id 
-                    ? 'bg-brand-blue text-white shadow-lg' 
+                    ? 'bg-brand-blue text-white shadow-glow-blue' 
                     : 'text-[#A1A1AA] hover:bg-white/5 hover:text-white'
                 }`}
               >

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { 
   Users, UserPlus, Shield, ShieldCheck, 
   Lock, Key, Trash2, X, 
@@ -25,8 +24,10 @@ export default function Staff() {
   const fetchStaff = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await invoke('get_all_staff');
-      setStaffList(data || []);
+      if (window.electronAPI) {
+        const data = await window.electronAPI.invoke('get_all_staff');
+        setStaffList(data || []);
+      }
     } catch (error) {
       console.error("Staff fetch failed:", error);
     } finally {
@@ -41,14 +42,15 @@ export default function Staff() {
   // 2. Synchronize permission toggles with Backend
   const togglePermission = async (id, field, currentValue) => {
     try {
-      // Logic: Send update command to Rust to modify SQLite row
-      await invoke('update_staff_permission', { 
-        id, 
-        permission: field, 
-        value: !currentValue 
-      });
-      // Refresh list to ensure UI matches Database state
-      await fetchStaff();
+      if (window.electronAPI) {
+        await window.electronAPI.invoke('update_staff_permission', { 
+          id, 
+          permission: field, 
+          value: !currentValue 
+        });
+        // Refresh list to ensure UI matches Database state
+        await fetchStaff();
+      }
     } catch (error) {
       console.error("Permission update failed:", error);
     }
@@ -59,14 +61,16 @@ export default function Staff() {
     if (newStaff.pin.length !== 4) return;
 
     try {
-      await invoke('add_staff', { 
-        name: newStaff.name,
-        phone: newStaff.phone || null,
-        pin: newStaff.pin,
-        allowDiscount: newStaff.allowDiscounts,
-        allowDelete: newStaff.allowDeleteBill,
-        role: newStaff.role
-      });
+      if (window.electronAPI) {
+        await window.electronAPI.invoke('add_staff', { 
+          name: newStaff.name,
+          phone: newStaff.phone || null,
+          pin: newStaff.pin,
+          allowDiscount: newStaff.allowDiscounts,
+          allowDelete: newStaff.allowDeleteBill,
+          role: newStaff.role
+        });
+      }
       
       setIsAdding(false);
       setNewStaff({ name: '', phone: '', pin: '', allowDiscounts: false, allowDeleteBill: false, role: 'CASHIER' });
@@ -79,8 +83,10 @@ export default function Staff() {
   const handleDeleteStaff = async (id) => {
     if (!window.confirm("Are you sure you want to remove this staff member?")) return;
     try {
-      await invoke('delete_staff', { id });
-      await fetchStaff();
+      if (window.electronAPI) {
+        await window.electronAPI.invoke('delete_staff', { id });
+        await fetchStaff();
+      }
     } catch (error) {
       console.error("Delete failed:", error);
     }

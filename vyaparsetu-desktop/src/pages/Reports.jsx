@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { 
   BarChart3, PieChart, Calendar, Download, 
   ArrowUpRight, ArrowDownRight, Package, 
@@ -21,24 +20,26 @@ export default function Reports() {
   });
   const [loading, setLoading] = useState(true);
 
-  // Real SQL Aggregation Logic
+  // Real SQL Aggregation Logic using Electron IPC
   const fetchReportData = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Fetch Aggregated Table Data
-      // This command executes Group By / Order By queries in Rust
-      const data = await invoke('get_detailed_report', { 
-        reportType: activeReport, 
-        range: dateRange 
-      }).catch(() => []);
-      
-      setReportData(data || []);
+      if (window.electronAPI) {
+        // 1. Fetch Aggregated Table Data
+        // This command executes Group By / Order By queries in Node.js backend
+        const data = await window.electronAPI.invoke('get_detailed_report', { 
+          reportType: activeReport, 
+          range: dateRange 
+        }).catch(() => []);
+        
+        setReportData(data || []);
 
-      // 2. Fetch High-level summary metrics for the current range
-      const stats = await invoke('get_report_summary', { range: dateRange })
-        .catch(() => ({ revenue: 0, bills: 0, avgValue: 0, profit: 0, revenueTrend: 0, profitTrend: 0 }));
-      
-      setSummary(stats);
+        // 2. Fetch High-level summary metrics for the current range
+        const stats = await window.electronAPI.invoke('get_report_summary', { range: dateRange })
+          .catch(() => ({ revenue: 0, bills: 0, avgValue: 0, profit: 0, revenueTrend: 0, profitTrend: 0 }));
+        
+        setSummary(stats);
+      }
     } catch (error) {
       console.error("Report Generation Error:", error);
     } finally {
@@ -83,7 +84,7 @@ export default function Reports() {
               key={tab.id}
               onClick={() => setActiveReport(tab.id)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                activeReport === tab.id ? 'bg-brand-blue text-white shadow-lg' : 'text-[#A1A1AA] hover:text-white hover:bg-white/5'
+                activeReport === tab.id ? 'bg-brand-blue text-white shadow-glow-blue' : 'text-[#A1A1AA] hover:text-white hover:bg-white/5'
               }`}
             >
               <tab.icon size={16} /> {tab.label}
@@ -123,12 +124,12 @@ export default function Reports() {
       <div className="flex-1 bg-brand-surface rounded-[2.5rem] border border-white/5 flex flex-col overflow-hidden shadow-2xl relative">
         
         {loading && (
-          <div className="absolute inset-0 bg-brand-surface/60 backdrop-blur-sm z-20 flex items-center justify-center">
+          <div className="absolute inset-0 bg-[#1c1c1e]/60 backdrop-blur-sm z-20 flex items-center justify-center">
             <Loader2 className="animate-spin text-brand-blue" size={40} />
           </div>
         )}
 
-        <div className="px-8 py-5 bg-brand-dark/30 border-b border-white/5 flex items-center justify-between">
+        <div className="px-8 py-5 bg-[#0a0a0a]/30 border-b border-white/5 flex items-center justify-between">
           <h3 className="text-white font-bold text-lg flex items-center gap-3 capitalize">
             <ClipboardList size={20} className="text-brand-blue" /> 
             {activeReport === 'items' ? 'Top Selling Products' : activeReport === 'customers' ? 'High Value Customers' : 'Transaction History'}
@@ -139,7 +140,7 @@ export default function Reports() {
         </div>
 
         {/* Visual Table Header */}
-        <div className="grid grid-cols-12 gap-4 px-8 py-4 bg-brand-dark/10 border-b border-white/5 text-[10px] font-black text-[#555] uppercase tracking-[0.2em]">
+        <div className="grid grid-cols-12 gap-4 px-8 py-4 bg-[#0a0a0a]/10 border-b border-white/5 text-[10px] font-black text-[#555] uppercase tracking-[0.2em]">
           <div className="col-span-5">Entity Name</div>
           <div className="col-span-2 text-center">Volume / Qty</div>
           <div className="col-span-2 text-center">Tax Contribution</div>
@@ -154,7 +155,7 @@ export default function Reports() {
              </div>
           ) : (
             reportData.map((row, idx) => (
-              <div key={idx} className="grid grid-cols-12 gap-4 px-6 py-4 items-center bg-brand-dark/20 hover:bg-white/5 rounded-3xl border border-white/5 transition-all group">
+              <div key={idx} className="grid grid-cols-12 gap-4 px-6 py-4 items-center bg-[#0a0a0a]/20 hover:bg-white/5 rounded-3xl border border-white/5 transition-all group">
                 <div className="col-span-5 flex items-center gap-4">
                   <div className="w-10 h-10 rounded-xl bg-brand-dark flex items-center justify-center text-[#A1A1AA] border border-white/5 font-black text-xs">#{idx + 1}</div>
                   <div className="overflow-hidden">
@@ -186,14 +187,14 @@ export default function Reports() {
         </div>
 
         {/* Action Footer */}
-        <div className="px-8 py-5 bg-brand-dark/50 border-t border-white/5 flex items-center justify-between">
+        <div className="px-8 py-5 bg-[#0a0a0a]/50 border-t border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-3">
              <span className="w-2 h-2 rounded-full bg-mac-green animate-pulse"></span>
              <span className="text-[11px] font-black text-white uppercase tracking-widest">Database Sync: OK</span>
           </div>
           <button 
             onClick={() => {/* Trigger Day Closing logic */}}
-            className="bg-brand-blue text-white font-black px-8 py-3 rounded-2xl hover:bg-brand-blue/80 transition-all shadow-lg shadow-brand-blue/20 flex items-center gap-2 text-xs uppercase tracking-widest active:scale-95"
+            className="bg-brand-blue text-white font-black px-8 py-3 rounded-2xl hover:bg-[#007AFF]/80 transition-all shadow-[0_0_20px_rgba(0,122,255,0.4)] flex items-center gap-2 text-xs uppercase tracking-widest active:scale-95"
           >
             Export Day Closing PDF
           </button>
