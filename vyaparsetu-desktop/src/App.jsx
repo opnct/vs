@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
-import { invoke } from '@tauri-apps/api/core';
 import { auth } from './firebase';
 import { Lock, UserCheck, ShieldAlert, MonitorOff } from 'lucide-react';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
@@ -56,7 +55,8 @@ const StaffPinLock = ({ onUnlock }) => {
       }
 
       try {
-        const attendant = await invoke('verify_staff_pin', { pin: newPin });
+        // ELECTRON IPC: Replaces Tauri invoke
+        const attendant = await window.electronAPI.invoke('verify_staff_pin', { pin: newPin });
         if (attendant) {
           onUnlock(attendant);
         } else {
@@ -186,7 +186,10 @@ export default function App() {
 
       if (currentUser) {
         try {
-          await invoke('start_cloud_sync', { uid: currentUser.uid });
+          // ELECTRON IPC: Replaces Tauri invoke
+          if (window.electronAPI) {
+            await window.electronAPI.invoke('start_cloud_sync', { uid: currentUser.uid });
+          }
         } catch (error) {
           console.error("Cloud Sync Worker failed to start:", error);
         }

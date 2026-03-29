@@ -3,19 +3,18 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && electron .\"",
+    "build": "vite build && electron-builder",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "rebuild": "electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "@tanstack/react-table": "^8.21.3",
-    "@tauri-apps/plugin-opener": "^2",
     "better-sqlite3": "^12.8.0",
     "clsx": "^2.1.1",
-    "electron": "^41.1.0",
     "firebase": "^12.11.0",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.7.0",
@@ -31,6 +30,7 @@
     "autoprefixer": "^10.4.27",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
+    "electron": "^41.1.0",
     "electron-builder": "^26.8.1",
     "electron-rebuild": "^3.2.9",
     "postcss": "^8.5.8",
