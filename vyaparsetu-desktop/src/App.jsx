@@ -36,7 +36,7 @@ const Communications = () => <div className="flex items-center justify-center h-
 
 /**
  * STAFF PIN LOCK SCREEN
- * A production-grade security barrier that protects the POS from unauthorized access.
+ * A production-grade security barrier featuring a premium frosted-glass aesthetic.
  */
 const StaffPinLock = ({ onUnlock }) => {
   const { t } = useLanguage();
@@ -72,39 +72,41 @@ const StaffPinLock = ({ onUnlock }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[999] bg-brand-black flex items-center justify-center animate-in fade-in duration-500">
-      <div className="w-[360px] text-center">
-        <div className="mb-8 flex flex-col items-center">
-          <div className={`w-20 h-20 rounded-3xl flex items-center justify-center border-2 mb-6 transition-all ${
-            error ? 'bg-mac-red/20 border-mac-red text-mac-red animate-shake' : 'bg-brand-blue/10 border-brand-blue/20 text-brand-blue'
+    <div className="fixed inset-0 z-[999] bg-black/70 backdrop-blur-2xl flex items-center justify-center animate-in fade-in duration-500">
+      <div className="w-[320px] text-center flex flex-col items-center">
+        
+        <div className="mb-10 flex flex-col items-center">
+          <div className={`w-16 h-16 rounded-3xl flex items-center justify-center mb-6 transition-all ${
+            error ? 'bg-mac-red/20 text-mac-red animate-shake shadow-[0_0_20px_rgba(248,113,113,0.3)]' : 'bg-brand-blue/20 text-brand-blue shadow-glow-blue'
           }`}>
-            <Lock size={36} />
+            <Lock size={28} />
           </div>
           <h2 className="text-2xl font-bold text-white tracking-tight">{t('pin_required')}</h2>
-          <p className="text-[#A1A1AA] text-sm mt-2">{t('pin_desc')}</p>
+          <p className="text-[#888888] text-sm mt-2">{t('pin_desc')}</p>
         </div>
 
-        <div className="flex justify-center gap-4 mb-10">
+        <div className="flex justify-center gap-6 mb-12">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className={`w-4 h-4 rounded-full border-2 transition-all ${
-              pin.length >= i ? 'bg-brand-blue border-brand-blue' : 'border-[#333]'
+            <div key={i} className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
+              pin.length >= i ? 'bg-brand-blue shadow-[0_0_15px_rgba(0,122,255,0.8)] scale-110' : 'bg-white/10'
             }`} />
           ))}
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-x-6 gap-y-4">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, "C", 0].map((val, idx) => (
             <button
               key={idx}
               onClick={() => val === 'C' ? setPin("") : handleVerify(val)}
-              className={`h-16 rounded-2xl flex items-center justify-center text-xl font-bold transition-all active:scale-90 ${
-                val === 'C' ? 'bg-mac-red/10 text-mac-red' : 'bg-white/5 text-white hover:bg-white/10'
+              className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl font-medium transition-all active:scale-90 ${
+                val === 'C' ? 'text-mac-red hover:bg-mac-red/10' : 'text-white hover:bg-white/10'
               } ${val === 0 ? 'col-start-2' : ''}`}
             >
               {val}
             </button>
           ))}
         </div>
+
       </div>
     </div>
   );
@@ -146,7 +148,7 @@ const MainLayout = ({ user, isOffline }) => {
   }
 
   return (
-    <div className="flex h-screen w-full bg-brand-black text-brand-text font-sans overflow-hidden">
+    <div className="flex h-screen w-full bg-brand-dark text-white font-sans overflow-hidden">
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
@@ -154,17 +156,17 @@ const MainLayout = ({ user, isOffline }) => {
         isOffline={isOffline}
       />
 
-      <div className="flex-1 flex flex-col h-full relative bg-brand-black">
+      <div className="flex-1 flex flex-col h-full relative bg-brand-dark">
         <Header user={user} staff={activeStaff} isOffline={isOffline} />
         
-        <main className="flex-1 overflow-y-auto p-6 md:p-10 bg-brand-black custom-scrollbar">
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-brand-dark custom-scrollbar">
           {isOffline && (
-            <div className="mb-6 bg-status-orange/10 border border-status-orange/20 p-3 rounded-2xl flex items-center gap-3 text-status-orange text-xs font-medium">
-              <MonitorOff size={14} />
+            <div className="mb-6 bg-status-orange/10 border border-status-orange/20 p-3 rounded-2xl flex items-center gap-3 text-status-orange text-xs font-bold uppercase tracking-widest">
+              <MonitorOff size={16} />
               {t('set_cloud_offline_msg')}
             </div>
           )}
-          <div className="max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500 h-full">
+          <div className="max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
             {renderPage()}
           </div>
         </main>
@@ -225,9 +227,9 @@ export default function App() {
   return (
     <LanguageProvider>
       {loading ? (
-        <div className="h-screen w-full bg-brand-black flex flex-col items-center justify-center">
-          <div className="w-16 h-16 border-4 border-brand-blue border-t-transparent rounded-full animate-spin mb-6 shadow-[0_0_30px_rgba(59,130,246,0.3)]"></div>
-          <p className="text-brand-muted font-bold tracking-widest text-[10px] uppercase animate-pulse">VyaparSetu Terminal Initializing</p>
+        <div className="h-screen w-full bg-brand-dark flex flex-col items-center justify-center">
+          <div className="w-16 h-16 border-4 border-brand-blue border-t-transparent rounded-full animate-spin mb-6 shadow-glow-blue"></div>
+          <p className="text-[#888888] font-bold tracking-widest text-[10px] uppercase animate-pulse">VyaparSetu Terminal Initializing</p>
         </div>
       ) : (
         <AppRouter />

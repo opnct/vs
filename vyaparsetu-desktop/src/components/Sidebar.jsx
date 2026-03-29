@@ -63,13 +63,13 @@ export default function Sidebar({ activeTab, setActiveTab, onLock, isOffline }) 
   ];
 
   return (
-    <aside className="w-[100px] h-full bg-brand-dark flex flex-col items-center py-8 shrink-0 z-20 select-none border-r border-white/5 rounded-l-6xl">
+    <aside className="w-[100px] h-full bg-brand-dark flex flex-col items-center py-8 shrink-0 z-20 select-none">
       
       {/* 1. Window Decorations (macOS Dots) */}
-      <div className="flex gap-1.5 mb-10">
-        <div className="w-3.5 h-3.5 rounded-full bg-mac-red shadow-inner"></div>
-        <div className="w-3.5 h-3.5 rounded-full bg-mac-yellow shadow-inner"></div>
-        <div className="w-3.5 h-3.5 rounded-full bg-mac-green shadow-inner"></div>
+      <div className="flex gap-2 mb-10">
+        <div className="w-3 h-3 rounded-full bg-mac-red shadow-inner"></div>
+        <div className="w-3 h-3 rounded-full bg-mac-yellow shadow-inner"></div>
+        <div className="w-3 h-3 rounded-full bg-mac-green shadow-inner"></div>
       </div>
 
       {/* 2. Scrollable Icon Nav */}
@@ -88,8 +88,8 @@ export default function Sidebar({ activeTab, setActiveTab, onLock, isOffline }) 
                   title={item.label}
                   className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 group relative ${
                     isActive 
-                      ? 'bg-brand-surface text-white shadow-soft-float border border-white/5' 
-                      : 'text-[#888888] hover:text-white hover:bg-white/5'
+                      ? 'bg-brand-blue text-white shadow-glow-blue scale-105' 
+                      : 'text-[#A1A1AA] hover:text-white hover:bg-white/5'
                   }`}
                 >
                   <item.icon 
@@ -97,11 +97,6 @@ export default function Sidebar({ activeTab, setActiveTab, onLock, isOffline }) 
                     strokeWidth={isActive ? 2.5 : 2}
                     className={isActive ? 'text-white' : 'group-hover:scale-110 transition-transform'}
                   />
-                  
-                  {/* Active Indicator Dot */}
-                  {isActive && (
-                    <div className="absolute -left-3 w-1.5 h-6 bg-brand-blue rounded-r-full"></div>
-                  )}
                 </button>
               );
             })}
@@ -117,7 +112,7 @@ export default function Sidebar({ activeTab, setActiveTab, onLock, isOffline }) 
           <button 
             onClick={handleSignInRequest}
             title={`${t('offline_badge')} - Click to Sign In`}
-            className="w-14 h-14 rounded-full bg-status-orange/10 hover:bg-status-orange/20 text-status-orange flex items-center justify-center transition-all group border border-status-orange/20 relative"
+            className="w-14 h-14 rounded-full bg-status-orange/10 hover:bg-status-orange/20 text-status-orange flex items-center justify-center transition-all group relative"
           >
             <UserCircle size={22} className="group-hover:scale-110 transition-transform" />
             <div className="absolute top-0 right-0 w-3.5 h-3.5 rounded-full bg-status-orange border-2 border-brand-dark"></div>
@@ -125,7 +120,7 @@ export default function Sidebar({ activeTab, setActiveTab, onLock, isOffline }) 
         ) : (
           <div 
             title={syncStatus === 'synced' ? t('synced') : syncStatus === 'syncing' ? 'Syncing...' : t('offline_badge')}
-            className="w-14 h-14 rounded-full bg-brand-surface flex items-center justify-center text-[#888888] relative border border-white/5"
+            className="w-14 h-14 rounded-full bg-brand-surface flex items-center justify-center text-[#888888] relative"
           >
             {syncStatus === 'synced' && <CloudCheck size={22} className="text-mac-green" />}
             {syncStatus === 'syncing' && <RefreshCw size={22} className="text-brand-blue animate-spin" />}
