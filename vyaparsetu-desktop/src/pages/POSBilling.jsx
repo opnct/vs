@@ -20,7 +20,7 @@ export default function POSBilling() {
     const hk = (e) => {
       if (e.key === 'F8') handleCheckout();
       if (e.key === 'F4') setCart([]);
-      if (e.key === 'F2') searchRef.current?.focus();
+      if (e.key === 'F2') { e.preventDefault(); searchRef.current?.focus(); }
     };
     window.addEventListener('keydown', hk);
     return () => window.removeEventListener('keydown', hk);
@@ -70,7 +70,7 @@ export default function POSBilling() {
         
         {/* Left: Inventory List */}
         <div className="w-1/2 flex flex-col border border-np-border bg-np-bg">
-          <input ref={searchRef} type="text" placeholder="Search Item (F2)..." value={search} onChange={e => setSearch(e.target.value)} className="w-full p-2 border-b border-np-border bg-np-actionBg" autoFocus />
+          <input ref={searchRef} type="text" placeholder="Search Item (F2)..." value={search} onChange={e => setSearch(e.target.value)} className="w-full p-2 border-b border-np-border bg-np-actionBg" />
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             <table>
               <thead><tr><th>Code</th><th>Name</th><th>Stk</th><th>Rate</th></tr></thead>

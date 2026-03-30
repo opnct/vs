@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store/useAppStore';
-import { WindowMinimize, Square, X, Database } from 'lucide-react';
+import { Minus, Square, X, Database } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
 import POSBilling from './pages/POSBilling';
@@ -33,7 +33,7 @@ const TopMenu = () => {
         </div>
       </div>
       <div className="flex">
-        <button onClick={() => appWindow?.minimize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><WindowMinimize size={14} /></button>
+        <button onClick={() => appWindow?.minimize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Minus size={14} /></button>
         <button onClick={() => appWindow?.toggleMaximize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Square size={12} /></button>
         <button onClick={() => appWindow?.close()} className="h-8 w-12 flex items-center justify-center hover:bg-red-500"><X size={16} /></button>
       </div>

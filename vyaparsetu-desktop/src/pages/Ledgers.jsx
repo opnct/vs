@@ -6,7 +6,7 @@ export default function Ledgers() {
   const [ledgers, setLedgers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [form, setForm] = useState({ name: '', group: 'G3', bal: '' });
-  const [log, setLog] = useState('Ledgers loaded.');
+  const [log, setLog] = useState('Line 1: Ledgers loaded.');
   const [filter, setFilter] = useState('');
   const nameRef = useRef(null);
 

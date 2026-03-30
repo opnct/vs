@@ -3,7 +3,7 @@ import pathlib
 
 FILES = {
     # ==========================================
-    # 1. FORCE DEPENDENCIES & ENVIRONMENT (Fixes Mismatch)
+    # 1. FORCE DEPENDENCIES & ENVIRONMENT
     # ==========================================
     "package.json": r"""{
   "name": "vyaparsetu-desktop",
@@ -92,8 +92,8 @@ export default {
   html, body { @apply bg-np-bg text-np-text font-mono; overscroll-behavior: none; }
   input, textarea, select { @apply bg-transparent border-b border-np-border focus:border-np-accent outline-none text-np-text px-2 py-1 text-sm font-mono transition-colors; }
   table { @apply w-full text-left border-collapse font-mono text-[13px]; }
-  th { @apply border-b-2 border-np-border py-2 px-2 text-np-muted font-normal whitespace-nowrap; }
-  td { @apply border-b border-np-border/50 py-2 px-2; }
+  th { @apply border-b border-np-border py-2 px-2 text-np-muted font-normal whitespace-nowrap; }
+  td { @apply border-b border-np-border/40 py-2 px-2; }
   button { @apply bg-np-actionBg border border-np-border px-3 py-1 hover:bg-np-tabHover transition-colors; }
 }
 
@@ -126,12 +126,19 @@ rusqlite = { version = "0.29.0", features = ["bundled"] }
 chrono = "0.4"
 """,
 
+    # CRITICAL FIX: The build.rs file is mandatory for Tauri v2 to set the OUT_DIR env var
+    "src-tauri/build.rs": r"""fn main() {
+    tauri_build::build()
+}
+""",
+
+    # CRITICAL FIX: beforeDevCommand updated to "npm run dev" to match package.json
     "src-tauri/tauri.conf.json": r"""{
   "productName": "VyaparSetu",
   "version": "0.1.0",
   "identifier": "com.vyaparsetu.notepad",
   "build": {
-    "beforeDevCommand": "npm run vite:dev",
+    "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:5173",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
@@ -174,7 +181,9 @@ pub fn init_db() -> Result<Connection> {
 }
 """,
 
+    # FIXED: Suppressed unused imports warning
     "src-tauri/src/commands.rs": r"""
+#![allow(unused_imports)]
 use serde::{Serialize, Deserialize};
 use rusqlite::params;
 use crate::db::init_db;
@@ -263,10 +272,11 @@ export const useAppStore = create((set) => ({
 }));
 """,
 
+    # CRITICAL FIX: Replaced 'WindowMinimize' with 'Minus'
     "src/App.jsx": r"""
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store/useAppStore';
-import { WindowMinimize, Square, X, Database } from 'lucide-react';
+import { Minus, Square, X, Database } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
 import POSBilling from './pages/POSBilling';
@@ -298,7 +308,7 @@ const TopMenu = () => {
         </div>
       </div>
       <div className="flex">
-        <button onClick={() => appWindow?.minimize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><WindowMinimize size={14} /></button>
+        <button onClick={() => appWindow?.minimize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Minus size={14} /></button>
         <button onClick={() => appWindow?.toggleMaximize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Square size={12} /></button>
         <button onClick={() => appWindow?.close()} className="h-8 w-12 flex items-center justify-center hover:bg-red-500"><X size={16} /></button>
       </div>
@@ -400,7 +410,7 @@ export default function POSBilling() {
     const hk = (e) => {
       if (e.key === 'F8') handleCheckout();
       if (e.key === 'F4') setCart([]);
-      if (e.key === 'F2') searchRef.current?.focus();
+      if (e.key === 'F2') { e.preventDefault(); searchRef.current?.focus(); }
     };
     window.addEventListener('keydown', hk);
     return () => window.removeEventListener('keydown', hk);
@@ -450,7 +460,7 @@ export default function POSBilling() {
         
         {/* Left: Inventory List */}
         <div className="w-1/2 flex flex-col border border-np-border bg-np-bg">
-          <input ref={searchRef} type="text" placeholder="Search Item (F2)..." value={search} onChange={e => setSearch(e.target.value)} className="w-full p-2 border-b border-np-border bg-np-actionBg" autoFocus />
+          <input ref={searchRef} type="text" placeholder="Search Item (F2)..." value={search} onChange={e => setSearch(e.target.value)} className="w-full p-2 border-b border-np-border bg-np-actionBg" />
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             <table>
               <thead><tr><th>Code</th><th>Name</th><th>Stk</th><th>Rate</th></tr></thead>
@@ -535,7 +545,7 @@ export default function Vouchers() {
 
   // S3: Post Double Entry
   const handlePost = async () => {
-    if(!form.amount || form.dr === form.cr) return setLog('ERR: Invalid Entry.');
+    if(!form.amount || form.dr === form.cr) return setLog('ERR: Invalid Entry. Check accounts/amount.');
     try {
       const vchId = await invoke('post_double_entry', { v_type: form.vType, total: parseFloat(form.amount), dr_ledger: form.dr, cr_ledger: form.cr, narration: form.narration, items: [] });
       setLog(`OK: Voucher ${vchId} Posted.`);
@@ -624,7 +634,7 @@ export default function Ledgers() {
   const [ledgers, setLedgers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [form, setForm] = useState({ name: '', group: 'G3', bal: '' });
-  const [log, setLog] = useState('Ledgers loaded.');
+  const [log, setLog] = useState('Line 1: Ledgers loaded.');
   const [filter, setFilter] = useState('');
   const nameRef = useRef(null);
 

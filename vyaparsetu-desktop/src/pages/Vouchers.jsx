@@ -35,7 +35,7 @@ export default function Vouchers() {
 
   // S3: Post Double Entry
   const handlePost = async () => {
-    if(!form.amount || form.dr === form.cr) return setLog('ERR: Invalid Entry.');
+    if(!form.amount || form.dr === form.cr) return setLog('ERR: Invalid Entry. Check accounts/amount.');
     try {
       const vchId = await invoke('post_double_entry', { v_type: form.vType, total: parseFloat(form.amount), dr_ledger: form.dr, cr_ledger: form.cr, narration: form.narration, items: [] });
       setLog(`OK: Voucher ${vchId} Posted.`);
