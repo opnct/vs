@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -13,8 +12,17 @@ export default function POSBilling() {
 
   // S1: Data Initialization
   useEffect(() => {
-    invoke('exec_sql_read', { query: "SELECT * FROM inventory" }).then(setItems).catch(e => setStatus(`ERR: ${e}`));
-    invoke('exec_sql_read', { query: "SELECT id, name FROM ledgers WHERE group_id IN ('G3', 'G1')" }).then(setCustomers);
+    if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__) {
+      invoke('exec_sql_read', { query: "SELECT * FROM inventory" })
+        .then(setItems)
+        .catch(e => setStatus(`ERR: ${e}`));
+        
+      invoke('exec_sql_read', { query: "SELECT id, name FROM ledgers WHERE group_id IN ('G3', 'G1')" })
+        .then(setCustomers)
+        .catch(e => console.error(e));
+    } else {
+      setStatus('ERR: Native engine missing. Running in standard browser.');
+    }
     
     // S2: Keyboard Shortcuts
     const hk = (e) => {
@@ -35,13 +43,24 @@ export default function POSBilling() {
   // S3: Tally Double-Entry Checkout
   const handleCheckout = async () => {
     if(cart.length === 0) return setStatus('ERR: Empty Cart.');
+    if (!window.__TAURI_INTERNALS__) return setStatus('ERR: Cannot post. Native engine missing.');
+
     const total = cart.reduce((sum, item) => sum + (item.rate * item.qty), 0);
     try {
       setStatus('Processing Double-Entry transaction...');
-      const vchId = await invoke('post_double_entry', { v_type: 'Sales', total, dr_ledger: selectedCust, cr_ledger: 'L2', narration: 'POS Auto-Sale', items: cart });
+      const vchId = await invoke('post_double_entry', { 
+        v_type: 'Sales', 
+        total, 
+        dr_ledger: selectedCust, 
+        cr_ledger: 'L2', 
+        narration: 'POS Auto-Sale', 
+        items: cart 
+      });
       setStatus(`OK: Voucher ${vchId} saved. Debit: ${selectedCust}, Credit: L2.`);
       setCart([]);
-    } catch (e) { setStatus(`ERR: ${e}`); }
+    } catch (e) { 
+      setStatus(`ERR: ${e}`); 
+    }
   };
 
   const total = cart.reduce((sum, item) => sum + (item.rate * item.qty), 0);
