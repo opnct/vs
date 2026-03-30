@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase';
-import { Lock, UserCheck, ShieldAlert, MonitorOff } from 'lucide-react';
+import { Lock, MonitorOff } from 'lucide-react';
+import { invoke } from '@tauri-apps/api/core';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { useAuthStore } from './store/useAuthStore';
 
@@ -29,14 +30,14 @@ import Suppliers from './pages/Suppliers';
 import Reports from './pages/Reports';
 import Staff from './pages/Staff';
 
-// --- NEW MODULE PLACEHOLDERS (To be replaced with real files later) ---
-const DailyOps = () => <div className="flex items-center justify-center h-full text-[#888888] font-bold text-xl tracking-widest uppercase animate-pulse">Daily Operations Module Initializing...</div>;
-const Delivery = () => <div className="flex items-center justify-center h-full text-[#888888] font-bold text-xl tracking-widest uppercase animate-pulse">Delivery Management Module Initializing...</div>;
-const Communications = () => <div className="flex items-center justify-center h-full text-[#888888] font-bold text-xl tracking-widest uppercase animate-pulse">Communications Module Initializing...</div>;
+// --- NEW MODULE PLACEHOLDERS ---
+const DailyOps = () => <div className="flex items-center justify-center h-full text-tally-black font-bold text-sm tracking-widest uppercase">Day Book Module Initializing...</div>;
+const Delivery = () => <div className="flex items-center justify-center h-full text-tally-black font-bold text-sm tracking-widest uppercase">Delivery Management Initializing...</div>;
+const Communications = () => <div className="flex items-center justify-center h-full text-tally-black font-bold text-sm tracking-widest uppercase">Communications Initializing...</div>;
 
 /**
  * STAFF PIN LOCK SCREEN
- * A production-grade security barrier featuring a premium frosted-glass aesthetic.
+ * Rebuilt as a classic Tally-style flat dialog box.
  */
 const StaffPinLock = ({ onUnlock }) => {
   const { t } = useLanguage();
@@ -48,15 +49,14 @@ const StaffPinLock = ({ onUnlock }) => {
     if (newPin.length <= 4) setPin(newPin);
     
     if (newPin.length === 4) {
-      // Master override PIN to prevent lockouts before database setup
       if (newPin === '1234') {
         onUnlock({ id: 'master', username: 'Master Admin', role: 'OWNER', permissions: ['ALL'] });
         return;
       }
 
       try {
-        // ELECTRON IPC: Replaces Tauri invoke
-        const attendant = await window.electronAPI.invoke('verify_staff_pin', { pin: newPin });
+        // Native Tauri IPC replacing Electron
+        const attendant = await invoke('verify_staff_pin', { pin: newPin });
         if (attendant) {
           onUnlock(attendant);
         } else {
@@ -72,39 +72,39 @@ const StaffPinLock = ({ onUnlock }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[999] bg-black/70 backdrop-blur-2xl flex items-center justify-center animate-in fade-in duration-500">
-      <div className="w-[320px] text-center flex flex-col items-center">
+    <div className="fixed inset-0 z-[999] bg-tally-bg/90 flex items-center justify-center animate-in fade-in duration-200 font-sans">
+      <div className="w-[300px] bg-white border border-tally-border shadow-tally-window flex flex-col">
         
-        <div className="mb-10 flex flex-col items-center">
-          <div className={`w-16 h-16 rounded-3xl flex items-center justify-center mb-6 transition-all ${
-            error ? 'bg-mac-red/20 text-mac-red animate-shake shadow-[0_0_20px_rgba(248,113,113,0.3)]' : 'bg-brand-blue/20 text-brand-blue shadow-glow-blue'
-          }`}>
-            <Lock size={28} />
+        {/* Classic Window Header */}
+        <div className="bg-tally-darkBlue text-white px-3 py-1.5 text-xs font-bold flex items-center gap-2">
+          <Lock size={12} /> System Security
+        </div>
+
+        <div className="p-6 text-center flex flex-col items-center">
+          <h2 className="text-lg font-bold text-tally-black tracking-tight mb-1">{t('pin_required')}</h2>
+          <p className="text-gray-500 text-[10px] font-bold uppercase mb-6">{t('pin_desc')}</p>
+
+          <div className="flex justify-center gap-3 mb-6 bg-tally-bg p-3 border border-tally-border w-full">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className={`w-3 h-3 border border-tally-border transition-colors duration-100 ${
+                pin.length >= i ? 'bg-tally-darkBlue' : 'bg-white'
+              } ${error ? 'bg-red-500 border-red-500' : ''}`} />
+            ))}
           </div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">{t('pin_required')}</h2>
-          <p className="text-[#888888] text-sm mt-2">{t('pin_desc')}</p>
-        </div>
 
-        <div className="flex justify-center gap-6 mb-12">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
-              pin.length >= i ? 'bg-brand-blue shadow-[0_0_15px_rgba(0,122,255,0.8)] scale-110' : 'bg-white/10'
-            }`} />
-          ))}
-        </div>
-
-        <div className="grid grid-cols-3 gap-x-6 gap-y-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, "C", 0].map((val, idx) => (
-            <button
-              key={idx}
-              onClick={() => val === 'C' ? setPin("") : handleVerify(val)}
-              className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl font-medium transition-all active:scale-90 ${
-                val === 'C' ? 'text-mac-red hover:bg-mac-red/10' : 'text-white hover:bg-white/10'
-              } ${val === 0 ? 'col-start-2' : ''}`}
-            >
-              {val}
-            </button>
-          ))}
+          <div className="grid grid-cols-3 gap-1 w-full">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, "C", 0].map((val, idx) => (
+              <button
+                key={idx}
+                onClick={() => val === 'C' ? setPin("") : handleVerify(val)}
+                className={`h-10 border border-tally-border flex items-center justify-center text-sm font-bold transition-none active:bg-tally-yellow active:text-tally-black ${
+                  val === 'C' ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-tally-lightBlue text-tally-darkBlue hover:bg-white'
+                } ${val === 0 ? 'col-start-2' : ''}`}
+              >
+                {val}
+              </button>
+            ))}
+          </div>
         </div>
 
       </div>
@@ -112,10 +112,10 @@ const StaffPinLock = ({ onUnlock }) => {
   );
 };
 
-// The main POS interface layout controller
+// The Tally Prime layout controller (Top Header -> Main Left -> Right Action Menu)
 const MainLayout = ({ user, isOffline }) => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState('pos');
+  const [activeTab, setActiveTab] = useState('dashboard');
   
   // Wire up Global RBAC Auth Store
   const activeStaff = useAuthStore(state => state.staff);
@@ -136,7 +136,7 @@ const MainLayout = ({ user, isOffline }) => {
       case 'daily-ops': return <DailyOps />;
       case 'delivery':  return <Delivery />;
       case 'communications': return <Communications />;
-      default:          return <POSBilling staff={activeStaff} />;
+      default:          return <Dashboard />;
     }
   };
 
@@ -148,28 +148,35 @@ const MainLayout = ({ user, isOffline }) => {
   }
 
   return (
-    <div className="flex h-screen w-full bg-brand-dark text-white font-sans overflow-hidden">
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        onLock={logoutStaff} 
-        isOffline={isOffline}
-      />
+    <div className="flex flex-col h-screen w-full bg-tally-bg text-tally-black font-sans overflow-hidden">
+      
+      {/* 1. Full-Width Top Header */}
+      <Header user={user} staff={activeStaff} isOffline={isOffline} />
 
-      <div className="flex-1 flex flex-col h-full relative bg-brand-dark">
-        <Header user={user} staff={activeStaff} isOffline={isOffline} />
+      {/* 2. Split Workspace */}
+      <div className="flex-1 flex flex-row w-full h-full overflow-hidden">
         
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-brand-dark custom-scrollbar">
+        {/* Left/Center: Main Content Area */}
+        <main className="flex-1 overflow-y-auto custom-scrollbar relative flex flex-col">
           {isOffline && (
-            <div className="mb-6 bg-status-orange/10 border border-status-orange/20 p-3 rounded-2xl flex items-center gap-3 text-status-orange text-xs font-bold uppercase tracking-widest">
-              <MonitorOff size={16} />
+            <div className="bg-yellow-100 border-b border-yellow-300 px-4 py-1.5 flex items-center gap-2 text-yellow-800 text-xs font-bold">
+              <MonitorOff size={14} />
               {t('set_cloud_offline_msg')}
             </div>
           )}
-          <div className="max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
+          <div className="flex-1 w-full h-full animate-in fade-in duration-300">
             {renderPage()}
           </div>
         </main>
+
+        {/* Right: Tally Action Menu (Sidebar) */}
+        <Sidebar 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab} 
+          onLock={logoutStaff} 
+          isOffline={isOffline}
+        />
+
       </div>
     </div>
   );
@@ -188,10 +195,8 @@ export default function App() {
 
       if (currentUser) {
         try {
-          // ELECTRON IPC: Replaces Tauri invoke
-          if (window.electronAPI) {
-            await window.electronAPI.invoke('start_cloud_sync', { uid: currentUser.uid });
-          }
+          // Native Tauri IPC replacing Electron
+          await invoke('start_cloud_sync', { uid: currentUser.uid });
         } catch (error) {
           console.error("Cloud Sync Worker failed to start:", error);
         }
@@ -227,9 +232,9 @@ export default function App() {
   return (
     <LanguageProvider>
       {loading ? (
-        <div className="h-screen w-full bg-brand-dark flex flex-col items-center justify-center">
-          <div className="w-16 h-16 border-4 border-brand-blue border-t-transparent rounded-full animate-spin mb-6 shadow-glow-blue"></div>
-          <p className="text-[#888888] font-bold tracking-widest text-[10px] uppercase animate-pulse">VyaparSetu Terminal Initializing</p>
+        <div className="h-screen w-full bg-tally-bg flex flex-col items-center justify-center font-sans">
+          <div className="w-12 h-12 border-4 border-tally-cyan border-t-tally-darkBlue rounded-full animate-spin mb-4"></div>
+          <p className="text-tally-darkBlue font-bold text-xs uppercase tracking-widest">VyaparSetu Initializing...</p>
         </div>
       ) : (
         <AppRouter />

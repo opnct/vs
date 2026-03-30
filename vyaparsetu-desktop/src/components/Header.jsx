@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Cloud, User, LogOut, MonitorOff, Clock } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useLanguage } from '../context/LanguageContext';
-import PremiumButton from './ui/PremiumButton';
+
+const TopNavButton = ({ shortcut, label, onClick }) => (
+  <button 
+    onClick={onClick} 
+    className="flex items-center gap-0.5 text-tally-headerText hover:text-white transition-colors cursor-pointer outline-none text-[13px]"
+  >
+    <span className="underline decoration-1 underline-offset-[3px] font-bold">{shortcut}</span>
+    <span>:</span>
+    <span className="ml-0.5">{label}</span>
+  </button>
+);
 
 export default function Header({ user, staff, isOffline }) {
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Live Clock Engine
@@ -15,7 +25,7 @@ export default function Header({ user, staff, isOffline }) {
     return () => clearInterval(timer);
   }, []);
 
-  const displayName = staff?.username || (isOffline ? t('guest_owner') : (user?.email?.split('@')[0] || t('guest_owner')));
+  const displayName = staff?.username || (user?.email?.split('@')[0] || 'GUEST');
   
   const smallTopDate = currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); 
   const timeString = currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); 
@@ -33,74 +43,76 @@ export default function Header({ user, staff, isOffline }) {
     }
   };
 
-  const languages = [
-    { code: 'en', label: 'EN' },
-    { code: 'hi', label: 'HI' },
-    { code: 'mr', label: 'MR' }
-  ];
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'hi' : 'en');
+  };
 
   return (
-    <header className="flex items-center justify-between px-10 py-6 bg-[#000000] border-b border-white/10 shrink-0 select-none">
+    <header className="flex flex-col w-full shrink-0 select-none font-sans">
       
-      {/* 1. LEFT: Corporate VyaparSetu Logo */}
-      <div className="flex items-center animate-in fade-in slide-in-from-left-6 duration-700">
-        <h1 className="text-3xl font-black text-white tracking-tighter">
-          VyaparSetu
-        </h1>
-      </div>
-
-      {/* 2. MIDDLE: Nav-style Corporate Links */}
-      <div className="hidden xl:flex items-center gap-8 animate-in fade-in duration-1000 delay-150">
-        <div className="flex items-center gap-2 text-sm font-bold text-white hover:text-brand-blue transition-colors cursor-pointer">
-          <User size={16} /> <span className="uppercase tracking-widest">{displayName}</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm font-bold text-gray-400">
-          <Clock size={16} /> <span className="uppercase tracking-widest">{timeString} • {smallTopDate}</span>
-        </div>
-        <div className={`flex items-center gap-2 text-sm font-bold uppercase tracking-widest ${isOffline ? 'text-status-orange' : 'text-brand-green'}`}>
-          {isOffline ? <><MonitorOff size={16}/> Local Session</> : <><Cloud size={16}/> Cloud Synced</>}
-        </div>
-      </div>
-
-      {/* 3. RIGHT: Search, Lang, and Primary Action */}
-      <div className="flex items-center gap-6 animate-in fade-in slide-in-from-right-6 duration-700">
+      {/* 1. TOP TIER: Dark Blue Main Navigation */}
+      <div className="bg-tally-darkBlue flex items-center justify-between px-4 py-1.5 min-h-[40px]">
         
-        {/* Sleek Dark Corporate Search */}
-        <div className="relative group hidden md:block">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-brand-blue transition-colors" />
-          <input 
-            type="text"
-            placeholder="Universal Search..."
-            className="w-64 bg-[#111111] hover:bg-[#1a1a1a] py-2.5 pl-10 pr-4 rounded-sm border border-white/10 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none text-sm font-bold text-white placeholder-gray-500 transition-all"
-          />
+        <div className="flex items-center gap-10">
+          {/* Logo Mimicking TallyPrime */}
+          <div className="flex items-baseline gap-1.5 cursor-pointer">
+            <h1 className="text-white text-xl font-bold italic tracking-tighter leading-none">VyaparSetu</h1>
+            <span className="text-white text-[10px] tracking-widest leading-none font-bold">POS</span>
+          </div>
+          
+          {/* Classic Shortcut Navigation Links */}
+          <div className="flex items-center gap-5">
+            <TopNavButton shortcut="K" label="Company" />
+            <TopNavButton shortcut="Y" label="Data" />
+            <TopNavButton shortcut="Z" label="Exchange" />
+            <TopNavButton shortcut="O" label="Import" />
+            <TopNavButton shortcut="E" label="Export" />
+            <TopNavButton shortcut="M" label="Share" />
+            <TopNavButton shortcut="P" label="Print" />
+            <TopNavButton shortcut="F1" label="Help" />
+          </div>
         </div>
 
-        {/* Flat Language Selection Nav */}
-        <div className="flex gap-1">
-          {languages.map((lang) => (
-            <button
-              key={lang.code}
-              onClick={() => setLanguage(lang.code)}
-              className={`px-3 py-1.5 rounded-sm text-xs font-black tracking-widest transition-all ${
-                language === lang.code 
-                  ? 'bg-white text-black' 
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              {lang.label}
-            </button>
-          ))}
+        {/* System Actions (Language & Quit) */}
+        <div className="flex items-center gap-6">
+          <TopNavButton shortcut="L" label={language.toUpperCase()} onClick={toggleLanguage} />
+          <TopNavButton shortcut="Q" label="Quit" onClick={handleAction} />
+        </div>
+      </div>
+
+      {/* 2. SECOND TIER: Cyan Gateway & Search */}
+      <div className="bg-tally-cyan text-white flex items-center justify-between px-4 py-1 min-h-[36px] border-b border-tally-border shadow-sm">
+        
+        {/* Active Path Tracker */}
+        <div className="font-bold text-[13px] flex items-center gap-3 w-1/4">
+          Gateway of VyaparSetu
+          {isOffline && (
+            <span className="text-tally-yellow border border-tally-yellow px-1.5 py-0.5 text-[9px] rounded-sm font-black uppercase">
+              Offline Mode
+            </span>
+          )}
         </div>
 
-        {/* Primary Auth Action (GET STARTED Style) */}
-        <PremiumButton 
-          onClick={handleAction}
-          variant="primary"
-          icon={isOffline ? Cloud : LogOut}
-          className="rounded-sm px-8 py-3 text-xs tracking-widest shadow-none border-none"
-        >
-          {isOffline ? 'GO ONLINE' : 'SYSTEM LOGOUT'}
-        </PremiumButton>
+        {/* Go To Master Search Bar */}
+        <div className="flex items-center w-1/2 max-w-[600px]">
+          <button className="bg-tally-bg text-tally-black px-4 py-1 border border-tally-border flex items-center justify-center font-bold text-xs hover:bg-gray-200 transition-colors shadow-sm whitespace-nowrap">
+            <span className="underline decoration-1 underline-offset-[3px]">G</span>: Go To
+          </button>
+          <div className="flex-1 flex items-center bg-white px-2 py-1 ml-1 border border-tally-border shadow-inner">
+            <Search size={14} className="text-gray-400 mr-2 shrink-0" />
+            <input 
+              type="text" 
+              placeholder="Find details entered in masters and transactions. (Alt+F)" 
+              className="w-full outline-none text-xs text-tally-black placeholder-gray-400 bg-transparent font-sans"
+            />
+          </div>
+        </div>
+
+        {/* User Session & Time */}
+        <div className="flex items-center justify-end gap-5 text-[11px] font-bold w-1/4 text-white/90 uppercase tracking-wide">
+          <span>{timeString} • {smallTopDate}</span>
+          <span className="text-white">{displayName}</span>
+        </div>
 
       </div>
     </header>
