@@ -1,78 +1,77 @@
 
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core'; // TAURI v2 IMPORT
+import { invoke } from '@tauri-apps/api/core';
 
 export default function Inventory() {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState({ code: '', name: '', stock: '', rate: '' });
-  const [log, setLog] = useState('// Status: Inventory Engine Online');
+  const [log, setLog] = useState('Ready.');
   const [filter, setFilter] = useState('');
 
   // S1: Initialization
-  const loadItems = () => invoke('exec_sql_read', { query: "SELECT * FROM inventory" }).then(setItems).catch(e => setLog(`// Error: ${e}`));
+  const loadItems = () => invoke('exec_sql_read', { query: "SELECT * FROM inventory" }).then(setItems).catch(e => setLog(`ERR: ${e}`));
   useEffect(() => { loadItems(); }, []);
 
   // S2: Data Insertion
   const handleCreate = async () => {
-    if(!form.name) return setLog('// Error: Missing Name');
+    if(!form.name) return setLog('ERR: Missing Name');
     try {
       const id = `ITM${Date.now()}`;
       await invoke('exec_sql', { query: `INSERT INTO inventory (id, item_code, name, stock, rate, unit) VALUES ('${id}', '${form.code}', '${form.name}', ${form.stock || 0}, ${form.rate || 0}, 'PCS')`});
-      setLog(`// Created: ${form.name}`);
+      setLog(`OK: Created ${form.name}`);
       loadItems();
       setForm({ code: '', name: '', stock: '', rate: '' });
-    } catch (e) { setLog(`// Error: ${e}`); }
+    } catch (e) { setLog(`ERR: ${e}`); }
   };
 
-  // S3: Analytics (Low Stock)
+  // S3: Analytics (Low Stock & Value)
   const lowStock = items.filter(i => i.stock <= 5).length;
-  // S4: Analytics (Valuation)
   const totalValuation = items.reduce((sum, i) => sum + (i.stock * i.rate), 0);
 
   return (
-    <div className="flex flex-col h-full gap-4 pb-10 font-mono text-sm">
-      {/* S5: Top Metrics Dashboard */}
-      <div className="flex gap-4">
-        <div className="flex-1 p-4 border border-vscode-border bg-[#252526] flex justify-between text-base">
-          <span className="text-vscode-textDark">Total Items: <span className="text-vscode-type ml-2">{items.length}</span></span>
-          <span className="text-vscode-textDark">Low Stock Alert: <span className="text-red-400 ml-2">{lowStock}</span></span>
-          <span className="text-vscode-textDark">Est. Valuation: <span className="text-vscode-func ml-2">₹{totalValuation.toFixed(2)}</span></span>
-        </div>
+    <div className="flex flex-col h-full gap-6">
+      <h1 className="text-xl border-b border-np-border pb-2">Inventory Masters & Stock Info</h1>
+
+      {/* S4: Metrics */}
+      <div className="flex gap-4 p-3 bg-np-actionBg border border-np-border">
+        <span>Total Items: <span className="text-np-accent">{items.length}</span></span>
+        <span>Low Stock Alert: <span className="text-red-400">{lowStock}</span></span>
+        <span>Est. Valuation: <span className="text-np-accent">{totalValuation.toFixed(2)}</span></span>
       </div>
 
-      <div className="p-4 border border-vscode-border bg-[#1e1e1e]">
-        <div className="text-vscode-keyword mb-4">// Insert Inventory Item</div>
-        <div className="flex gap-4">
-          <input type="text" placeholder="Barcode/Code" value={form.code} onChange={e=>setForm({...form, code: e.target.value})} className="w-40" />
-          <input type="text" placeholder="Item Name" value={form.name} onChange={e=>setForm({...form, name: e.target.value})} className="flex-1" />
-          <input type="number" placeholder="Qty" value={form.stock} onChange={e=>setForm({...form, stock: e.target.value})} className="w-32" />
-          <input type="number" placeholder="Rate" value={form.rate} onChange={e=>setForm({...form, rate: e.target.value})} className="w-32" />
-          <button onClick={handleCreate} className="bg-vscode-accent px-6 py-1.5 text-white rounded hover:bg-blue-600 font-bold">insert()</button>
+      {/* S5: Form */}
+      <div>
+        <div className="text-np-muted mb-2">Create Stock Item</div>
+        <div className="flex gap-4 items-end">
+          <div className="w-32"><label className="text-xs text-np-muted block">Item Code</label><input type="text" value={form.code} onChange={e=>setForm({...form, code: e.target.value})} className="w-full" /></div>
+          <div className="flex-1"><label className="text-xs text-np-muted block">Name</label><input type="text" value={form.name} onChange={e=>setForm({...form, name: e.target.value})} className="w-full" /></div>
+          <div className="w-24"><label className="text-xs text-np-muted block">Qty</label><input type="number" value={form.stock} onChange={e=>setForm({...form, stock: e.target.value})} className="w-full" /></div>
+          <div className="w-24"><label className="text-xs text-np-muted block">Rate</label><input type="number" value={form.rate} onChange={e=>setForm({...form, rate: e.target.value})} className="w-full" /></div>
+          <button onClick={handleCreate}>Save (Enter)</button>
         </div>
       </div>
       
-      <div className="flex-1 flex flex-col border border-vscode-border bg-[#1e1e1e] overflow-hidden">
-        <div className="p-3 bg-[#252526] border-b border-vscode-border">
-          <input type="text" placeholder="Filter items by name or code..." value={filter} onChange={e=>setFilter(e.target.value)} className="w-full bg-[#1e1e1e]" />
-        </div>
+      {/* S6: Data Table */}
+      <div className="flex-1 flex flex-col border border-np-border overflow-hidden">
+        <input type="text" placeholder="Filter inventory..." value={filter} onChange={e=>setFilter(e.target.value)} className="p-2 border-b border-np-border bg-np-actionBg w-full" />
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <table>
-            <thead><tr><th>item_code</th><th>name</th><th>closing_stock</th><th>rate</th><th>valuation</th></tr></thead>
+            <thead><tr className="bg-np-actionBg"><th>Code</th><th>Name</th><th>Closing Stock</th><th>Rate</th><th>Value</th></tr></thead>
             <tbody>
               {items.filter(i => i.name.toLowerCase().includes(filter.toLowerCase())).map(i => (
-                <tr key={i.id} className="hover:bg-[#2a2d2e]">
-                  <td className="text-vscode-string">"{i.item_code}"</td>
-                  <td className="text-vscode-text">{i.name}</td>
-                  <td className={`font-bold ${i.stock <= 5 ? 'text-red-400' : 'text-vscode-type'}`}>{i.stock}</td>
-                  <td className="text-vscode-func">₹{i.rate}</td>
-                  <td className="text-vscode-textDark">₹{(i.stock * i.rate).toFixed(2)}</td>
+                <tr key={i.id} className="hover:bg-np-tabHover">
+                  <td className="text-np-muted">{i.item_code}</td>
+                  <td>{i.name}</td>
+                  <td className={i.stock <= 5 ? 'text-red-400' : ''}>{i.stock} PCS</td>
+                  <td className="text-np-accent">{i.rate}</td>
+                  <td className="text-np-muted">{(i.stock * i.rate).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
-      <div className="p-2 border border-vscode-border bg-[#252526] text-vscode-textDark text-xs">{log}</div>
+      <div className="text-xs text-np-muted">{log}</div>
     </div>
   );
 }

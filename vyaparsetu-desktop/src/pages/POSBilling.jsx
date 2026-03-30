@@ -1,29 +1,29 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { invoke } from '@tauri-apps/api/core'; // TAURI v2 IMPORT
+import { invoke } from '@tauri-apps/api/core';
 
 export default function POSBilling() {
   const [items, setItems] = useState([]);
   const [cart, setCart] = useState([]);
   const [search, setSearch] = useState('');
   const [customers, setCustomers] = useState([]);
-  const [selectedCust, setSelectedCust] = useState('');
-  const [status, setStatus] = useState('// Status: Engine Ready. Press F8 to Post.');
+  const [selectedCust, setSelectedCust] = useState('L1'); // Cash Default
+  const [status, setStatus] = useState('Ready for input...');
   const searchRef = useRef(null);
 
+  // S1: Data Initialization
   useEffect(() => {
-    // S1: Fetch Inventory & Ledgers
-    invoke('exec_sql_read', { query: "SELECT * FROM inventory" }).then(setItems).catch(e => setStatus(`// Err: ${e}`));
-    invoke('exec_sql_read', { query: "SELECT id, name FROM ledgers WHERE group_id = 'G3'" }).then(setCustomers);
+    invoke('exec_sql_read', { query: "SELECT * FROM inventory" }).then(setItems);
+    invoke('exec_sql_read', { query: "SELECT id, name FROM ledgers WHERE group_id IN ('G3', 'G1')" }).then(setCustomers);
     
-    // S2: POS Shortcuts
-    const handleKey = (e) => {
+    // S2: Keyboard Shortcuts (F8 Checkout, F4 Clear)
+    const hk = (e) => {
       if (e.key === 'F8') handleCheckout();
       if (e.key === 'F4') setCart([]);
       if (e.key === 'F2') searchRef.current?.focus();
     };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+    window.addEventListener('keydown', hk);
+    return () => window.removeEventListener('keydown', hk);
   }, [cart, selectedCust]);
 
   const addToCart = (item) => {
@@ -32,72 +32,85 @@ export default function POSBilling() {
     else setCart([...cart, {...item, qty: 1}]);
   };
 
-  // S3: Double-Entry Checkout Logic
+  // S3: Tally Double-Entry Core Checkout
   const handleCheckout = async () => {
-    if(cart.length === 0) return setStatus('// Error: Cart is empty');
+    if(cart.length === 0) return setStatus('ERR: Empty Cart.');
     const total = cart.reduce((sum, item) => sum + (item.rate * item.qty), 0);
     try {
-      setStatus('// Processing Double-Entry transaction...');
-      const vchId = await invoke('post_pos_sale', { total, items: cart, customerId: selectedCust || null });
-      setStatus(`// Success: Voucher [${vchId}] posted. Press F4 to clear.`);
+      setStatus('Processing Double-Entry transaction...');
+      const vchId = await invoke('post_double_entry', { vType: 'Sales', total, drLedger: selectedCust, crLedger: 'L2', narration: 'POS Auto-Sale', items: cart });
+      setStatus(`OK: Voucher ${vchId} saved. Debit: ${selectedCust}, Credit: L2.`);
       setCart([]);
-    } catch (e) { setStatus(`// Error: ${e}`); }
+    } catch (e) { setStatus(`ERR: ${e}`); }
   };
 
   const total = cart.reduce((sum, item) => sum + (item.rate * item.qty), 0);
 
   return (
-    <div className="flex h-full gap-4 pb-10">
-      {/* S4: Inventory & Search Pane */}
-      <div className="flex-1 flex flex-col border border-vscode-border bg-[#1e1e1e]">
-        <div className="bg-[#252526] px-4 py-2 text-xs font-mono text-vscode-keyword border-b border-vscode-border">scanner_module.rs</div>
-        <div className="p-4 flex-1 flex flex-col min-h-0">
-          <input ref={searchRef} type="text" placeholder="Scan Barcode or Search (F2)..." value={search} onChange={e => setSearch(e.target.value)} className="w-full mb-4" />
+    <div className="flex flex-col h-full gap-6">
+      {/* S4: Header & Config */}
+      <div>
+        <h1 className="text-xl border-b border-np-border pb-2 mb-4">Voucher Type: Sales (POS Mode)</h1>
+        <div className="flex gap-4 mb-4">
+          <div className="w-1/2">
+            <label className="text-np-muted block mb-1">Party A/c Name (F3 to change)</label>
+            <select value={selectedCust} onChange={e=>setSelectedCust(e.target.value)} className="w-full bg-np-actionBg border border-np-border px-2 py-1">
+              {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div className="w-1/2">
+            <label className="text-np-muted block mb-1">Sales Ledger</label>
+            <input type="text" value="Local Sales (L2)" disabled className="w-full bg-np-bg border-none" />
+          </div>
+        </div>
+      </div>
+
+      {/* S5: Split Interface for Items and Cart */}
+      <div className="flex-1 flex gap-6 overflow-hidden">
+        
+        {/* Left: Inventory List */}
+        <div className="w-1/2 flex flex-col border border-np-border bg-np-bg">
+          <input ref={searchRef} type="text" placeholder="Scan Barcode or Search Item (F2)..." value={search} onChange={e => setSearch(e.target.value)} className="w-full p-2 border-b border-np-border bg-np-actionBg" autoFocus />
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             <table>
-              <thead><tr><th>Code</th><th>Name</th><th>Stock</th><th>Rate</th></tr></thead>
+              <thead><tr><th>Code</th><th>Name</th><th>Stk</th><th>Rate</th></tr></thead>
               <tbody>
                 {items.filter(i => i.name.toLowerCase().includes(search.toLowerCase())).map(item => (
-                  <tr key={item.id} onClick={() => addToCart(item)} className="cursor-pointer hover:bg-[#2a2d2e]">
-                    <td className="text-vscode-string">"{item.item_code}"</td>
-                    <td className="text-vscode-text">{item.name}</td>
-                    <td className="text-vscode-type">{item.stock}</td>
-                    <td className="text-vscode-func">₹{item.rate}</td>
+                  <tr key={item.id} onClick={() => addToCart(item)} className="cursor-pointer hover:bg-np-tabHover">
+                    <td className="text-np-muted">{item.item_code}</td>
+                    <td>{item.name}</td>
+                    <td className={item.stock < 5 ? 'text-red-400' : ''}>{item.stock}</td>
+                    <td className="text-np-accent">{item.rate}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-      </div>
 
-      {/* S5: Active Cart & Ledger Mapping */}
-      <div className="w-[450px] flex flex-col border border-vscode-border bg-[#1e1e1e]">
-        <div className="bg-[#252526] px-4 py-2 text-xs font-mono text-vscode-keyword border-b border-vscode-border">transaction_cart.json</div>
-        
-        <div className="p-4 border-b border-vscode-border">
-          <label className="text-xs font-mono text-vscode-textDark mb-2 block">// Select Debit Ledger (Customer/Cash)</label>
-          <select value={selectedCust} onChange={e=>setSelectedCust(e.target.value)} className="w-full">
-            <option value="">Main Cash (L1)</option>
-            {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </div>
-
-        <div className="p-4 flex-1 overflow-y-auto custom-scrollbar font-mono text-sm leading-loose">
-          <span className="text-vscode-keyword">const</span> <span className="text-vscode-func">cart</span> = [
-          {cart.map((c, i) => (
-            <div key={c.id} className="pl-4">
-              {'{'} <span className="text-vscode-textDark">id:</span> <span className="text-vscode-string">"{c.item_code}"</span>, <span className="text-vscode-textDark">qty:</span> <span className="text-vscode-type">{c.qty}</span>, <span className="text-vscode-textDark">rate:</span> <span className="text-vscode-type">{c.rate}</span> {'}'}{i < cart.length - 1 ? ',' : ''}
+        {/* Right: Active Cart */}
+        <div className="w-1/2 flex flex-col border border-np-border bg-np-bg">
+          <div className="bg-np-actionBg p-2 border-b border-np-border font-bold">Item Allocation</div>
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+            {cart.map((c, i) => (
+              <div key={c.id} className="flex justify-between border-b border-np-border/50 py-2">
+                <span>{i+1}. {c.name}</span>
+                <div className="text-right">
+                  <span className="text-np-muted mr-4">{c.qty} {c.unit} x {c.rate}</span>
+                  <span className="text-np-accent">{(c.qty * c.rate).toFixed(2)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="p-4 border-t border-np-border bg-np-actionBg">
+            <div className="flex justify-between text-lg mb-4"><span>Total Amount:</span><span className="text-np-accent">{total.toFixed(2)}</span></div>
+            <div className="flex gap-2">
+              <button onClick={() => setCart([])} className="flex-1 border border-np-border text-np-muted py-2 hover:bg-np-bg">Clear (F4)</button>
+              <button onClick={handleCheckout} className="flex-[2] bg-np-accent text-black font-bold py-2 hover:bg-blue-400">Post Sale (F8)</button>
             </div>
-          ))}
-          ];
-        </div>
-        
-        <div className="p-4 border-t border-vscode-border bg-[#252526]">
-          <div className="flex justify-between font-mono text-xl mb-4 text-vscode-text"><span>Total:</span><span className="text-vscode-func">₹{total.toFixed(2)}</span></div>
-          <button onClick={handleCheckout} className="w-full bg-vscode-accent text-white font-sans py-2.5 rounded hover:bg-blue-600 font-bold mb-2">Post Sale (F8)</button>
-          <button onClick={() => setCart([])} className="w-full border border-vscode-border text-vscode-text font-sans py-2 rounded hover:bg-vscode-border text-sm">Clear Cart (F4)</button>
-          <div className="mt-4 text-xs font-mono text-vscode-textDark break-all">{status}</div>
+            <div className="mt-2 text-xs text-np-muted">{status}</div>
+          </div>
         </div>
       </div>
     </div>

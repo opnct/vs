@@ -3,12 +3,78 @@ import pathlib
 
 FILES = {
     # ==========================================
-    # 1. TAURI v2 CONFIGURATIONS
+    # 1. GLOBAL UI/UX (Windows 11 Notepad Theme)
+    # ==========================================
+    "tailwind.config.js": r"""/** @type {import('tailwindcss').Config} */
+export default {
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  theme: {
+    extend: {
+      colors: {
+        np: {
+          bg: '#202020',         // Notepad background
+          menuBg: '#181818',     // Titlebar/Menu background
+          tabActive: '#2d2d2d',  // Active tab
+          tabHover: '#2a2a2a',   // Tab hover
+          text: '#ffffff',       // Main text
+          muted: '#9d9d9d',      // Placeholder/Muted
+          accent: '#4cc2ff',     // Selection/Active blue
+          border: '#333333',     // Subtle borders
+          actionBg: '#282828',   // Formatting bar bg
+        }
+      },
+      fontFamily: {
+        mono: ['Consolas', '"Courier New"', 'monospace'],
+        sans: ['"Segoe UI"', 'system-ui', 'sans-serif'],
+      }
+    },
+  },
+  plugins: [],
+}
+""",
+
+    "index.html": r"""<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VyaparSetu - Notepad</title>
+  </head>
+  <body class="bg-np-bg text-np-text m-0 p-0 overflow-hidden font-mono antialiased">
+    <div id="root" class="h-screen w-screen flex flex-col"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+""",
+
+    "src/index.css": r"""@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body { @apply bg-np-bg text-np-text font-mono; overscroll-behavior: none; }
+  input, textarea, select { @apply bg-transparent border-b border-np-border focus:border-np-accent outline-none text-np-text px-2 py-1 text-sm font-mono transition-colors; }
+  table { @apply w-full text-left border-collapse font-mono text-sm; }
+  th { @apply border-b-2 border-np-border py-2 px-2 text-np-muted font-normal whitespace-nowrap; }
+  td { @apply border-b border-np-border/50 py-2 px-2; }
+  button { @apply bg-np-actionBg border border-np-border px-3 py-1 hover:bg-np-tabHover transition-colors; }
+}
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar { width: 12px; height: 12px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #4a4a4a; border: 3px solid #202020; border-radius: 10px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #666666; }
+}
+""",
+
+    # ==========================================
+    # 2. RUST BACKEND (Double-Entry Tally Engine)
     # ==========================================
     "src-tauri/Cargo.toml": r"""[package]
 name = "vyaparsetu"
 version = "0.1.0"
-description = "VyaparSetu Tauri v2 Engine"
+description = "VyaparSetu Tally Engine"
 authors = ["VyaparSetu"]
 edition = "2021"
 
@@ -24,9 +90,9 @@ chrono = "0.4"
 """,
 
     "src-tauri/tauri.conf.json": r"""{
-  "productName": "vyaparsetu",
+  "productName": "VyaparSetu Notepad",
   "version": "0.1.0",
-  "identifier": "com.vyaparsetu.app",
+  "identifier": "com.vyaparsetu.notepad",
   "build": {
     "beforeDevCommand": "npm run vite:dev",
     "devUrl": "http://localhost:5173",
@@ -35,24 +101,15 @@ chrono = "0.4"
   },
   "app": {
     "windows": [
-      {
-        "title": "VyaparSetu Workspace",
-        "width": 1280,
-        "height": 800
-      }
+      { "title": "VyaparSetu - Notepad", "width": 1280, "height": 800, "decorations": false, "transparent": true }
     ],
-    "security": {
-      "csp": null
-    }
+    "security": { "csp": null }
   }
 }
 """,
 
-    # ==========================================
-    # 2. RUST BACKEND (Double-Entry Engine)
-    # ==========================================
     "src-tauri/src/schema.sql": r"""
-CREATE TABLE IF NOT EXISTS company (id TEXT PRIMARY KEY, name TEXT, gstin TEXT, fy_start TEXT);
+CREATE TABLE IF NOT EXISTS company (id TEXT PRIMARY KEY, name TEXT, gstin TEXT, fy_start TEXT, currency TEXT);
 CREATE TABLE IF NOT EXISTS ledger_groups (id TEXT PRIMARY KEY, name TEXT, nature TEXT); 
 CREATE TABLE IF NOT EXISTS ledgers (id TEXT PRIMARY KEY, name TEXT, group_id TEXT, opening_bal REAL, is_system INTEGER);
 CREATE TABLE IF NOT EXISTS inventory (id TEXT PRIMARY KEY, item_code TEXT, name TEXT, stock REAL, rate REAL, unit TEXT);
@@ -63,12 +120,18 @@ CREATE TABLE IF NOT EXISTS voucher_entries (id TEXT PRIMARY KEY, voucher_id TEXT
     "src-tauri/src/db.rs": r"""
 use rusqlite::{Connection, Result};
 pub fn init_db() -> Result<Connection> {
-    let conn = Connection::open("vyaparsetu_workspace.db")?;
+    let conn = Connection::open("vyaparsetu_data.db")?;
     let schema = include_str!("schema.sql");
     conn.execute_batch(schema)?;
-    // Seed default double-entry structure
-    conn.execute("INSERT OR IGNORE INTO ledger_groups (id, name, nature) VALUES ('G1', 'Cash-in-Hand', 'Assets'), ('G2', 'Sales Accounts', 'Income'), ('G3', 'Sundry Debtors', 'Assets'), ('G4', 'Sundry Creditors', 'Liabilities')", [])?;
-    conn.execute("INSERT OR IGNORE INTO ledgers (id, name, group_id, opening_bal, is_system) VALUES ('L1', 'Main Cash', 'G1', 0, 1), ('L2', 'Local Sales', 'G2', 0, 1)", [])?;
+    // Core Tally Ledgers & Groups Seed
+    conn.execute_batch("
+        INSERT OR IGNORE INTO ledger_groups (id, name, nature) VALUES 
+        ('G1', 'Cash-in-Hand', 'Assets'), ('G2', 'Sales Accounts', 'Income'), 
+        ('G3', 'Sundry Debtors', 'Assets'), ('G4', 'Sundry Creditors', 'Liabilities'),
+        ('G5', 'Purchase Accounts', 'Expenses'), ('G6', 'Bank Accounts', 'Assets');
+        INSERT OR IGNORE INTO ledgers (id, name, group_id, opening_bal, is_system) VALUES 
+        ('L1', 'Main Cash', 'G1', 0, 1), ('L2', 'Local Sales', 'G2', 0, 1), ('L3', 'Purchases', 'G5', 0, 1);
+    ")?;
     Ok(conn)
 }
 """,
@@ -90,7 +153,6 @@ pub fn exec_sql_read(query: String) -> Result<Vec<serde_json::Value>, String> {
     let conn = init_db().map_err(|e| e.to_string())?;
     let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
     let cols: Vec<String> = stmt.column_names().into_iter().map(|s| s.to_string()).collect();
-    
     let rows = stmt.query_map([], |row| {
         let mut map = serde_json::Map::new();
         for (i, col) in cols.iter().enumerate() {
@@ -106,31 +168,27 @@ pub fn exec_sql_read(query: String) -> Result<Vec<serde_json::Value>, String> {
         }
         Ok(serde_json::Value::Object(map))
     }).map_err(|e| e.to_string())?;
-
     let mut res = Vec::new();
     for r in rows { res.push(r.map_err(|e| e.to_string())?); }
     Ok(res)
 }
 
 #[tauri::command]
-pub fn post_pos_sale(total: f64, items: Vec<serde_json::Value>, customer_id: Option<String>) -> Result<String, String> {
-    let conn = init_db().map_err(|e| e.to_string())?;
-    let v_id = format!("VCH-{}", chrono::Local::now().timestamp());
+pub fn post_double_entry(v_type: String, total: f64, dr_ledger: String, cr_ledger: String, narration: String, items: Vec<serde_json::Value>) -> Result<String, String> {
+    let mut conn = init_db().map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let v_id = format!("VCH-{}", chrono::Local::now().timestamp_millis());
     
-    // 1. Sales Voucher Header
-    conn.execute("INSERT INTO vouchers (id, v_type, date, total, narration) VALUES (?1, 'Sales', date('now'), ?2, 'POS Sale')", params![v_id, total]).map_err(|e| e.to_string())?;
+    tx.execute("INSERT INTO vouchers (id, v_type, date, total, narration) VALUES (?1, ?2, date('now'), ?3, ?4)", params![v_id, v_type, total, narration]).map_err(|e| e.to_string())?;
+    tx.execute("INSERT INTO voucher_entries (id, voucher_id, ledger_id, debit, credit) VALUES (?1, ?2, ?3, ?4, 0)", params![format!("{}-D", v_id), v_id, dr_ledger, total]).map_err(|e| e.to_string())?;
+    tx.execute("INSERT INTO voucher_entries (id, voucher_id, ledger_id, debit, credit) VALUES (?1, ?2, ?3, 0, ?4)", params![format!("{}-C", v_id), v_id, cr_ledger, total]).map_err(|e| e.to_string())?;
     
-    // 2. Double-Entry: Debit Customer/Cash & Credit Sales
-    let dr_ledger = customer_id.unwrap_or_else(|| "L1".to_string());
-    conn.execute("INSERT INTO voucher_entries (id, voucher_id, ledger_id, debit, credit) VALUES (?1, ?2, ?3, ?4, 0)", params![format!("{}-D", v_id), v_id, dr_ledger, total]).map_err(|e| e.to_string())?;
-    conn.execute("INSERT INTO voucher_entries (id, voucher_id, ledger_id, debit, credit) VALUES (?1, ?2, 'L2', 0, ?3)", params![format!("{}-C", v_id), v_id, total]).map_err(|e| e.to_string())?;
-    
-    // 3. Update Inventory Stock Levels
     for item in items {
         let id: String = serde_json::from_value(item["id"].clone()).unwrap();
         let qty: f64 = serde_json::from_value(item["qty"].clone()).unwrap();
-        conn.execute("UPDATE inventory SET stock = stock - ?1 WHERE id = ?2", params![qty, id]).map_err(|e| e.to_string())?;
+        tx.execute("UPDATE inventory SET stock = stock - ?1 WHERE id = ?2", params![qty, id]).map_err(|e| e.to_string())?;
     }
+    tx.commit().map_err(|e| e.to_string())?;
     Ok(v_id)
 }
 """,
@@ -139,94 +197,23 @@ pub fn post_pos_sale(total: f64, items: Vec<serde_json::Value>, customer_id: Opt
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod db;
 mod commands;
-
 fn main() {
     tauri::Builder::default()
         .setup(|_app| { db::init_db().unwrap(); Ok(()) })
-        .invoke_handler(tauri::generate_handler![commands::exec_sql, commands::exec_sql_read, commands::post_pos_sale])
+        .invoke_handler(tauri::generate_handler![commands::exec_sql, commands::exec_sql_read, commands::post_double_entry])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 """,
 
     # ==========================================
-    # 3. GLOBAL UI/UX (VS Code Dark Theme)
-    # ==========================================
-    "tailwind.config.js": r"""/** @type {import('tailwindcss').Config} */
-export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
-  theme: {
-    extend: {
-      colors: {
-        vscode: {
-          bg: '#1e1e1e',         
-          sidebar: '#252526',    
-          activity: '#333333',   
-          accent: '#007acc',     
-          text: '#cccccc',       
-          textDark: '#858585',   
-          string: '#ce9178',     
-          keyword: '#569cd6',    
-          func: '#dcdcaa',       
-          type: '#4ec9b0',       
-          border: '#3c3c3c',     
-          tabInactive: '#2d2d2d',
-          statusBg: '#007acc',
-        }
-      },
-      fontFamily: {
-        mono: ['"Fira Code"', 'Consolas', 'monospace'],
-        sans: ['Inter', 'Segoe UI', 'sans-serif'],
-      }
-    }
-  },
-  plugins: [],
-}
-""",
-
-    "index.html": r"""<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
-    <title>VyaparSetu Workspace</title>
-  </head>
-  <body class="bg-vscode-bg text-vscode-text m-0 p-0 overflow-hidden font-sans antialiased">
-    <div id="root" class="h-screen w-screen flex flex-col"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
-""",
-
-    "src/index.css": r"""@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  html, body { @apply bg-vscode-bg text-vscode-text font-sans; overscroll-behavior: none; }
-  input, textarea, select { @apply bg-[#3c3c3c] border border-transparent focus:border-vscode-accent outline-none text-vscode-text px-3 py-1.5 text-sm font-mono transition-colors rounded-sm; }
-  table { @apply w-full text-left border-collapse font-mono text-[13px]; }
-  th { @apply border-b border-vscode-border py-2 px-3 text-vscode-textDark font-normal whitespace-nowrap bg-[#252526]; }
-  td { @apply border-b border-vscode-border/40 py-2 px-3; }
-}
-
-@layer utilities {
-  .custom-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
-  .custom-scrollbar::-webkit-scrollbar-track { background: #1e1e1e; }
-  .custom-scrollbar::-webkit-scrollbar-thumb { background: #424242; border: 2px solid #1e1e1e; }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
-}
-""",
-
-    # ==========================================
-    # 4. STATE & LAYOUT (VS Code Style)
+    # 3. REACT STATE & NOTEPAD LAYOUT
     # ==========================================
     "src/store/useAppStore.js": r"""
 import { create } from 'zustand';
 export const useAppStore = create((set) => ({
-  activeTab: 'Welcome.md',
-  openTabs: ['Welcome.md'],
+  activeTab: 'POS_Billing.txt',
+  openTabs: ['POS_Billing.txt', 'Ledgers_Master.txt', 'Inventory.txt', 'Reports.txt', 'System_Config.txt'],
   openFile: (fileName) => set((state) => ({ 
     activeTab: fileName, 
     openTabs: state.openTabs.includes(fileName) ? state.openTabs : [...state.openTabs, fileName] 
@@ -241,164 +228,142 @@ export const useAppStore = create((set) => ({
     "src/App.jsx": r"""
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store/useAppStore';
-import { Files, Search, Database, Settings, Play, X, Check, Box, Users, FileText, LayoutDashboard } from 'lucide-react';
+import { WindowMinimize, Square, X, Settings, Database, Play } from 'lucide-react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
-import Dashboard from './pages/Dashboard';
 import POSBilling from './pages/POSBilling';
 import Ledgers from './pages/Ledgers';
 import Inventory from './pages/Inventory';
 import Reports from './pages/Reports';
+import Config from './pages/Config';
 
-const Explorer = () => {
-  const { openFile, activeTab } = useAppStore();
-  const files = [
-    { name: 'Welcome.md', icon: LayoutDashboard, color: 'text-vscode-keyword' },
-    { name: 'POS_Terminal.rs', icon: Play, color: 'text-vscode-type' },
-    { name: 'Chart_Of_Accounts.json', icon: Database, color: 'text-vscode-string' },
-    { name: 'Inventory_Master.sql', icon: Box, color: 'text-yellow-500' },
-    { name: 'Financial_Reports.csv', icon: FileText, color: 'text-green-500' }
-  ];
-
+const TopMenu = () => {
+  const { openFile } = useAppStore();
+  const appWindow = getCurrentWindow();
   return (
-    <div className="w-64 h-full bg-vscode-sidebar border-r border-vscode-border flex flex-col shrink-0 select-none">
-      <div className="px-4 py-3 text-[11px] font-bold tracking-widest text-vscode-textDark">EXPLORER</div>
-      <div className="flex-1 overflow-y-auto mt-2">
-        {files.map(f => (
-          <div key={f.name} onClick={() => openFile(f.name)} className={`flex items-center gap-2 px-6 py-1 cursor-pointer text-[13px] ${activeTab === f.name ? 'bg-[#37373d] text-white' : 'text-vscode-text hover:bg-[#2a2d2e]'}`}>
-            <f.icon size={14} className={f.color} /> {f.name}
+    <div className="h-8 bg-np-menuBg flex items-center justify-between select-none font-sans" data-tauri-drag-region>
+      <div className="flex items-center">
+        <div className="px-3 flex gap-4 text-xs text-np-text cursor-default">
+          <div className="hover:bg-white/10 px-2 py-1 rounded">File</div>
+          <div className="hover:bg-white/10 px-2 py-1 rounded">Edit</div>
+          <div className="hover:bg-white/10 px-2 py-1 rounded">View</div>
+          
+          {/* Module Quick Links inside Menu */}
+          <div className="flex gap-2 ml-4 border-l border-np-border pl-4">
+            <button onClick={()=>openFile('POS_Billing.txt')} className="hover:text-np-accent">Billing</button>
+            <button onClick={()=>openFile('Ledgers_Master.txt')} className="hover:text-np-accent">Ledgers</button>
+            <button onClick={()=>openFile('Inventory.txt')} className="hover:text-np-accent">Inventory</button>
+            <button onClick={()=>openFile('Reports.txt')} className="hover:text-np-accent">Reports</button>
+            <button onClick={()=>openFile('System_Config.txt')} className="hover:text-np-accent">Config</button>
           </div>
-        ))}
+        </div>
+      </div>
+      <div className="flex">
+        <button onClick={() => appWindow.minimize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><WindowMinimize size={14} /></button>
+        <button onClick={() => appWindow.toggleMaximize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Square size={12} /></button>
+        <button onClick={() => appWindow.close()} className="h-8 w-12 flex items-center justify-center hover:bg-red-500"><X size={16} /></button>
       </div>
     </div>
   );
 };
 
+const TabBar = () => {
+  const { openTabs, activeTab, openFile, closeFile } = useAppStore();
+  return (
+    <div className="flex h-9 bg-np-menuBg overflow-x-auto custom-scrollbar pt-1 px-1 shrink-0 font-sans">
+      {openTabs.map(tab => (
+        <div key={tab} onClick={() => openFile(tab)} className={`flex items-center gap-2 px-3 py-1.5 cursor-pointer rounded-t-md border border-b-0 transition-colors group ${activeTab === tab ? 'bg-np-bg border-np-border text-np-text' : 'bg-np-menuBg border-transparent text-np-muted hover:bg-np-tabHover'}`}>
+          <span className="text-[13px]">{tab}</span>
+          <X size={14} onClick={(e) => { e.stopPropagation(); closeFile(tab); }} className={`rounded-full hover:bg-white/20 p-0.5 ${activeTab === tab ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
+        </div>
+      ))}
+      <div className="px-3 flex items-center cursor-pointer hover:bg-np-tabHover rounded-t-md text-np-muted"><span className="text-lg">+</span></div>
+    </div>
+  );
+};
+
+const ActionBar = () => (
+  <div className="h-10 bg-np-bg border-b border-np-border flex items-center px-4 gap-4 text-sm shrink-0 font-sans">
+    <select className="bg-np-actionBg border border-np-border px-2 py-1 rounded w-32"><option>Consolas</option><option>Arial</option></select>
+    <select className="bg-np-actionBg border border-np-border px-2 py-1 rounded"><option>14</option><option>16</option></select>
+    <div className="w-px h-5 bg-np-border"></div>
+    <div className="font-bold flex gap-3 text-np-muted">
+      <span className="hover:text-np-text cursor-pointer">B</span><span className="italic hover:text-np-text cursor-pointer">I</span><span className="underline hover:text-np-text cursor-pointer">U</span>
+    </div>
+    <div className="ml-auto text-xs text-np-accent flex items-center gap-2 border border-np-accent/30 bg-np-accent/10 px-3 py-1 rounded">
+      <Database size={14} /> ACTIVE FY: 2024-25 | GST: ON
+    </div>
+  </div>
+);
+
+const StatusBar = () => {
+  const [time, setTime] = useState(new Date().toLocaleTimeString());
+  useEffect(() => { setInterval(() => setTime(new Date().toLocaleTimeString()), 1000); }, []);
+  return (
+    <div className="h-6 bg-np-bg border-t border-np-border text-np-muted flex items-center px-4 text-[11px] font-sans justify-between shrink-0">
+      <div className="flex gap-6"><span>Ln 14, Col 32</span><span>100%</span></div>
+      <div className="flex gap-6"><span>Windows (CRLF)</span><span>UTF-8</span><span>{time}</span></div>
+    </div>
+  );
+};
+
 export default function App() {
-  const { activeTab, openTabs, openFile, closeFile } = useAppStore();
+  const activeTab = useAppStore(state => state.activeTab);
   
   const renderContent = () => {
     switch(activeTab) {
-      case 'Welcome.md': return <Dashboard />;
-      case 'POS_Terminal.rs': return <POSBilling />;
-      case 'Chart_Of_Accounts.json': return <Ledgers />;
-      case 'Inventory_Master.sql': return <Inventory />;
-      case 'Financial_Reports.csv': return <Reports />;
-      default: return null;
+      case 'POS_Billing.txt': return <POSBilling />;
+      case 'Ledgers_Master.txt': return <Ledgers />;
+      case 'Inventory.txt': return <Inventory />;
+      case 'Reports.txt': return <Reports />;
+      case 'System_Config.txt': return <Config />;
+      default: return <div className="p-6 text-np-muted font-mono">This file is empty. Type to create new accounting entry...</div>;
     }
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-vscode-bg">
-      <div className="w-12 h-full bg-vscode-activity flex flex-col items-center py-4 gap-6 border-r border-vscode-border shrink-0">
-        <Files size={24} className="text-vscode-text cursor-pointer" />
-        <Settings size={24} className="text-vscode-textDark mt-auto cursor-pointer" />
-      </div>
-      <Explorer />
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex h-9 bg-vscode-sidebar shrink-0 overflow-x-auto">
-          {openTabs.map(tab => (
-            <div key={tab} onClick={() => openFile(tab)} className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-r border-vscode-border border-t border-t-transparent group ${activeTab === tab ? 'bg-vscode-bg text-vscode-accent border-t-vscode-accent' : 'bg-vscode-tabInactive text-vscode-textDark hover:bg-[#2b2b2b]'}`}>
-              <span className="text-[13px] font-sans">{tab}</span>
-              <X size={14} onClick={(e) => { e.stopPropagation(); closeFile(tab); }} className="hover:bg-vscode-border rounded" />
-            </div>
-          ))}
-        </div>
-        <main className="flex-1 overflow-y-auto relative custom-scrollbar p-1">{renderContent()}</main>
-      </div>
-      <div className="absolute bottom-0 w-full h-6 bg-vscode-statusBg text-white flex items-center px-3 text-[11px] font-sans justify-between z-50">
-        <div className="flex items-center gap-4"><Check size={12}/> Tauri v2 Engine Online</div>
-        <div>sqlite3: workspace.db</div>
-      </div>
+    <div className="flex flex-col h-screen w-full overflow-hidden bg-np-bg border border-np-border rounded-lg shadow-2xl">
+      <TopMenu />
+      <TabBar />
+      <ActionBar />
+      <main className="flex-1 overflow-y-auto custom-scrollbar p-6">
+        {renderContent()}
+      </main>
+      <StatusBar />
     </div>
   );
 }
 """,
 
     # ==========================================
-    # 5. CORE REACT MODULES (TAURI v2 IMPORTS)
+    # 4. CORE MODULES (5+ Sections, Hotkeys, DB)
     # ==========================================
-    "src/pages/Dashboard.jsx": r"""
-import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { useAppStore } from '../store/useAppStore';
-
-export default function Dashboard() {
-  const openFile = useAppStore(state => state.openFile);
-  const [stats, setStats] = useState([]);
-
-  useEffect(() => {
-    // S1: Database Status Fetch
-    invoke('exec_sql_read', { query: "SELECT v_type, COUNT(id) as count, SUM(total) as val FROM vouchers GROUP BY v_type" })
-      .then(setStats).catch(console.error);
-    
-    // S2: Global Shortcuts
-    const hk = (e) => { if (e.key === 'F8') openFile('POS_Terminal.rs'); };
-    window.addEventListener('keydown', hk);
-    return () => window.removeEventListener('keydown', hk);
-  }, []);
-
-  return (
-    <div className="max-w-5xl p-8 font-sans text-vscode-text">
-      {/* S3: Header */}
-      <h1 className="text-3xl font-normal mb-2">VyaparSetu Workspace</h1>
-      <p className="text-vscode-textDark mb-10 text-sm">Double-Entry Engine v2.0. Press F8 anywhere for Rapid POS.</p>
-      
-      <div className="grid grid-cols-2 gap-12">
-        {/* S4: Shortcut Links */}
-        <div>
-          <h2 className="text-lg mb-4 font-semibold text-vscode-string">Start</h2>
-          <ul className="space-y-3 text-sm font-mono">
-            <li><button onClick={() => openFile('POS_Terminal.rs')} className="text-vscode-accent hover:underline">1. New POS Sale (F8)</button></li>
-            <li><button onClick={() => openFile('Chart_Of_Accounts.json')} className="text-vscode-accent hover:underline">2. Manage Ledgers</button></li>
-            <li><button onClick={() => openFile('Inventory_Master.sql')} className="text-vscode-accent hover:underline">3. Add Stock Item</button></li>
-            <li><button onClick={() => openFile('Financial_Reports.csv')} className="text-vscode-accent hover:underline">4. View Day Book</button></li>
-          </ul>
-        </div>
-
-        {/* S5: Live Database Status */}
-        <div>
-          <h2 className="text-lg mb-4 font-semibold text-vscode-type">Database Status</h2>
-          <div className="bg-[#1e1e1e] border border-vscode-border p-5 rounded font-mono text-sm leading-loose">
-            <div className="text-vscode-keyword mb-2">// Active Vouchers Summary</div>
-            {stats.length > 0 ? stats.map((s,i) => (
-              <div key={i} className="flex justify-between border-b border-vscode-border/30 pb-1 mb-1">
-                <span>{s.v_type}:</span><span className="text-vscode-func">₹{s.val || 0} ({s.count} tx)</span>
-              </div>
-            )) : <div className="text-vscode-textDark">No transactions yet. Run POS to generate data.</div>}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-""",
-
     "src/pages/POSBilling.jsx": r"""
 import React, { useState, useEffect, useRef } from 'react';
-import { invoke } from '@tauri-apps/api/core'; // TAURI v2 IMPORT
+import { invoke } from '@tauri-apps/api/core';
 
 export default function POSBilling() {
   const [items, setItems] = useState([]);
   const [cart, setCart] = useState([]);
   const [search, setSearch] = useState('');
   const [customers, setCustomers] = useState([]);
-  const [selectedCust, setSelectedCust] = useState('');
-  const [status, setStatus] = useState('// Status: Engine Ready. Press F8 to Post.');
+  const [selectedCust, setSelectedCust] = useState('L1'); // Cash Default
+  const [status, setStatus] = useState('Ready for input...');
   const searchRef = useRef(null);
 
+  // S1: Data Initialization
   useEffect(() => {
-    // S1: Fetch Inventory & Ledgers
-    invoke('exec_sql_read', { query: "SELECT * FROM inventory" }).then(setItems).catch(e => setStatus(`// Err: ${e}`));
-    invoke('exec_sql_read', { query: "SELECT id, name FROM ledgers WHERE group_id = 'G3'" }).then(setCustomers);
+    invoke('exec_sql_read', { query: "SELECT * FROM inventory" }).then(setItems);
+    invoke('exec_sql_read', { query: "SELECT id, name FROM ledgers WHERE group_id IN ('G3', 'G1')" }).then(setCustomers);
     
-    // S2: POS Shortcuts
-    const handleKey = (e) => {
+    // S2: Keyboard Shortcuts (F8 Checkout, F4 Clear)
+    const hk = (e) => {
       if (e.key === 'F8') handleCheckout();
       if (e.key === 'F4') setCart([]);
       if (e.key === 'F2') searchRef.current?.focus();
     };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+    window.addEventListener('keydown', hk);
+    return () => window.removeEventListener('keydown', hk);
   }, [cart, selectedCust]);
 
   const addToCart = (item) => {
@@ -407,72 +372,85 @@ export default function POSBilling() {
     else setCart([...cart, {...item, qty: 1}]);
   };
 
-  // S3: Double-Entry Checkout Logic
+  // S3: Tally Double-Entry Core Checkout
   const handleCheckout = async () => {
-    if(cart.length === 0) return setStatus('// Error: Cart is empty');
+    if(cart.length === 0) return setStatus('ERR: Empty Cart.');
     const total = cart.reduce((sum, item) => sum + (item.rate * item.qty), 0);
     try {
-      setStatus('// Processing Double-Entry transaction...');
-      const vchId = await invoke('post_pos_sale', { total, items: cart, customerId: selectedCust || null });
-      setStatus(`// Success: Voucher [${vchId}] posted. Press F4 to clear.`);
+      setStatus('Processing Double-Entry transaction...');
+      const vchId = await invoke('post_double_entry', { vType: 'Sales', total, drLedger: selectedCust, crLedger: 'L2', narration: 'POS Auto-Sale', items: cart });
+      setStatus(`OK: Voucher ${vchId} saved. Debit: ${selectedCust}, Credit: L2.`);
       setCart([]);
-    } catch (e) { setStatus(`// Error: ${e}`); }
+    } catch (e) { setStatus(`ERR: ${e}`); }
   };
 
   const total = cart.reduce((sum, item) => sum + (item.rate * item.qty), 0);
 
   return (
-    <div className="flex h-full gap-4 pb-10">
-      {/* S4: Inventory & Search Pane */}
-      <div className="flex-1 flex flex-col border border-vscode-border bg-[#1e1e1e]">
-        <div className="bg-[#252526] px-4 py-2 text-xs font-mono text-vscode-keyword border-b border-vscode-border">scanner_module.rs</div>
-        <div className="p-4 flex-1 flex flex-col min-h-0">
-          <input ref={searchRef} type="text" placeholder="Scan Barcode or Search (F2)..." value={search} onChange={e => setSearch(e.target.value)} className="w-full mb-4" />
+    <div className="flex flex-col h-full gap-6">
+      {/* S4: Header & Config */}
+      <div>
+        <h1 className="text-xl border-b border-np-border pb-2 mb-4">Voucher Type: Sales (POS Mode)</h1>
+        <div className="flex gap-4 mb-4">
+          <div className="w-1/2">
+            <label className="text-np-muted block mb-1">Party A/c Name (F3 to change)</label>
+            <select value={selectedCust} onChange={e=>setSelectedCust(e.target.value)} className="w-full bg-np-actionBg border border-np-border px-2 py-1">
+              {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div className="w-1/2">
+            <label className="text-np-muted block mb-1">Sales Ledger</label>
+            <input type="text" value="Local Sales (L2)" disabled className="w-full bg-np-bg border-none" />
+          </div>
+        </div>
+      </div>
+
+      {/* S5: Split Interface for Items and Cart */}
+      <div className="flex-1 flex gap-6 overflow-hidden">
+        
+        {/* Left: Inventory List */}
+        <div className="w-1/2 flex flex-col border border-np-border bg-np-bg">
+          <input ref={searchRef} type="text" placeholder="Scan Barcode or Search Item (F2)..." value={search} onChange={e => setSearch(e.target.value)} className="w-full p-2 border-b border-np-border bg-np-actionBg" autoFocus />
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             <table>
-              <thead><tr><th>Code</th><th>Name</th><th>Stock</th><th>Rate</th></tr></thead>
+              <thead><tr><th>Code</th><th>Name</th><th>Stk</th><th>Rate</th></tr></thead>
               <tbody>
                 {items.filter(i => i.name.toLowerCase().includes(search.toLowerCase())).map(item => (
-                  <tr key={item.id} onClick={() => addToCart(item)} className="cursor-pointer hover:bg-[#2a2d2e]">
-                    <td className="text-vscode-string">"{item.item_code}"</td>
-                    <td className="text-vscode-text">{item.name}</td>
-                    <td className="text-vscode-type">{item.stock}</td>
-                    <td className="text-vscode-func">₹{item.rate}</td>
+                  <tr key={item.id} onClick={() => addToCart(item)} className="cursor-pointer hover:bg-np-tabHover">
+                    <td className="text-np-muted">{item.item_code}</td>
+                    <td>{item.name}</td>
+                    <td className={item.stock < 5 ? 'text-red-400' : ''}>{item.stock}</td>
+                    <td className="text-np-accent">{item.rate}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-      </div>
 
-      {/* S5: Active Cart & Ledger Mapping */}
-      <div className="w-[450px] flex flex-col border border-vscode-border bg-[#1e1e1e]">
-        <div className="bg-[#252526] px-4 py-2 text-xs font-mono text-vscode-keyword border-b border-vscode-border">transaction_cart.json</div>
-        
-        <div className="p-4 border-b border-vscode-border">
-          <label className="text-xs font-mono text-vscode-textDark mb-2 block">// Select Debit Ledger (Customer/Cash)</label>
-          <select value={selectedCust} onChange={e=>setSelectedCust(e.target.value)} className="w-full">
-            <option value="">Main Cash (L1)</option>
-            {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </div>
-
-        <div className="p-4 flex-1 overflow-y-auto custom-scrollbar font-mono text-sm leading-loose">
-          <span className="text-vscode-keyword">const</span> <span className="text-vscode-func">cart</span> = [
-          {cart.map((c, i) => (
-            <div key={c.id} className="pl-4">
-              {'{'} <span className="text-vscode-textDark">id:</span> <span className="text-vscode-string">"{c.item_code}"</span>, <span className="text-vscode-textDark">qty:</span> <span className="text-vscode-type">{c.qty}</span>, <span className="text-vscode-textDark">rate:</span> <span className="text-vscode-type">{c.rate}</span> {'}'}{i < cart.length - 1 ? ',' : ''}
+        {/* Right: Active Cart */}
+        <div className="w-1/2 flex flex-col border border-np-border bg-np-bg">
+          <div className="bg-np-actionBg p-2 border-b border-np-border font-bold">Item Allocation</div>
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+            {cart.map((c, i) => (
+              <div key={c.id} className="flex justify-between border-b border-np-border/50 py-2">
+                <span>{i+1}. {c.name}</span>
+                <div className="text-right">
+                  <span className="text-np-muted mr-4">{c.qty} {c.unit} x {c.rate}</span>
+                  <span className="text-np-accent">{(c.qty * c.rate).toFixed(2)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="p-4 border-t border-np-border bg-np-actionBg">
+            <div className="flex justify-between text-lg mb-4"><span>Total Amount:</span><span className="text-np-accent">{total.toFixed(2)}</span></div>
+            <div className="flex gap-2">
+              <button onClick={() => setCart([])} className="flex-1 border border-np-border text-np-muted py-2 hover:bg-np-bg">Clear (F4)</button>
+              <button onClick={handleCheckout} className="flex-[2] bg-np-accent text-black font-bold py-2 hover:bg-blue-400">Post Sale (F8)</button>
             </div>
-          ))}
-          ];
-        </div>
-        
-        <div className="p-4 border-t border-vscode-border bg-[#252526]">
-          <div className="flex justify-between font-mono text-xl mb-4 text-vscode-text"><span>Total:</span><span className="text-vscode-func">₹{total.toFixed(2)}</span></div>
-          <button onClick={handleCheckout} className="w-full bg-vscode-accent text-white font-sans py-2.5 rounded hover:bg-blue-600 font-bold mb-2">Post Sale (F8)</button>
-          <button onClick={() => setCart([])} className="w-full border border-vscode-border text-vscode-text font-sans py-2 rounded hover:bg-vscode-border text-sm">Clear Cart (F4)</button>
-          <div className="mt-4 text-xs font-mono text-vscode-textDark break-all">{status}</div>
+            <div className="mt-2 text-xs text-np-muted">{status}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -482,87 +460,89 @@ export default function POSBilling() {
 
     "src/pages/Ledgers.jsx": r"""
 import React, { useState, useEffect, useRef } from 'react';
-import { invoke } from '@tauri-apps/api/core'; // TAURI v2 IMPORT
+import { invoke } from '@tauri-apps/api/core';
 
 export default function Ledgers() {
   const [ledgers, setLedgers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [form, setForm] = useState({ name: '', group: 'G3', bal: '' });
-  const [log, setLog] = useState('// Ledger engine ready.');
+  const [log, setLog] = useState('Line 1: Ledgers loaded.');
   const [filter, setFilter] = useState('');
-  
   const nameRef = useRef(null);
 
-  // S1: Complex Join Fetch
+  // S1: Load Ledgers & Groups
   const loadData = async () => {
     try {
       const gs = await invoke('exec_sql_read', { query: "SELECT * FROM ledger_groups" });
       setGroups(gs);
       const ls = await invoke('exec_sql_read', { query: "SELECT l.id, l.name, g.name as group_name, l.opening_bal + COALESCE(SUM(ve.debit) - SUM(ve.credit), 0) as net_bal FROM ledgers l JOIN ledger_groups g ON l.group_id = g.id LEFT JOIN voucher_entries ve ON l.id = ve.ledger_id GROUP BY l.id" });
       setLedgers(ls);
-    } catch(e) { setLog(`// Error: ${e}`); }
+    } catch(e) { setLog(`ERR: ${e}`); }
   };
 
-  useEffect(() => {
-    loadData();
-    // S2: Hotkeys
-    const hk = (e) => { if(e.ctrlKey && e.key === 's') { e.preventDefault(); handleCreate(); }};
-    window.addEventListener('keydown', hk);
-    return () => window.removeEventListener('keydown', hk);
-  }, [form]);
+  useEffect(() => { loadData(); }, []);
 
-  // S3: DB Insertion
+  // S2: Create Logic
   const handleCreate = async () => {
-    if(!form.name) return setLog('// Error: Name required');
+    if(!form.name) return setLog('ERR: Name required');
     try {
       const id = `L${Date.now()}`;
       await invoke('exec_sql', { query: `INSERT INTO ledgers (id, name, group_id, opening_bal, is_system) VALUES ('${id}', '${form.name}', '${form.group}', ${form.bal || 0}, 0)`});
-      setLog(`// Created: ${form.name}`);
+      setLog(`OK: Created Ledger ${form.name}`);
       loadData();
       setForm({ name: '', group: 'G3', bal: '' });
       nameRef.current?.focus();
-    } catch (e) { setLog(`// Error: ${e}`); }
+    } catch (e) { setLog(`ERR: ${e}`); }
   };
 
-  // S4: Filtering
-  const filtered = ledgers.filter(l => l.name.toLowerCase().includes(filter.toLowerCase()) || l.group_name.toLowerCase().includes(filter.toLowerCase()));
+  // S3: Computations
+  const totalDebtors = ledgers.filter(l => l.group_name.includes('Debtors')).reduce((s, l) => s + (l.net_bal || 0), 0);
+  const filtered = ledgers.filter(l => l.name.toLowerCase().includes(filter.toLowerCase()));
 
   return (
-    <div className="flex flex-col h-full gap-4 pb-10 font-mono text-sm">
-      {/* S5: Action Form */}
-      <div className="p-4 border border-vscode-border bg-[#1e1e1e]">
-        <div className="text-vscode-keyword mb-4">// Create New Ledger (Ctrl+S)</div>
-        <div className="flex gap-4">
-          <input ref={nameRef} type="text" placeholder="Ledger Name" value={form.name} onChange={e=>setForm({...form, name: e.target.value})} className="flex-1" />
-          <select value={form.group} onChange={e=>setForm({...form, group: e.target.value})} className="w-64">
-            {groups.map(g => <option key={g.id} value={g.id}>{g.name} ({g.nature})</option>)}
-          </select>
-          <input type="number" placeholder="Open Bal" value={form.bal} onChange={e=>setForm({...form, bal: e.target.value})} className="w-32" />
-          <button onClick={handleCreate} className="bg-vscode-accent px-6 py-1.5 text-white rounded hover:bg-blue-600 font-bold">save()</button>
+    <div className="flex flex-col h-full gap-6">
+      <h1 className="text-xl border-b border-np-border pb-2">Chart of Accounts / Ledgers</h1>
+      
+      {/* S4: Analytics Bar */}
+      <div className="flex gap-4 p-3 bg-np-actionBg border border-np-border">
+        <span>Total Ledgers: <span className="text-np-accent">{ledgers.length}</span></span>
+        <span>Sundry Debtors Total: <span className="text-np-accent">{totalDebtors.toFixed(2)} Dr</span></span>
+      </div>
+
+      {/* S5: Creation Form */}
+      <div>
+        <div className="text-np-muted mb-2">Create New Ledger</div>
+        <div className="flex gap-4 items-end">
+          <div className="flex-1"><label className="text-xs text-np-muted block">Name</label><input ref={nameRef} type="text" value={form.name} onChange={e=>setForm({...form, name: e.target.value})} className="w-full" /></div>
+          <div className="w-64"><label className="text-xs text-np-muted block">Under Group</label>
+            <select value={form.group} onChange={e=>setForm({...form, group: e.target.value})} className="w-full">
+              {groups.map(g => <option key={g.id} value={g.id}>{g.name} ({g.nature})</option>)}
+            </select>
+          </div>
+          <div className="w-32"><label className="text-xs text-np-muted block">Open Bal</label><input type="number" value={form.bal} onChange={e=>setForm({...form, bal: e.target.value})} className="w-full" /></div>
+          <button onClick={handleCreate}>Save (Enter)</button>
         </div>
       </div>
-      
-      <div className="flex-1 flex flex-col border border-vscode-border bg-[#1e1e1e] overflow-hidden">
-        <div className="p-3 bg-[#252526] border-b border-vscode-border">
-          <input type="text" placeholder="Filter ledgers by name or group..." value={filter} onChange={e=>setFilter(e.target.value)} className="w-full bg-[#1e1e1e]" />
-        </div>
+
+      {/* S6: Data Table */}
+      <div className="flex-1 flex flex-col border border-np-border overflow-hidden">
+        <input type="text" placeholder="Filter ledgers..." value={filter} onChange={e=>setFilter(e.target.value)} className="p-2 border-b border-np-border bg-np-actionBg w-full" />
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <table>
-            <thead><tr><th>id</th><th>name</th><th>group</th><th>net_balance</th></tr></thead>
+            <thead><tr className="bg-np-actionBg"><th>Ledger Name</th><th>Under</th><th>Closing Balance</th></tr></thead>
             <tbody>
               {filtered.map(l => (
-                <tr key={l.id} className="hover:bg-[#2a2d2e]">
-                  <td className="text-vscode-string">"{l.id}"</td>
-                  <td className="text-vscode-text">{l.name}</td>
-                  <td className="text-vscode-textDark">{l.group_name}</td>
-                  <td className="text-vscode-type">₹{l.net_bal?.toFixed(2)}</td>
+                <tr key={l.id} className="hover:bg-np-tabHover">
+                  <td>{l.name}</td>
+                  <td className="text-np-muted">{l.group_name}</td>
+                  <td className="text-np-accent">{l.net_bal?.toFixed(2)} {l.net_bal >= 0 ? 'Dr' : 'Cr'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
-      <div className="p-2 border border-vscode-border bg-[#252526] text-vscode-textDark text-xs">{log}</div>
+      <div className="text-xs text-np-muted">{log}</div>
     </div>
   );
 }
@@ -570,79 +550,78 @@ export default function Ledgers() {
 
     "src/pages/Inventory.jsx": r"""
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core'; // TAURI v2 IMPORT
+import { invoke } from '@tauri-apps/api/core';
 
 export default function Inventory() {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState({ code: '', name: '', stock: '', rate: '' });
-  const [log, setLog] = useState('// Status: Inventory Engine Online');
+  const [log, setLog] = useState('Ready.');
   const [filter, setFilter] = useState('');
 
   // S1: Initialization
-  const loadItems = () => invoke('exec_sql_read', { query: "SELECT * FROM inventory" }).then(setItems).catch(e => setLog(`// Error: ${e}`));
+  const loadItems = () => invoke('exec_sql_read', { query: "SELECT * FROM inventory" }).then(setItems).catch(e => setLog(`ERR: ${e}`));
   useEffect(() => { loadItems(); }, []);
 
   // S2: Data Insertion
   const handleCreate = async () => {
-    if(!form.name) return setLog('// Error: Missing Name');
+    if(!form.name) return setLog('ERR: Missing Name');
     try {
       const id = `ITM${Date.now()}`;
       await invoke('exec_sql', { query: `INSERT INTO inventory (id, item_code, name, stock, rate, unit) VALUES ('${id}', '${form.code}', '${form.name}', ${form.stock || 0}, ${form.rate || 0}, 'PCS')`});
-      setLog(`// Created: ${form.name}`);
+      setLog(`OK: Created ${form.name}`);
       loadItems();
       setForm({ code: '', name: '', stock: '', rate: '' });
-    } catch (e) { setLog(`// Error: ${e}`); }
+    } catch (e) { setLog(`ERR: ${e}`); }
   };
 
-  // S3: Analytics (Low Stock)
+  // S3: Analytics (Low Stock & Value)
   const lowStock = items.filter(i => i.stock <= 5).length;
-  // S4: Analytics (Valuation)
   const totalValuation = items.reduce((sum, i) => sum + (i.stock * i.rate), 0);
 
   return (
-    <div className="flex flex-col h-full gap-4 pb-10 font-mono text-sm">
-      {/* S5: Top Metrics Dashboard */}
-      <div className="flex gap-4">
-        <div className="flex-1 p-4 border border-vscode-border bg-[#252526] flex justify-between text-base">
-          <span className="text-vscode-textDark">Total Items: <span className="text-vscode-type ml-2">{items.length}</span></span>
-          <span className="text-vscode-textDark">Low Stock Alert: <span className="text-red-400 ml-2">{lowStock}</span></span>
-          <span className="text-vscode-textDark">Est. Valuation: <span className="text-vscode-func ml-2">₹{totalValuation.toFixed(2)}</span></span>
-        </div>
+    <div className="flex flex-col h-full gap-6">
+      <h1 className="text-xl border-b border-np-border pb-2">Inventory Masters & Stock Info</h1>
+
+      {/* S4: Metrics */}
+      <div className="flex gap-4 p-3 bg-np-actionBg border border-np-border">
+        <span>Total Items: <span className="text-np-accent">{items.length}</span></span>
+        <span>Low Stock Alert: <span className="text-red-400">{lowStock}</span></span>
+        <span>Est. Valuation: <span className="text-np-accent">{totalValuation.toFixed(2)}</span></span>
       </div>
 
-      <div className="p-4 border border-vscode-border bg-[#1e1e1e]">
-        <div className="text-vscode-keyword mb-4">// Insert Inventory Item</div>
-        <div className="flex gap-4">
-          <input type="text" placeholder="Barcode/Code" value={form.code} onChange={e=>setForm({...form, code: e.target.value})} className="w-40" />
-          <input type="text" placeholder="Item Name" value={form.name} onChange={e=>setForm({...form, name: e.target.value})} className="flex-1" />
-          <input type="number" placeholder="Qty" value={form.stock} onChange={e=>setForm({...form, stock: e.target.value})} className="w-32" />
-          <input type="number" placeholder="Rate" value={form.rate} onChange={e=>setForm({...form, rate: e.target.value})} className="w-32" />
-          <button onClick={handleCreate} className="bg-vscode-accent px-6 py-1.5 text-white rounded hover:bg-blue-600 font-bold">insert()</button>
+      {/* S5: Form */}
+      <div>
+        <div className="text-np-muted mb-2">Create Stock Item</div>
+        <div className="flex gap-4 items-end">
+          <div className="w-32"><label className="text-xs text-np-muted block">Item Code</label><input type="text" value={form.code} onChange={e=>setForm({...form, code: e.target.value})} className="w-full" /></div>
+          <div className="flex-1"><label className="text-xs text-np-muted block">Name</label><input type="text" value={form.name} onChange={e=>setForm({...form, name: e.target.value})} className="w-full" /></div>
+          <div className="w-24"><label className="text-xs text-np-muted block">Qty</label><input type="number" value={form.stock} onChange={e=>setForm({...form, stock: e.target.value})} className="w-full" /></div>
+          <div className="w-24"><label className="text-xs text-np-muted block">Rate</label><input type="number" value={form.rate} onChange={e=>setForm({...form, rate: e.target.value})} className="w-full" /></div>
+          <button onClick={handleCreate}>Save (Enter)</button>
         </div>
       </div>
       
-      <div className="flex-1 flex flex-col border border-vscode-border bg-[#1e1e1e] overflow-hidden">
-        <div className="p-3 bg-[#252526] border-b border-vscode-border">
-          <input type="text" placeholder="Filter items by name or code..." value={filter} onChange={e=>setFilter(e.target.value)} className="w-full bg-[#1e1e1e]" />
-        </div>
+      {/* S6: Data Table */}
+      <div className="flex-1 flex flex-col border border-np-border overflow-hidden">
+        <input type="text" placeholder="Filter inventory..." value={filter} onChange={e=>setFilter(e.target.value)} className="p-2 border-b border-np-border bg-np-actionBg w-full" />
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <table>
-            <thead><tr><th>item_code</th><th>name</th><th>closing_stock</th><th>rate</th><th>valuation</th></tr></thead>
+            <thead><tr className="bg-np-actionBg"><th>Code</th><th>Name</th><th>Closing Stock</th><th>Rate</th><th>Value</th></tr></thead>
             <tbody>
               {items.filter(i => i.name.toLowerCase().includes(filter.toLowerCase())).map(i => (
-                <tr key={i.id} className="hover:bg-[#2a2d2e]">
-                  <td className="text-vscode-string">"{i.item_code}"</td>
-                  <td className="text-vscode-text">{i.name}</td>
-                  <td className={`font-bold ${i.stock <= 5 ? 'text-red-400' : 'text-vscode-type'}`}>{i.stock}</td>
-                  <td className="text-vscode-func">₹{i.rate}</td>
-                  <td className="text-vscode-textDark">₹{(i.stock * i.rate).toFixed(2)}</td>
+                <tr key={i.id} className="hover:bg-np-tabHover">
+                  <td className="text-np-muted">{i.item_code}</td>
+                  <td>{i.name}</td>
+                  <td className={i.stock <= 5 ? 'text-red-400' : ''}>{i.stock} PCS</td>
+                  <td className="text-np-accent">{i.rate}</td>
+                  <td className="text-np-muted">{(i.stock * i.rate).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
-      <div className="p-2 border border-vscode-border bg-[#252526] text-vscode-textDark text-xs">{log}</div>
+      <div className="text-xs text-np-muted">{log}</div>
     </div>
   );
 }
@@ -650,83 +629,111 @@ export default function Inventory() {
 
     "src/pages/Reports.jsx": r"""
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core'; // TAURI v2 IMPORT
+import { invoke } from '@tauri-apps/api/core'; 
 
 export default function Reports() {
   const [data, setData] = useState([]);
   const [cols, setCols] = useState([]);
   const [reportType, setReportType] = useState('DayBook');
-  const [log, setLog] = useState('// Report Engine Online');
   
-  // S1: Dynamic SQL Engine mapping
+  // S1: Advanced SQL Tally Reports
   const queries = {
-    'DayBook': "SELECT v.date, v.id as voucher_no, v.v_type, l.name as ledger, ve.debit, ve.credit FROM vouchers v JOIN voucher_entries ve ON v.id = ve.voucher_id JOIN ledgers l ON ve.ledger_id = l.id ORDER BY v.date DESC",
-    'TrialBalance': "SELECT l.name, g.name as grp, SUM(ve.debit) as total_dr, SUM(ve.credit) as total_cr FROM ledgers l JOIN ledger_groups g ON l.group_id = g.id LEFT JOIN voucher_entries ve ON l.id = ve.ledger_id GROUP BY l.id",
-    'StockSummary': "SELECT item_code, name, stock, rate, (stock*rate) as value FROM inventory"
+    'DayBook': "SELECT v.date as Date, v.id as Vch_No, v.v_type as Type, l.name as Particulars, ve.debit as Inward, ve.credit as Outward, v.narration FROM vouchers v JOIN voucher_entries ve ON v.id = ve.voucher_id JOIN ledgers l ON ve.ledger_id = l.id ORDER BY v.date DESC",
+    'TrialBalance': "SELECT l.name as Particulars, g.name as Group_Name, SUM(ve.debit) as Debit_Total, SUM(ve.credit) as Credit_Total FROM ledgers l JOIN ledger_groups g ON l.group_id = g.id LEFT JOIN voucher_entries ve ON l.id = ve.ledger_id GROUP BY l.id",
+    'StockSummary': "SELECT item_code as Code, name as Particulars, stock as Closing_Bal, rate as Rate, (stock*rate) as Value FROM inventory"
   };
 
   // S2: Data Execution
   useEffect(() => {
-    setLog(`// Executing query for ${reportType}...`);
     invoke('exec_sql_read', { query: queries[reportType] })
       .then(res => {
         setData(res);
         if(res.length > 0) setCols(Object.keys(res[0]));
         else setCols([]);
-        setLog(`// Success: Retrieved ${res.length} rows.`);
-      })
-      .catch(e => setLog(`// Error: ${e}`));
+      }).catch(console.error);
   }, [reportType]);
 
-  // S3: Download Export Logic
-  const handleExport = () => alert(`Exporting ${reportType}.csv via Tauri Filesystem API...`);
+  // S3: CSV Export Stub
+  const handleExport = () => alert(`Writing ${reportType}.csv to disk via Tauri API...`);
 
-  // S4: Aggregate Summary Calculation
-  const aggregateValue = data.reduce((sum, row) => sum + (row.value || row.total_dr || row.credit || 0), 0);
+  // S4: Aggregate Engine
+  const getTotals = () => {
+    if(reportType === 'TrialBalance') {
+      const dr = data.reduce((s, r) => s + (r.Debit_Total||0), 0);
+      const cr = data.reduce((s, r) => s + (r.Credit_Total||0), 0);
+      return `Total Dr: ${dr.toFixed(2)} | Total Cr: ${cr.toFixed(2)}`;
+    }
+    if(reportType === 'StockSummary') {
+      const val = data.reduce((s, r) => s + (r.Value||0), 0);
+      return `Total Stock Value: ${val.toFixed(2)}`;
+    }
+    return `Total Rows: ${data.length}`;
+  };
 
   return (
-    <div className="h-full flex flex-col pb-10 font-mono text-sm gap-4">
-      {/* S5: Top Action Bar */}
-      <div className="flex justify-between p-4 border border-vscode-border bg-[#252526]">
-        <div className="flex gap-4">
-          {Object.keys(queries).map(k => (
-            <button key={k} onClick={() => setReportType(k)} className={`px-4 py-1.5 rounded-sm font-bold ${reportType === k ? 'bg-vscode-accent text-white' : 'bg-[#1e1e1e] text-vscode-text hover:bg-[#333]'}`}>
-              {k}()
-            </button>
-          ))}
-        </div>
-        <button onClick={handleExport} className="bg-[#1e1e1e] text-vscode-type px-4 py-1.5 border border-vscode-border rounded-sm hover:bg-[#333] font-bold">export_csv()</button>
-      </div>
-
-      <div className="p-3 border border-vscode-border bg-[#1e1e1e] text-vscode-keyword flex items-center">
-        <span className="text-vscode-func mr-2">EXEC:</span> {queries[reportType]}
+    <div className="h-full flex flex-col gap-6">
+      <h1 className="text-xl border-b border-np-border pb-2">Display More Reports</h1>
+      
+      {/* S5: Action Bar */}
+      <div className="flex gap-4 border-b border-np-border pb-4">
+        {Object.keys(queries).map(k => (
+          <button key={k} onClick={() => setReportType(k)} className={reportType === k ? 'bg-np-accent text-black font-bold' : ''}>
+            {k}
+          </button>
+        ))}
+        <button onClick={handleExport} className="ml-auto">Export (Alt+E)</button>
       </div>
       
-      <div className="flex-1 flex flex-col border border-vscode-border bg-[#1e1e1e] overflow-hidden">
+      {/* S6: Data View */}
+      <div className="flex-1 flex flex-col border border-np-border overflow-hidden bg-np-bg">
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {data.length > 0 ? (
-            <table className="w-full">
-              <thead><tr className="bg-[#252526] sticky top-0">{cols.map(c => <th key={c} className="text-vscode-keyword">{c}</th>)}</tr></thead>
+            <table>
+              <thead><tr className="bg-np-actionBg">{cols.map(c => <th key={c}>{c}</th>)}</tr></thead>
               <tbody>
                 {data.map((row, i) => (
-                  <tr key={i} className="hover:bg-[#2a2d2e]">
-                    {cols.map(c => <td key={c} className={typeof row[c] === 'number' ? 'text-vscode-type' : 'text-vscode-string'}>{row[c]}</td>)}
+                  <tr key={i} className="hover:bg-np-tabHover">
+                    {cols.map(c => <td key={c} className={typeof row[c] === 'number' ? 'text-np-accent text-right' : ''}>{row[c]}</td>)}
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <div className="text-vscode-textDark p-6">// No data records found in the database.</div>
+            <div className="p-6 text-np-muted">No data records found.</div>
           )}
         </div>
+        
         {/* Footer Aggregation */}
-        <div className="p-3 bg-[#252526] border-t border-vscode-border flex justify-end font-bold">
-          <span className="text-vscode-text mr-4">AGGREGATE SUM:</span>
-          <span className="text-vscode-func">₹{aggregateValue.toFixed(2)}</span>
+        <div className="p-2 bg-np-actionBg border-t border-np-border flex justify-end font-bold text-np-accent">
+          {getTotals()}
         </div>
       </div>
-      
-      <div className="p-2 border border-vscode-border bg-[#252526] text-vscode-textDark text-xs">{log}</div>
+    </div>
+  );
+}
+""",
+
+    "src/pages/Config.jsx": r"""
+import React from 'react';
+export default function Config() {
+  return (
+    <div className="flex flex-col h-full gap-6 max-w-2xl">
+      <h1 className="text-xl border-b border-np-border pb-2">System Configuration (F12)</h1>
+      <div className="space-y-4">
+        <div>
+          <label className="text-np-muted block">Company Name</label>
+          <input type="text" defaultValue="VyaparSetu Retail" className="w-full" />
+        </div>
+        <div>
+          <label className="text-np-muted block">Financial Year From</label>
+          <input type="date" defaultValue="2024-04-01" className="w-full" />
+        </div>
+        <div>
+          <label className="text-np-muted block">Enable GST Features</label>
+          <select className="w-full"><option>Yes</option><option>No</option></select>
+        </div>
+        <button className="bg-np-accent text-black font-bold px-6">Save Settings</button>
+      </div>
     </div>
   );
 }
@@ -734,14 +741,14 @@ export default function Reports() {
 }
 
 def build_architecture():
-    print("\n🚀 Building VyaparSetu Tauri v2 VS Code Engine...\n")
+    print("\n🚀 Building VyaparSetu Notepad Environment (Tally Engine)...\n")
     for filepath, content in FILES.items():
         path = pathlib.Path(filepath)
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, 'w', encoding='utf-8') as f:
             f.write(content)
         print(f"✅ Generated: {filepath}")
-    print("\n🎉 Tauri v2 Architecture successfully scaffolded!")
+    print("\n🎉 Tauri v2 Notepad Architecture successfully scaffolded!")
 
 if __name__ == "__main__":
     build_architecture()

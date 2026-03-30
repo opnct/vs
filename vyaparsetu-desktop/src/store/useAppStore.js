@@ -1,8 +1,8 @@
 
 import { create } from 'zustand';
 export const useAppStore = create((set) => ({
-  activeTab: 'Welcome.md',
-  openTabs: ['Welcome.md'],
+  activeTab: 'POS_Billing.txt',
+  openTabs: ['POS_Billing.txt', 'Ledgers_Master.txt', 'Inventory.txt', 'Reports.txt', 'System_Config.txt'],
   openFile: (fileName) => set((state) => ({ 
     activeTab: fileName, 
     openTabs: state.openTabs.includes(fileName) ? state.openTabs : [...state.openTabs, fileName] 

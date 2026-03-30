@@ -1,7 +1,7 @@
 {
-  "productName": "vyaparsetu",
+  "productName": "VyaparSetu Notepad",
   "version": "0.1.0",
-  "identifier": "com.vyaparsetu.app",
+  "identifier": "com.vyaparsetu.notepad",
   "build": {
     "beforeDevCommand": "npm run vite:dev",
     "devUrl": "http://localhost:5173",
@@ -10,14 +10,8 @@
   },
   "app": {
     "windows": [
-      {
-        "title": "VyaparSetu Workspace",
-        "width": 1280,
-        "height": 800
-      }
+      { "title": "VyaparSetu - Notepad", "width": 1280, "height": 800, "decorations": false, "transparent": true }
     ],
-    "security": {
-      "csp": null
-    }
+    "security": { "csp": null }
   }
 }

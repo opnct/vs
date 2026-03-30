@@ -4,27 +4,23 @@ export default {
   theme: {
     extend: {
       colors: {
-        vscode: {
-          bg: '#1e1e1e',         
-          sidebar: '#252526',    
-          activity: '#333333',   
-          accent: '#007acc',     
-          text: '#cccccc',       
-          textDark: '#858585',   
-          string: '#ce9178',     
-          keyword: '#569cd6',    
-          func: '#dcdcaa',       
-          type: '#4ec9b0',       
-          border: '#3c3c3c',     
-          tabInactive: '#2d2d2d',
-          statusBg: '#007acc',
+        np: {
+          bg: '#202020',         // Notepad background
+          menuBg: '#181818',     // Titlebar/Menu background
+          tabActive: '#2d2d2d',  // Active tab
+          tabHover: '#2a2a2a',   // Tab hover
+          text: '#ffffff',       // Main text
+          muted: '#9d9d9d',      // Placeholder/Muted
+          accent: '#4cc2ff',     // Selection/Active blue
+          border: '#333333',     // Subtle borders
+          actionBg: '#282828',   // Formatting bar bg
         }
       },
       fontFamily: {
-        mono: ['"Fira Code"', 'Consolas', 'monospace'],
-        sans: ['Inter', 'Segoe UI', 'sans-serif'],
+        mono: ['Consolas', '"Courier New"', 'monospace'],
+        sans: ['"Segoe UI"', 'system-ui', 'sans-serif'],
       }
-    }
+    },
   },
   plugins: [],
 }

@@ -3,16 +3,17 @@
 @tailwind utilities;
 
 @layer base {
-  html, body { @apply bg-vscode-bg text-vscode-text font-sans; overscroll-behavior: none; }
-  input, textarea, select { @apply bg-[#3c3c3c] border border-transparent focus:border-vscode-accent outline-none text-vscode-text px-3 py-1.5 text-sm font-mono transition-colors rounded-sm; }
-  table { @apply w-full text-left border-collapse font-mono text-[13px]; }
-  th { @apply border-b border-vscode-border py-2 px-3 text-vscode-textDark font-normal whitespace-nowrap bg-[#252526]; }
-  td { @apply border-b border-vscode-border/40 py-2 px-3; }
+  html, body { @apply bg-np-bg text-np-text font-mono; overscroll-behavior: none; }
+  input, textarea, select { @apply bg-transparent border-b border-np-border focus:border-np-accent outline-none text-np-text px-2 py-1 text-sm font-mono transition-colors; }
+  table { @apply w-full text-left border-collapse font-mono text-sm; }
+  th { @apply border-b-2 border-np-border py-2 px-2 text-np-muted font-normal whitespace-nowrap; }
+  td { @apply border-b border-np-border/50 py-2 px-2; }
+  button { @apply bg-np-actionBg border border-np-border px-3 py-1 hover:bg-np-tabHover transition-colors; }
 }
 
 @layer utilities {
-  .custom-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
-  .custom-scrollbar::-webkit-scrollbar-track { background: #1e1e1e; }
-  .custom-scrollbar::-webkit-scrollbar-thumb { background: #424242; border: 2px solid #1e1e1e; }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+  .custom-scrollbar::-webkit-scrollbar { width: 12px; height: 12px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #4a4a4a; border: 3px solid #202020; border-radius: 10px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #666666; }
 }
