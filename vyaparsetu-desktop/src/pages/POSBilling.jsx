@@ -13,7 +13,7 @@ export default function POSBilling() {
 
   // S1: Data Initialization
   useEffect(() => {
-    invoke('exec_sql_read', { query: "SELECT * FROM inventory" }).then(setItems);
+    invoke('exec_sql_read', { query: "SELECT * FROM inventory" }).then(setItems).catch(e => setStatus(`ERR: ${e}`));
     invoke('exec_sql_read', { query: "SELECT id, name FROM ledgers WHERE group_id IN ('G3', 'G1')" }).then(setCustomers);
     
     // S2: Keyboard Shortcuts
@@ -53,8 +53,8 @@ export default function POSBilling() {
         <h1 className="text-xl border-b border-np-border pb-2 mb-2">POS Billing / Voucher Type: Sales</h1>
         <div className="flex gap-4">
           <div className="w-1/2">
-            <label className="text-np-muted block mb-1">Party A/c Name (F3)</label>
-            <select value={selectedCust} onChange={e=>setSelectedCust(e.target.value)} className="w-full bg-np-actionBg border border-np-border px-2 py-1">
+            <label className="text-np-muted block mb-1">Party A/c Name</label>
+            <select value={selectedCust} onChange={e=>setSelectedCust(e.target.value)} className="w-full bg-np-actionBg border border-np-border px-2 py-1.5">
               {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
@@ -106,8 +106,8 @@ export default function POSBilling() {
           <div className="p-4 border-t border-np-border bg-np-actionBg">
             <div className="flex justify-between text-lg mb-4"><span>Total Amount:</span><span className="text-np-accent">{total.toFixed(2)}</span></div>
             <div className="flex gap-2">
-              <button onClick={() => setCart([])} className="flex-1 border border-np-border text-np-muted py-2">Clear (F4)</button>
-              <button onClick={handleCheckout} className="flex-[2] bg-np-accent text-black font-bold py-2 hover:bg-blue-400">Post Sale (F8)</button>
+              <button onClick={() => setCart([])} className="flex-1 border border-np-border text-np-muted py-2 bg-transparent">Clear (F4)</button>
+              <button onClick={handleCheckout} className="flex-[2] bg-np-accent text-black font-bold py-2 border-none">Post Sale (F8)</button>
             </div>
             <div className="mt-2 text-xs text-np-muted">{status}</div>
           </div>

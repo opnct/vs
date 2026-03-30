@@ -60,13 +60,13 @@ export default function Ledgers() {
             </select>
           </div>
           <div className="w-32"><label className="text-xs text-np-muted block">Open Bal</label><input type="number" value={form.bal} onChange={e=>setForm({...form, bal: e.target.value})} className="w-full" /></div>
-          <button onClick={handleCreate}>Save</button>
+          <button onClick={handleCreate} className="bg-np-actionBg">Save</button>
         </div>
       </div>
 
       {/* S6: Data Table */}
       <div className="flex-1 flex flex-col border border-np-border overflow-hidden">
-        <input type="text" placeholder="Filter ledgers..." value={filter} onChange={e=>setFilter(e.target.value)} className="p-2 border-b border-np-border bg-np-actionBg w-full" />
+        <input type="text" placeholder="Filter ledgers..." value={filter} onChange={e=>setFilter(e.target.value)} className="p-2 border-b border-np-border bg-np-actionBg w-full border-none" />
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <table>
             <thead><tr className="bg-np-actionBg"><th>Ledger Name</th><th>Under</th><th>Closing Balance</th></tr></thead>

@@ -48,7 +48,7 @@ export default function Reports() {
       {/* S5: Action Bar */}
       <div className="flex gap-4 border-b border-np-border pb-2">
         {Object.keys(queries).map(k => (
-          <button key={k} onClick={() => setReportType(k)} className={reportType === k ? 'bg-np-accent text-black font-bold' : ''}>
+          <button key={k} onClick={() => setReportType(k)} className={`border-none ${reportType === k ? 'bg-np-accent text-black font-bold' : 'bg-transparent text-np-text'}`}>
             {k}
           </button>
         ))}

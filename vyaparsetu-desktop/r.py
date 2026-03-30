@@ -49,15 +49,15 @@ export default {
     extend: {
       colors: {
         np: {
-          bg: '#202020',         // Notepad background
-          menuBg: '#181818',     // Titlebar/Menu background
-          tabActive: '#2d2d2d',  // Active tab
-          tabHover: '#2a2a2a',   // Tab hover
-          text: '#ffffff',       // Main text
-          muted: '#9d9d9d',      // Placeholder/Muted
-          accent: '#4cc2ff',     // Selection/Active blue
-          border: '#333333',     // Subtle borders
-          actionBg: '#282828',   // Formatting bar bg
+          bg: '#202020',         
+          menuBg: '#181818',     
+          tabActive: '#2d2d2d',  
+          tabHover: '#2a2a2a',   
+          text: '#ffffff',       
+          muted: '#9d9d9d',      
+          accent: '#4cc2ff',     
+          border: '#333333',     
+          actionBg: '#282828',   
         }
       },
       fontFamily: {
@@ -94,7 +94,7 @@ export default {
   table { @apply w-full text-left border-collapse font-mono text-[13px]; }
   th { @apply border-b border-np-border py-2 px-2 text-np-muted font-normal whitespace-nowrap; }
   td { @apply border-b border-np-border/40 py-2 px-2; }
-  button { @apply bg-np-actionBg border border-np-border px-3 py-1 hover:bg-np-tabHover transition-colors; }
+  button { @apply bg-np-actionBg border border-np-border px-4 py-1.5 hover:bg-np-tabHover transition-colors font-sans text-sm; }
 }
 
 @layer utilities {
@@ -106,12 +106,12 @@ export default {
 """,
 
     # ==========================================
-    # 3. RUST BACKEND (Double-Entry Tally Engine)
+    # 3. RUST BACKEND (Double-Entry Engine)
     # ==========================================
     "src-tauri/Cargo.toml": r"""[package]
 name = "vyaparsetu"
 version = "0.1.0"
-description = "VyaparSetu Tally Engine"
+description = "VyaparSetu Notepad Tally Engine"
 authors = ["VyaparSetu"]
 edition = "2021"
 
@@ -126,13 +126,11 @@ rusqlite = { version = "0.29.0", features = ["bundled"] }
 chrono = "0.4"
 """,
 
-    # CRITICAL FIX: The build.rs file is mandatory for Tauri v2 to set the OUT_DIR env var
     "src-tauri/build.rs": r"""fn main() {
     tauri_build::build()
 }
 """,
 
-    # CRITICAL FIX: beforeDevCommand updated to "npm run dev" to match package.json
     "src-tauri/tauri.conf.json": r"""{
   "productName": "VyaparSetu",
   "version": "0.1.0",
@@ -168,7 +166,6 @@ pub fn init_db() -> Result<Connection> {
     let schema = include_str!("schema.sql");
     conn.execute_batch(schema)?;
     
-    // Core Tally Ledgers & Groups Seed
     conn.execute_batch("
         INSERT OR IGNORE INTO ledger_groups (id, name, nature) VALUES 
         ('G1', 'Cash-in-Hand', 'Assets'), ('G2', 'Sales Accounts', 'Income'), 
@@ -181,7 +178,6 @@ pub fn init_db() -> Result<Connection> {
 }
 """,
 
-    # FIXED: Suppressed unused imports warning
     "src-tauri/src/commands.rs": r"""
 #![allow(unused_imports)]
 use serde::{Serialize, Deserialize};
@@ -254,13 +250,15 @@ fn main() {
 """,
 
     # ==========================================
-    # 4. REACT STATE & NOTEPAD LAYOUT
+    # 4. REACT APP, STATE, & FUNCTIONAL MENUS
     # ==========================================
     "src/store/useAppStore.js": r"""
 import { create } from 'zustand';
 export const useAppStore = create((set) => ({
   activeTab: 'POSBilling.txt',
   openTabs: ['POSBilling.txt', 'Vouchers.txt', 'Ledgers.txt', 'Inventory.txt', 'Reports.txt', 'Config.txt'],
+  zoomLevel: 100,
+  setZoomLevel: (zoom) => set({ zoomLevel: zoom }),
   openFile: (fileName) => set((state) => ({ 
     activeTab: fileName, 
     openTabs: state.openTabs.includes(fileName) ? state.openTabs : [...state.openTabs, fileName] 
@@ -272,9 +270,8 @@ export const useAppStore = create((set) => ({
 }));
 """,
 
-    # CRITICAL FIX: Replaced 'WindowMinimize' with 'Minus'
     "src/App.jsx": r"""
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAppStore } from './store/useAppStore';
 import { Minus, Square, X, Database } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -287,30 +284,80 @@ import Config from './pages/Config';
 import Vouchers from './pages/Vouchers';
 
 const TopMenu = () => {
-  const { openFile } = useAppStore();
-  const appWindow = getCurrentWindow();
+  const { openFile, zoomLevel, setZoomLevel } = useAppStore();
+  const [appWindow, setAppWindow] = useState(null);
+  const [activeMenu, setActiveMenu] = useState(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__) {
+      try { setAppWindow(getCurrentWindow()); } catch (e) { console.warn(e); }
+    }
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setActiveMenu(null);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleMenu = (menu) => setActiveMenu(activeMenu === menu ? null : menu);
+  const executeCopy = () => { navigator.clipboard.writeText(window.getSelection().toString()); setActiveMenu(null); };
+  const executePaste = async () => { const text = await navigator.clipboard.readText(); alert('Clipboard Data: ' + text); setActiveMenu(null); };
+
   return (
     <div className="h-8 bg-np-menuBg flex items-center justify-between select-none font-sans" data-tauri-drag-region>
-      <div className="flex items-center">
-        <div className="px-3 flex gap-4 text-[13px] text-np-text cursor-default">
-          <div className="hover:bg-white/10 px-2 py-1 rounded">File</div>
-          <div className="hover:bg-white/10 px-2 py-1 rounded">Edit</div>
-          <div className="hover:bg-white/10 px-2 py-1 rounded">View</div>
+      <div className="flex items-center" ref={menuRef}>
+        <div className="px-2 flex gap-1 text-[13px] text-np-text cursor-default">
           
-          <div className="flex gap-2 ml-4 border-l border-np-border pl-4">
-            <button onClick={()=>openFile('POSBilling.txt')} className="hover:text-np-accent">Billing</button>
-            <button onClick={()=>openFile('Vouchers.txt')} className="hover:text-np-accent">Vouchers</button>
-            <button onClick={()=>openFile('Ledgers.txt')} className="hover:text-np-accent">Ledgers</button>
-            <button onClick={()=>openFile('Inventory.txt')} className="hover:text-np-accent">Inventory</button>
-            <button onClick={()=>openFile('Reports.txt')} className="hover:text-np-accent">Reports</button>
-            <button onClick={()=>openFile('Config.txt')} className="hover:text-np-accent">Config</button>
+          {/* File Menu */}
+          <div className="relative">
+            <div onClick={() => handleMenu('File')} className={`px-2 py-1 rounded cursor-pointer ${activeMenu === 'File' ? 'bg-white/10' : 'hover:bg-white/10'}`}>File</div>
+            {activeMenu === 'File' && (
+              <div className="absolute top-full left-0 mt-1 w-56 bg-np-menuBg border border-np-border rounded shadow-2xl py-1 z-50">
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer flex justify-between" onClick={() => {openFile('POSBilling.txt'); setActiveMenu(null)}}><span>New Billing Tab</span><span className="text-np-muted">Ctrl+N</span></div>
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer flex justify-between" onClick={() => {openFile('Config.txt'); setActiveMenu(null)}}><span>Save DB Snapshot</span><span className="text-np-muted">Ctrl+S</span></div>
+                <div className="h-px bg-np-border my-1"></div>
+                <div className="px-4 py-1.5 hover:bg-red-500 hover:text-white cursor-pointer" onClick={() => appWindow?.close()}>Exit</div>
+              </div>
+            )}
           </div>
+
+          {/* Edit Menu */}
+          <div className="relative">
+            <div onClick={() => handleMenu('Edit')} className={`px-2 py-1 rounded cursor-pointer ${activeMenu === 'Edit' ? 'bg-white/10' : 'hover:bg-white/10'}`}>Edit</div>
+            {activeMenu === 'Edit' && (
+              <div className="absolute top-full left-0 mt-1 w-48 bg-np-menuBg border border-np-border rounded shadow-2xl py-1 z-50">
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer flex justify-between" onClick={executeCopy}><span>Copy</span><span className="text-np-muted">Ctrl+C</span></div>
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer flex justify-between" onClick={executePaste}><span>Paste</span><span className="text-np-muted">Ctrl+V</span></div>
+                <div className="h-px bg-np-border my-1"></div>
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer" onClick={() => {openFile('Ledgers.txt'); setActiveMenu(null)}}>Find Account...</div>
+              </div>
+            )}
+          </div>
+
+          {/* View Menu */}
+          <div className="relative">
+            <div onClick={() => handleMenu('View')} className={`px-2 py-1 rounded cursor-pointer ${activeMenu === 'View' ? 'bg-white/10' : 'hover:bg-white/10'}`}>View</div>
+            {activeMenu === 'View' && (
+              <div className="absolute top-full left-0 mt-1 w-48 bg-np-menuBg border border-np-border rounded shadow-2xl py-1 z-50">
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer flex justify-between" onClick={() => setZoomLevel(zoomLevel + 10)}><span>Zoom In</span><span className="text-np-muted">Ctrl++</span></div>
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer flex justify-between" onClick={() => setZoomLevel(zoomLevel - 10)}><span>Zoom Out</span><span className="text-np-muted">Ctrl+-</span></div>
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer flex justify-between" onClick={() => setZoomLevel(100)}><span>Restore Zoom</span><span className="text-np-muted">Ctrl+0</span></div>
+              </div>
+            )}
+          </div>
+          
         </div>
       </div>
+      
       <div className="flex">
-        <button onClick={() => appWindow?.minimize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Minus size={14} /></button>
-        <button onClick={() => appWindow?.toggleMaximize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Square size={12} /></button>
-        <button onClick={() => appWindow?.close()} className="h-8 w-12 flex items-center justify-center hover:bg-red-500"><X size={16} /></button>
+        {appWindow && (
+          <>
+            <button onClick={() => appWindow.minimize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Minus size={14} /></button>
+            <button onClick={() => appWindow.toggleMaximize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Square size={12} /></button>
+            <button onClick={() => appWindow.close()} className="h-8 w-12 flex items-center justify-center hover:bg-red-500"><X size={16} /></button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -346,18 +393,19 @@ const ActionBar = () => (
 );
 
 const StatusBar = () => {
+  const { zoomLevel } = useAppStore();
   const [time, setTime] = useState(new Date().toLocaleTimeString());
   useEffect(() => { setInterval(() => setTime(new Date().toLocaleTimeString()), 1000); }, []);
   return (
     <div className="h-6 bg-np-bg border-t border-np-border text-np-muted flex items-center px-4 text-[11px] font-sans justify-between shrink-0">
-      <div className="flex gap-6"><span>Ln 14, Col 32</span><span>100%</span></div>
+      <div className="flex gap-6"><span>Ln 14, Col 32</span><span>{zoomLevel}%</span></div>
       <div className="flex gap-6"><span>Windows (CRLF)</span><span>UTF-8</span><span>{time}</span></div>
     </div>
   );
 };
 
 export default function App() {
-  const activeTab = useAppStore(state => state.activeTab);
+  const { activeTab, zoomLevel } = useAppStore();
   
   const renderContent = () => {
     switch(activeTab) {
@@ -367,7 +415,7 @@ export default function App() {
       case 'Reports.txt': return <Reports />;
       case 'Vouchers.txt': return <Vouchers />;
       case 'Config.txt': return <Config />;
-      default: return <div className="p-6 text-np-muted font-mono">File is empty. Navigate via the top menu.</div>;
+      default: return <div className="p-6 text-np-muted font-mono">File is empty. Navigate via the File menu.</div>;
     }
   };
 
@@ -376,7 +424,7 @@ export default function App() {
       <TopMenu />
       <TabBar />
       <ActionBar />
-      <main className="flex-1 overflow-y-auto custom-scrollbar p-4">
+      <main className="flex-1 overflow-y-auto custom-scrollbar p-6" style={{ zoom: `${zoomLevel}%` }}>
         {renderContent()}
       </main>
       <StatusBar />
@@ -403,7 +451,7 @@ export default function POSBilling() {
 
   // S1: Data Initialization
   useEffect(() => {
-    invoke('exec_sql_read', { query: "SELECT * FROM inventory" }).then(setItems);
+    invoke('exec_sql_read', { query: "SELECT * FROM inventory" }).then(setItems).catch(e => setStatus(`ERR: ${e}`));
     invoke('exec_sql_read', { query: "SELECT id, name FROM ledgers WHERE group_id IN ('G3', 'G1')" }).then(setCustomers);
     
     // S2: Keyboard Shortcuts
@@ -443,8 +491,8 @@ export default function POSBilling() {
         <h1 className="text-xl border-b border-np-border pb-2 mb-2">POS Billing / Voucher Type: Sales</h1>
         <div className="flex gap-4">
           <div className="w-1/2">
-            <label className="text-np-muted block mb-1">Party A/c Name (F3)</label>
-            <select value={selectedCust} onChange={e=>setSelectedCust(e.target.value)} className="w-full bg-np-actionBg border border-np-border px-2 py-1">
+            <label className="text-np-muted block mb-1">Party A/c Name</label>
+            <select value={selectedCust} onChange={e=>setSelectedCust(e.target.value)} className="w-full bg-np-actionBg border border-np-border px-2 py-1.5">
               {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
@@ -496,8 +544,8 @@ export default function POSBilling() {
           <div className="p-4 border-t border-np-border bg-np-actionBg">
             <div className="flex justify-between text-lg mb-4"><span>Total Amount:</span><span className="text-np-accent">{total.toFixed(2)}</span></div>
             <div className="flex gap-2">
-              <button onClick={() => setCart([])} className="flex-1 border border-np-border text-np-muted py-2">Clear (F4)</button>
-              <button onClick={handleCheckout} className="flex-[2] bg-np-accent text-black font-bold py-2 hover:bg-blue-400">Post Sale (F8)</button>
+              <button onClick={() => setCart([])} className="flex-1 border border-np-border text-np-muted py-2 bg-transparent">Clear (F4)</button>
+              <button onClick={handleCheckout} className="flex-[2] bg-np-accent text-black font-bold py-2 border-none">Post Sale (F8)</button>
             </div>
             <div className="mt-2 text-xs text-np-muted">{status}</div>
           </div>
@@ -597,7 +645,7 @@ export default function Vouchers() {
             <label className="text-np-muted block mb-1">Narration</label>
             <input type="text" value={form.narration} onChange={e=>setForm({...form, narration: e.target.value})} className="w-full" />
           </div>
-          <button onClick={handlePost} className="bg-np-accent text-black font-bold px-6">Save</button>
+          <button onClick={handlePost} className="bg-np-accent text-black font-bold px-6 border-none">Save</button>
         </div>
       </div>
 
@@ -688,13 +736,13 @@ export default function Ledgers() {
             </select>
           </div>
           <div className="w-32"><label className="text-xs text-np-muted block">Open Bal</label><input type="number" value={form.bal} onChange={e=>setForm({...form, bal: e.target.value})} className="w-full" /></div>
-          <button onClick={handleCreate}>Save</button>
+          <button onClick={handleCreate} className="bg-np-actionBg">Save</button>
         </div>
       </div>
 
       {/* S6: Data Table */}
       <div className="flex-1 flex flex-col border border-np-border overflow-hidden">
-        <input type="text" placeholder="Filter ledgers..." value={filter} onChange={e=>setFilter(e.target.value)} className="p-2 border-b border-np-border bg-np-actionBg w-full" />
+        <input type="text" placeholder="Filter ledgers..." value={filter} onChange={e=>setFilter(e.target.value)} className="p-2 border-b border-np-border bg-np-actionBg w-full border-none" />
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <table>
             <thead><tr className="bg-np-actionBg"><th>Ledger Name</th><th>Under</th><th>Closing Balance</th></tr></thead>
@@ -760,12 +808,12 @@ export default function Inventory() {
           <div className="flex-1"><label className="text-xs text-np-muted block">Name</label><input type="text" value={form.name} onChange={e=>setForm({...form, name: e.target.value})} className="w-full" /></div>
           <div className="w-24"><label className="text-xs text-np-muted block">Qty</label><input type="number" value={form.stock} onChange={e=>setForm({...form, stock: e.target.value})} className="w-full" /></div>
           <div className="w-24"><label className="text-xs text-np-muted block">Rate</label><input type="number" value={form.rate} onChange={e=>setForm({...form, rate: e.target.value})} className="w-full" /></div>
-          <button onClick={handleCreate}>Save</button>
+          <button onClick={handleCreate} className="bg-np-actionBg">Save</button>
         </div>
       </div>
       
       <div className="flex-1 flex flex-col border border-np-border overflow-hidden">
-        <input type="text" placeholder="Filter inventory..." value={filter} onChange={e=>setFilter(e.target.value)} className="p-2 border-b border-np-border bg-np-actionBg w-full" />
+        <input type="text" placeholder="Filter inventory..." value={filter} onChange={e=>setFilter(e.target.value)} className="p-2 border-b border-np-border bg-np-actionBg w-full border-none" />
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <table>
             <thead><tr className="bg-np-actionBg"><th>Code</th><th>Name</th><th>Closing Stock</th><th>Rate</th><th>Value</th></tr></thead>
@@ -839,7 +887,7 @@ export default function Reports() {
       {/* S5: Action Bar */}
       <div className="flex gap-4 border-b border-np-border pb-2">
         {Object.keys(queries).map(k => (
-          <button key={k} onClick={() => setReportType(k)} className={reportType === k ? 'bg-np-accent text-black font-bold' : ''}>
+          <button key={k} onClick={() => setReportType(k)} className={`border-none ${reportType === k ? 'bg-np-accent text-black font-bold' : 'bg-transparent text-np-text'}`}>
             {k}
           </button>
         ))}
@@ -907,8 +955,8 @@ export default function Config() {
         </div>
         
         <div className="pt-4 border-t border-np-border flex gap-4">
-          <button className="bg-np-accent text-black font-bold px-6">Save Settings</button>
-          <button onClick={handleBackup}>Optimize & Backup DB</button>
+          <button className="bg-np-accent text-black font-bold px-6 border-none">Save Settings</button>
+          <button onClick={handleBackup} className="bg-np-bg">Optimize & Backup DB</button>
         </div>
       </div>
       <div className="text-xs text-np-muted mt-auto">{log}</div>

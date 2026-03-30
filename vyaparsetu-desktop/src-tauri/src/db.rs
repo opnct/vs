@@ -5,7 +5,6 @@ pub fn init_db() -> Result<Connection> {
     let schema = include_str!("schema.sql");
     conn.execute_batch(schema)?;
     
-    // Core Tally Ledgers & Groups Seed
     conn.execute_batch("
         INSERT OR IGNORE INTO ledger_groups (id, name, nature) VALUES 
         ('G1', 'Cash-in-Hand', 'Assets'), ('G2', 'Sales Accounts', 'Income'), 

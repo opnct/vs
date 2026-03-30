@@ -1,12 +1,12 @@
 [package]
 name = "vyaparsetu"
 version = "0.1.0"
-description = "VyaparSetu Tally Engine"
+description = "VyaparSetu Notepad Tally Engine"
 authors = ["VyaparSetu"]
 edition = "2021"
 
 [build-dependencies]
-tauri-build = { version = "2.0.0", features = [] }
+tauri-build = "2.0.0"
 
 [dependencies]
 tauri = { version = "2.0.0", features = [] }

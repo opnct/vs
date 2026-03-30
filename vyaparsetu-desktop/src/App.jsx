@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useRef } from 'react';
 import { useAppStore } from './store/useAppStore';
 import { Minus, Square, X, Database } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -11,48 +12,81 @@ import Config from './pages/Config';
 import Vouchers from './pages/Vouchers';
 
 const TopMenu = () => {
-  const { openFile } = useAppStore();
+  const { openFile, zoomLevel, setZoomLevel } = useAppStore();
   const [appWindow, setAppWindow] = useState(null);
-  const [isTauri, setIsTauri] = useState(false);
+  const [activeMenu, setActiveMenu] = useState(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
-    // Safely check if running inside the Tauri native container
     if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__) {
-      setIsTauri(true);
-      try {
-        setAppWindow(getCurrentWindow());
-      } catch (error) {
-        console.warn("Not running in native Tauri window environment:", error);
-      }
+      try { setAppWindow(getCurrentWindow()); } catch (e) { console.warn(e); }
     }
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setActiveMenu(null);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleMenu = (menu) => setActiveMenu(activeMenu === menu ? null : menu);
+  const executeCopy = () => { navigator.clipboard.writeText(window.getSelection().toString()); setActiveMenu(null); };
+  const executePaste = async () => { const text = await navigator.clipboard.readText(); alert('Clipboard Data: ' + text); setActiveMenu(null); };
 
   return (
     <div className="h-8 bg-np-menuBg flex items-center justify-between select-none font-sans" data-tauri-drag-region>
-      <div className="flex items-center">
-        <div className="px-3 flex gap-4 text-[13px] text-np-text cursor-default">
-          <div className="hover:bg-white/10 px-2 py-1 rounded">File</div>
-          <div className="hover:bg-white/10 px-2 py-1 rounded">Edit</div>
-          <div className="hover:bg-white/10 px-2 py-1 rounded">View</div>
+      <div className="flex items-center" ref={menuRef}>
+        <div className="px-2 flex gap-1 text-[13px] text-np-text cursor-default">
           
-          <div className="flex gap-2 ml-4 border-l border-np-border pl-4">
-            <button onClick={()=>openFile('POSBilling.txt')} className="hover:text-np-accent">Billing</button>
-            <button onClick={()=>openFile('Vouchers.txt')} className="hover:text-np-accent">Vouchers</button>
-            <button onClick={()=>openFile('Ledgers.txt')} className="hover:text-np-accent">Ledgers</button>
-            <button onClick={()=>openFile('Inventory.txt')} className="hover:text-np-accent">Inventory</button>
-            <button onClick={()=>openFile('Reports.txt')} className="hover:text-np-accent">Reports</button>
-            <button onClick={()=>openFile('Config.txt')} className="hover:text-np-accent">Config</button>
+          {/* File Menu */}
+          <div className="relative">
+            <div onClick={() => handleMenu('File')} className={`px-2 py-1 rounded cursor-pointer ${activeMenu === 'File' ? 'bg-white/10' : 'hover:bg-white/10'}`}>File</div>
+            {activeMenu === 'File' && (
+              <div className="absolute top-full left-0 mt-1 w-56 bg-np-menuBg border border-np-border rounded shadow-2xl py-1 z-50">
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer flex justify-between" onClick={() => {openFile('POSBilling.txt'); setActiveMenu(null)}}><span>New Billing Tab</span><span className="text-np-muted">Ctrl+N</span></div>
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer flex justify-between" onClick={() => {openFile('Config.txt'); setActiveMenu(null)}}><span>Save DB Snapshot</span><span className="text-np-muted">Ctrl+S</span></div>
+                <div className="h-px bg-np-border my-1"></div>
+                <div className="px-4 py-1.5 hover:bg-red-500 hover:text-white cursor-pointer" onClick={() => appWindow?.close()}>Exit</div>
+              </div>
+            )}
           </div>
+
+          {/* Edit Menu */}
+          <div className="relative">
+            <div onClick={() => handleMenu('Edit')} className={`px-2 py-1 rounded cursor-pointer ${activeMenu === 'Edit' ? 'bg-white/10' : 'hover:bg-white/10'}`}>Edit</div>
+            {activeMenu === 'Edit' && (
+              <div className="absolute top-full left-0 mt-1 w-48 bg-np-menuBg border border-np-border rounded shadow-2xl py-1 z-50">
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer flex justify-between" onClick={executeCopy}><span>Copy</span><span className="text-np-muted">Ctrl+C</span></div>
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer flex justify-between" onClick={executePaste}><span>Paste</span><span className="text-np-muted">Ctrl+V</span></div>
+                <div className="h-px bg-np-border my-1"></div>
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer" onClick={() => {openFile('Ledgers.txt'); setActiveMenu(null)}}>Find Account...</div>
+              </div>
+            )}
+          </div>
+
+          {/* View Menu */}
+          <div className="relative">
+            <div onClick={() => handleMenu('View')} className={`px-2 py-1 rounded cursor-pointer ${activeMenu === 'View' ? 'bg-white/10' : 'hover:bg-white/10'}`}>View</div>
+            {activeMenu === 'View' && (
+              <div className="absolute top-full left-0 mt-1 w-48 bg-np-menuBg border border-np-border rounded shadow-2xl py-1 z-50">
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer flex justify-between" onClick={() => setZoomLevel(zoomLevel + 10)}><span>Zoom In</span><span className="text-np-muted">Ctrl++</span></div>
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer flex justify-between" onClick={() => setZoomLevel(zoomLevel - 10)}><span>Zoom Out</span><span className="text-np-muted">Ctrl+-</span></div>
+                <div className="px-4 py-1.5 hover:bg-np-tabHover cursor-pointer flex justify-between" onClick={() => setZoomLevel(100)}><span>Restore Zoom</span><span className="text-np-muted">Ctrl+0</span></div>
+              </div>
+            )}
+          </div>
+          
         </div>
       </div>
-      {/* Gracefully hide window controls if running in a standard web browser */}
-      {isTauri && appWindow && (
-        <div className="flex">
-          <button onClick={() => appWindow.minimize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Minus size={14} /></button>
-          <button onClick={() => appWindow.toggleMaximize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Square size={12} /></button>
-          <button onClick={() => appWindow.close()} className="h-8 w-12 flex items-center justify-center hover:bg-red-500"><X size={16} /></button>
-        </div>
-      )}
+      
+      <div className="flex">
+        {appWindow && (
+          <>
+            <button onClick={() => appWindow.minimize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Minus size={14} /></button>
+            <button onClick={() => appWindow.toggleMaximize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Square size={12} /></button>
+            <button onClick={() => appWindow.close()} className="h-8 w-12 flex items-center justify-center hover:bg-red-500"><X size={16} /></button>
+          </>
+        )}
+      </div>
     </div>
   );
 };
@@ -87,18 +121,19 @@ const ActionBar = () => (
 );
 
 const StatusBar = () => {
+  const { zoomLevel } = useAppStore();
   const [time, setTime] = useState(new Date().toLocaleTimeString());
   useEffect(() => { setInterval(() => setTime(new Date().toLocaleTimeString()), 1000); }, []);
   return (
     <div className="h-6 bg-np-bg border-t border-np-border text-np-muted flex items-center px-4 text-[11px] font-sans justify-between shrink-0">
-      <div className="flex gap-6"><span>Ln 14, Col 32</span><span>100%</span></div>
+      <div className="flex gap-6"><span>Ln 14, Col 32</span><span>{zoomLevel}%</span></div>
       <div className="flex gap-6"><span>Windows (CRLF)</span><span>UTF-8</span><span>{time}</span></div>
     </div>
   );
 };
 
 export default function App() {
-  const activeTab = useAppStore(state => state.activeTab);
+  const { activeTab, zoomLevel } = useAppStore();
   
   const renderContent = () => {
     switch(activeTab) {
@@ -108,7 +143,7 @@ export default function App() {
       case 'Reports.txt': return <Reports />;
       case 'Vouchers.txt': return <Vouchers />;
       case 'Config.txt': return <Config />;
-      default: return <div className="p-6 text-np-muted font-mono">File is empty. Navigate via the top menu.</div>;
+      default: return <div className="p-6 text-np-muted font-mono">File is empty. Navigate via the File menu.</div>;
     }
   };
 
@@ -117,7 +152,7 @@ export default function App() {
       <TopMenu />
       <TabBar />
       <ActionBar />
-      <main className="flex-1 overflow-y-auto custom-scrollbar p-4">
+      <main className="flex-1 overflow-y-auto custom-scrollbar p-6" style={{ zoom: `${zoomLevel}%` }}>
         {renderContent()}
       </main>
       <StatusBar />

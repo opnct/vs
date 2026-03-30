@@ -30,8 +30,8 @@ export default function Config() {
         </div>
         
         <div className="pt-4 border-t border-np-border flex gap-4">
-          <button className="bg-np-accent text-black font-bold px-6">Save Settings</button>
-          <button onClick={handleBackup}>Optimize & Backup DB</button>
+          <button className="bg-np-accent text-black font-bold px-6 border-none">Save Settings</button>
+          <button onClick={handleBackup} className="bg-np-bg">Optimize & Backup DB</button>
         </div>
       </div>
       <div className="text-xs text-np-muted mt-auto">{log}</div>

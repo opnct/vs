@@ -5,15 +5,15 @@ export default {
     extend: {
       colors: {
         np: {
-          bg: '#202020',         // Notepad background
-          menuBg: '#181818',     // Titlebar/Menu background
-          tabActive: '#2d2d2d',  // Active tab
-          tabHover: '#2a2a2a',   // Tab hover
-          text: '#ffffff',       // Main text
-          muted: '#9d9d9d',      // Placeholder/Muted
-          accent: '#4cc2ff',     // Selection/Active blue
-          border: '#333333',     // Subtle borders
-          actionBg: '#282828',   // Formatting bar bg
+          bg: '#202020',         
+          menuBg: '#181818',     
+          tabActive: '#2d2d2d',  
+          tabHover: '#2a2a2a',   
+          text: '#ffffff',       
+          muted: '#9d9d9d',      
+          accent: '#4cc2ff',     
+          border: '#333333',     
+          actionBg: '#282828',   
         }
       },
       fontFamily: {

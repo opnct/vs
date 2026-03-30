@@ -87,7 +87,7 @@ export default function Vouchers() {
             <label className="text-np-muted block mb-1">Narration</label>
             <input type="text" value={form.narration} onChange={e=>setForm({...form, narration: e.target.value})} className="w-full" />
           </div>
-          <button onClick={handlePost} className="bg-np-accent text-black font-bold px-6">Save</button>
+          <button onClick={handlePost} className="bg-np-accent text-black font-bold px-6 border-none">Save</button>
         </div>
       </div>
 
