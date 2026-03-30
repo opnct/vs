@@ -1,110 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { useLanguage } from '../context/LanguageContext';
-import { auth } from '../firebase';
-import { signOut } from 'firebase/auth';
 
-// Classic Tally Action Button Component
-const TallyMenuButton = ({ shortcut, label, isActive, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`w-full flex items-center justify-between px-2 py-2 text-xs font-bold border-b border-tally-border/40 transition-none outline-none focus:outline-none ${
-      isActive 
-        ? 'bg-tally-yellow text-tally-black shadow-[inset_3px_0_0_#000]' 
-        : 'bg-transparent text-tally-darkBlue hover:bg-white'
-    }`}
-  >
-    <div className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
-      <span className={`${isActive ? 'text-tally-black' : 'text-tally-cyan'}`}>{shortcut}:</span>
-      <span className="truncate">{label}</span>
-    </div>
-    <span className={`ml-1 text-[10px] font-black ${isActive ? 'text-tally-black' : 'text-tally-cyan'}`}>{'<'}</span>
-  </button>
-);
-
-export default function Sidebar({ activeTab, setActiveTab, onLock, isOffline }) {
-  const { t } = useLanguage();
-  
-  // Sync Status State (Simplified for classic UI)
-  const [syncStatus, setSyncStatus] = useState(isOffline ? 'Offline' : 'Online');
-
-  useEffect(() => {
-    if (isOffline) return;
-    const handleOnline = () => setSyncStatus('Online');
-    const handleOffline = () => setSyncStatus('Offline');
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [isOffline]);
-
-  const handleSignOut = async () => {
-    if (isOffline) {
-      localStorage.removeItem('vs_offline_mode');
-      window.dispatchEvent(new Event('storage'));
-    } else {
-      try {
-        await signOut(auth);
-      } catch (error) {
-        console.error("Error logging out:", error);
-      }
-    }
-  };
-
-  // Mapped to classic Tally function keys
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', shortcut: 'F2' },
-    { id: 'pos', label: 'Vouchers', shortcut: 'F4' },
-    { id: 'khata', label: 'Ledgers', shortcut: 'F5' },
-    { id: 'inventory', label: 'Stock Item', shortcut: 'F6' },
-    { id: 'daily-ops', label: 'Day Book', shortcut: 'F7' },
-    { id: 'purchases', label: 'Purchases', shortcut: 'F8' },
-    { id: 'suppliers', label: 'Suppliers', shortcut: 'F9' },
-    { id: 'reports', label: 'Reports', shortcut: 'F10' },
-    { id: 'staff', label: 'Payroll', shortcut: 'F11' },
-    { id: 'settings', label: 'Features', shortcut: 'F12' },
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
+export default function Sidebar() {
+  const sections = [
+    { title: "HELP CENTER", items: [{ label: "Get started", path: "/" }, { label: "Company", path: "/company" }, { label: "Ledgers", path: "/ledgers" }, { label: "Vouchers", path: "/vouchers" }, { label: "Inventory", path: "/inventory" }] },
+    { title: "REPORTS & OPS", items: [{ label: "POS Billing", path: "/pos" }, { label: "Banking", path: "/banking" }, { label: "GST Compliance", path: "/gst" }, { label: "Reports", path: "/reports" }] },
+    { title: "SYSTEM", items: [{ label: "Settings", path: "/settings" }, { label: "Backup & Restore", path: "/backup" }, { label: "Staff", path: "/staff" }] }
   ];
-
   return (
-    <aside className="w-[160px] h-full bg-tally-lightBlue flex flex-col shrink-0 z-20 select-none border-l border-tally-border font-sans">
-      
-      {/* Scrollable Action Menu */}
-      <div className="flex-1 w-full flex flex-col overflow-y-auto custom-scrollbar">
-        {menuItems.map((item) => (
-          <TallyMenuButton
-            key={item.id}
-            shortcut={item.shortcut}
-            label={item.label}
-            isActive={activeTab === item.id}
-            onClick={() => setActiveTab(item.id)}
-          />
-        ))}
-      </div>
-
-      {/* System Status & Bottom Actions */}
-      <div className="w-full border-t border-tally-border bg-tally-bg flex flex-col mt-auto">
-        <div className="px-2 py-1 text-[9px] font-bold text-tally-darkBlue flex justify-between border-b border-tally-border/40">
-          <span>TallySync:</span>
-          <span className={syncStatus === 'Online' ? 'text-green-700' : 'text-red-600'}>{syncStatus}</span>
+    <aside className="w-[260px] h-full bg-brand-sidebar border-r border-brand-border overflow-y-auto custom-scrollbar flex flex-col pt-6 pb-10 select-none">
+      {sections.map((sec, i) => (
+        <div key={i} className="mb-8">
+          <h4 className="px-6 text-[10px] font-bold text-brand-muted uppercase tracking-widest mb-2">{sec.title}</h4>
+          <div className="flex flex-col">
+            {sec.items.map(item => (
+              <NavLink key={item.path} to={item.path} className={({isActive}) => `flex items-center gap-2 px-6 py-1.5 text-sm transition-colors ${isActive ? 'text-brand-text font-bold bg-brand-border/30' : 'text-brand-text hover:bg-brand-border/30'}`}>
+                <ChevronRight size={14} className="text-brand-muted" /> {item.label}
+              </NavLink>
+            ))}
+          </div>
         </div>
-        
-        <TallyMenuButton
-          shortcut="L"
-          label="Lock System"
-          isActive={false}
-          onClick={onLock}
-        />
-        <TallyMenuButton
-          shortcut="Q"
-          label={isOffline ? "Go Online" : "Quit"}
-          isActive={false}
-          onClick={handleSignOut}
-        />
-      </div>
-
+      ))}
     </aside>
   );
 }

@@ -1,39 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   html, body {
-    /* Strictly Minimalist Base (Pure White bg, Charcoal text) */
     @apply bg-brand-white text-brand-text font-sans antialiased;
-    /* Prevents the elastic bounce effect on Mac for a native app feel */
     overscroll-behavior: none; 
   }
 }
 
-/* Custom Scrollbar replicating the clean, barely-visible Notion/Tally.so feel */
 @layer utilities {
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent; 
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    /* Subtle rounded gray thumb */
-    @apply bg-brand-border rounded-full transition-colors; 
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-brand-muted; 
-  }
-  
-  /* Firefox Support */
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    /* brand-border thumb, transparent track */
-    scrollbar-color: #EAEAEA transparent; 
-  }
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { @apply bg-brand-border rounded-full transition-colors; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { @apply bg-brand-muted; }
+  .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #EAEAEA transparent; }
 }
