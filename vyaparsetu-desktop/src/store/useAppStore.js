@@ -1,8 +1,14 @@
 
 import { create } from 'zustand';
 export const useAppStore = create((set) => ({
-  companyName: "Default Kirana Store",
-  fyStart: "2025-04-01",
-  currency: "INR",
-  setCompanyData: (data) => set({ ...data }),
+  activeTab: 'Welcome.md',
+  openTabs: ['Welcome.md'],
+  openFile: (fileName) => set((state) => ({ 
+    activeTab: fileName, 
+    openTabs: state.openTabs.includes(fileName) ? state.openTabs : [...state.openTabs, fileName] 
+  })),
+  closeFile: (fileName) => set((state) => {
+    const newTabs = state.openTabs.filter(t => t !== fileName);
+    return { openTabs: newTabs, activeTab: state.activeTab === fileName ? (newTabs[0] || '') : state.activeTab };
+  })
 }));

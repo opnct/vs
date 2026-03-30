@@ -1,23 +1,29 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
-        brand: {
-          white: '#FFFFFF',      // Main content background
-          sidebar: '#F9F9F9',    // Off-White/Sidebar Gray
-          text: '#111111',       // Charcoal Text for headings/body
-          muted: '#9B9A97',      // Muted Gray Text for secondary labels
-          accent: '#0A85D1',     // Accent Blue for primary buttons/links
-          border: '#EAEAEA',     // Subtle border grays for dividers
+        vscode: {
+          bg: '#1e1e1e',         // Editor background
+          sidebar: '#252526',    // Explorer background
+          activity: '#333333',   // Leftmost icon bar
+          accent: '#007acc',     // VS Code Blue highlight
+          text: '#cccccc',       // Default text
+          textDark: '#858585',   // Muted text/comments
+          string: '#ce9178',     // Syntax: string
+          keyword: '#569cd6',    // Syntax: keyword
+          func: '#dcdcaa',       // Syntax: function
+          type: '#4ec9b0',       // Syntax: type/success
+          border: '#3c3c3c',     // Editor borders
+          tabActive: '#1e1e1e',
+          tabInactive: '#2d2d2d',
+          statusBg: '#007acc',
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['"Fira Code"', 'Consolas', 'monospace'],
+        sans: ['Inter', 'Segoe UI', 'sans-serif'],
       }
     },
   },

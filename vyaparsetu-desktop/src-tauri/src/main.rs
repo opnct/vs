@@ -2,11 +2,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod db;
 mod commands;
-
 fn main() {
     tauri::Builder::default()
-        .setup(|_app| { db::init_db().expect("DB Init Failed"); Ok(()) })
-        .invoke_handler(tauri::generate_handler![commands::create_ledger, commands::get_ledgers])
+        .setup(|_app| { db::init_db().unwrap(); Ok(()) })
+        .invoke_handler(tauri::generate_handler![commands::exec_sql, commands::get_ledgers, commands::get_inventory, commands::post_pos_sale])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
