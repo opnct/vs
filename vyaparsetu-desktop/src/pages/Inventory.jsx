@@ -8,11 +8,9 @@ export default function Inventory() {
   const [log, setLog] = useState('Ready.');
   const [filter, setFilter] = useState('');
 
-  // S1: Initialization
   const loadItems = () => invoke('exec_sql_read', { query: "SELECT * FROM inventory" }).then(setItems).catch(e => setLog(`ERR: ${e}`));
   useEffect(() => { loadItems(); }, []);
 
-  // S2: Data Insertion
   const handleCreate = async () => {
     if(!form.name) return setLog('ERR: Missing Name');
     try {
@@ -24,22 +22,19 @@ export default function Inventory() {
     } catch (e) { setLog(`ERR: ${e}`); }
   };
 
-  // S3: Analytics (Low Stock & Value)
   const lowStock = items.filter(i => i.stock <= 5).length;
   const totalValuation = items.reduce((sum, i) => sum + (i.stock * i.rate), 0);
 
   return (
-    <div className="flex flex-col h-full gap-6">
-      <h1 className="text-xl border-b border-np-border pb-2">Inventory Masters & Stock Info</h1>
+    <div className="flex flex-col h-full gap-4">
+      <h1 className="text-xl border-b border-np-border pb-2">Inventory Masters</h1>
 
-      {/* S4: Metrics */}
       <div className="flex gap-4 p-3 bg-np-actionBg border border-np-border">
         <span>Total Items: <span className="text-np-accent">{items.length}</span></span>
         <span>Low Stock Alert: <span className="text-red-400">{lowStock}</span></span>
         <span>Est. Valuation: <span className="text-np-accent">{totalValuation.toFixed(2)}</span></span>
       </div>
 
-      {/* S5: Form */}
       <div>
         <div className="text-np-muted mb-2">Create Stock Item</div>
         <div className="flex gap-4 items-end">
@@ -47,11 +42,10 @@ export default function Inventory() {
           <div className="flex-1"><label className="text-xs text-np-muted block">Name</label><input type="text" value={form.name} onChange={e=>setForm({...form, name: e.target.value})} className="w-full" /></div>
           <div className="w-24"><label className="text-xs text-np-muted block">Qty</label><input type="number" value={form.stock} onChange={e=>setForm({...form, stock: e.target.value})} className="w-full" /></div>
           <div className="w-24"><label className="text-xs text-np-muted block">Rate</label><input type="number" value={form.rate} onChange={e=>setForm({...form, rate: e.target.value})} className="w-full" /></div>
-          <button onClick={handleCreate}>Save (Enter)</button>
+          <button onClick={handleCreate}>Save</button>
         </div>
       </div>
       
-      {/* S6: Data Table */}
       <div className="flex-1 flex flex-col border border-np-border overflow-hidden">
         <input type="text" placeholder="Filter inventory..." value={filter} onChange={e=>setFilter(e.target.value)} className="p-2 border-b border-np-border bg-np-actionBg w-full" />
         <div className="flex-1 overflow-y-auto custom-scrollbar">

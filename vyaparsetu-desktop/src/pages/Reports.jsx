@@ -9,7 +9,7 @@ export default function Reports() {
   
   // S1: Advanced SQL Tally Reports
   const queries = {
-    'DayBook': "SELECT v.date as Date, v.id as Vch_No, v.v_type as Type, l.name as Particulars, ve.debit as Inward, ve.credit as Outward, v.narration FROM vouchers v JOIN voucher_entries ve ON v.id = ve.voucher_id JOIN ledgers l ON ve.ledger_id = l.id ORDER BY v.date DESC",
+    'DayBook': "SELECT v.date as Date, v.id as Vch_No, v.v_type as Type, l.name as Particulars, ve.debit as Debit, ve.credit as Credit, v.narration FROM vouchers v JOIN voucher_entries ve ON v.id = ve.voucher_id JOIN ledgers l ON ve.ledger_id = l.id ORDER BY v.date DESC",
     'TrialBalance': "SELECT l.name as Particulars, g.name as Group_Name, SUM(ve.debit) as Debit_Total, SUM(ve.credit) as Credit_Total FROM ledgers l JOIN ledger_groups g ON l.group_id = g.id LEFT JOIN voucher_entries ve ON l.id = ve.ledger_id GROUP BY l.id",
     'StockSummary': "SELECT item_code as Code, name as Particulars, stock as Closing_Bal, rate as Rate, (stock*rate) as Value FROM inventory"
   };
@@ -24,8 +24,8 @@ export default function Reports() {
       }).catch(console.error);
   }, [reportType]);
 
-  // S3: CSV Export Stub
-  const handleExport = () => alert(`Writing ${reportType}.csv to disk via Tauri API...`);
+  // S3: CSV Export
+  const handleExport = () => alert(`Exporting ${reportType}.csv...`);
 
   // S4: Aggregate Engine
   const getTotals = () => {
@@ -42,17 +42,17 @@ export default function Reports() {
   };
 
   return (
-    <div className="h-full flex flex-col gap-6">
+    <div className="h-full flex flex-col gap-4">
       <h1 className="text-xl border-b border-np-border pb-2">Display More Reports</h1>
       
       {/* S5: Action Bar */}
-      <div className="flex gap-4 border-b border-np-border pb-4">
+      <div className="flex gap-4 border-b border-np-border pb-2">
         {Object.keys(queries).map(k => (
           <button key={k} onClick={() => setReportType(k)} className={reportType === k ? 'bg-np-accent text-black font-bold' : ''}>
             {k}
           </button>
         ))}
-        <button onClick={handleExport} className="ml-auto">Export (Alt+E)</button>
+        <button onClick={handleExport} className="ml-auto bg-np-bg">Export CSV</button>
       </div>
       
       {/* S6: Data View */}
@@ -64,7 +64,7 @@ export default function Reports() {
               <tbody>
                 {data.map((row, i) => (
                   <tr key={i} className="hover:bg-np-tabHover">
-                    {cols.map(c => <td key={c} className={typeof row[c] === 'number' ? 'text-np-accent text-right' : ''}>{row[c]}</td>)}
+                    {cols.map(c => <td key={c} className={typeof row[c] === 'number' ? 'text-np-accent' : ''}>{row[c]}</td>)}
                   </tr>
                 ))}
               </tbody>

@@ -6,7 +6,7 @@ export default function Ledgers() {
   const [ledgers, setLedgers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [form, setForm] = useState({ name: '', group: 'G3', bal: '' });
-  const [log, setLog] = useState('Line 1: Ledgers loaded.');
+  const [log, setLog] = useState('Ledgers loaded.');
   const [filter, setFilter] = useState('');
   const nameRef = useRef(null);
 
@@ -40,7 +40,7 @@ export default function Ledgers() {
   const filtered = ledgers.filter(l => l.name.toLowerCase().includes(filter.toLowerCase()));
 
   return (
-    <div className="flex flex-col h-full gap-6">
+    <div className="flex flex-col h-full gap-4">
       <h1 className="text-xl border-b border-np-border pb-2">Chart of Accounts / Ledgers</h1>
       
       {/* S4: Analytics Bar */}
@@ -60,7 +60,7 @@ export default function Ledgers() {
             </select>
           </div>
           <div className="w-32"><label className="text-xs text-np-muted block">Open Bal</label><input type="number" value={form.bal} onChange={e=>setForm({...form, bal: e.target.value})} className="w-full" /></div>
-          <button onClick={handleCreate}>Save (Enter)</button>
+          <button onClick={handleCreate}>Save</button>
         </div>
       </div>
 
