@@ -4,7 +4,7 @@ use rusqlite::params;
 use crate::db::init_db;
 
 #[derive(Serialize)]
-pub struct Ledger { pub id: String, pub name: String, pub balance: f64 }
+pub struct Ledger { pub id: String, pub name: String, pub balance: f64, pub group_name: String }
 #[derive(Serialize)]
 pub struct Item { pub id: String, pub code: String, pub name: String, pub stock: f64, pub rate: f64 }
 
@@ -15,41 +15,52 @@ pub fn exec_sql(query: String) -> Result<String, String> {
     Ok("Executed".to_string())
 }
 
+// POWERFUL: Read ANY SQL Query directly into React JSON
 #[tauri::command]
-pub fn get_ledgers() -> Result<Vec<Ledger>, String> {
+pub fn exec_sql_read(query: String) -> Result<Vec<serde_json::Value>, String> {
     let conn = init_db().map_err(|e| e.to_string())?;
-    let mut stmt = conn.prepare("SELECT l.id, l.name, l.opening_bal + COALESCE(SUM(ve.debit) - SUM(ve.credit), 0) FROM ledgers l LEFT JOIN voucher_entries ve ON l.id = ve.ledger_id GROUP BY l.id").unwrap();
-    let rows = stmt.query_map([], |row| Ok(Ledger { id: row.get(0)?, name: row.get(1)?, balance: row.get(2)? })).unwrap();
-    Ok(rows.filter_map(Result::ok).collect())
+    let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
+    let cols: Vec<String> = stmt.column_names().into_iter().map(|s| s.to_string()).collect();
+    
+    let rows = stmt.query_map([], |row| {
+        let mut map = serde_json::Map::new();
+        for (i, col) in cols.iter().enumerate() {
+            let val: rusqlite::types::Value = row.get(i).unwrap();
+            let json_val = match val {
+                rusqlite::types::Value::Null => serde_json::Value::Null,
+                rusqlite::types::Value::Integer(i) => serde_json::Value::Number(i.into()),
+                rusqlite::types::Value::Real(f) => serde_json::json!(f),
+                rusqlite::types::Value::Text(t) => serde_json::Value::String(t),
+                rusqlite::types::Value::Blob(_) => serde_json::Value::String("[BLOB]".to_string()),
+            };
+            map.insert(col.clone(), json_val);
+        }
+        Ok(serde_json::Value::Object(map))
+    }).map_err(|e| e.to_string())?;
+
+    let mut res = Vec::new();
+    for r in rows { res.push(r.map_err(|e| e.to_string())?); }
+    Ok(res)
 }
 
 #[tauri::command]
-pub fn get_inventory() -> Result<Vec<Item>, String> {
-    let conn = init_db().map_err(|e| e.to_string())?;
-    let mut stmt = conn.prepare("SELECT id, item_code, name, stock, rate FROM inventory").unwrap();
-    let rows = stmt.query_map([], |row| Ok(Item { id: row.get(0)?, code: row.get(1)?, name: row.get(2)?, stock: row.get(3)?, rate: row.get(4)? })).unwrap();
-    Ok(rows.filter_map(Result::ok).collect())
-}
-
-// REAL DOUBLE ENTRY POS POSTING LOGIC
-#[tauri::command]
-pub fn post_pos_sale(total: f64, items: Vec<serde_json::Value>) -> Result<String, String> {
+pub fn post_pos_sale(total: f64, items: Vec<serde_json::Value>, customer_id: Option<String>) -> Result<String, String> {
     let conn = init_db().map_err(|e| e.to_string())?;
     let v_id = format!("VCH-{}", chrono::Local::now().timestamp());
     
-    // 1. Create Voucher
-    conn.execute("INSERT INTO vouchers (id, v_type, date, total, narration) VALUES (?1, 'Sales', date('now'), ?2, 'POS Cash Sale')", params![v_id, total]).map_err(|e| e.to_string())?;
+    conn.execute("INSERT INTO vouchers (id, v_type, date, total, narration) VALUES (?1, 'Sales', date('now'), ?2, 'POS Sale')", params![v_id, total]).map_err(|e| e.to_string())?;
     
-    // 2. Double Entry: Debit Cash (L1), Credit Sales (L2)
-    conn.execute("INSERT INTO voucher_entries (id, voucher_id, ledger_id, debit, credit) VALUES (?1, ?2, 'L1', ?3, 0)", params![format!("{}-D", v_id), v_id, total]).map_err(|e| e.to_string())?;
+    // Debit Cash OR Customer Account
+    let dr_ledger = customer_id.unwrap_or_else(|| "L1".to_string());
+    conn.execute("INSERT INTO voucher_entries (id, voucher_id, ledger_id, debit, credit) VALUES (?1, ?2, ?3, ?4, 0)", params![format!("{}-D", v_id), v_id, dr_ledger, total]).map_err(|e| e.to_string())?;
+    
+    // Credit Sales Account
     conn.execute("INSERT INTO voucher_entries (id, voucher_id, ledger_id, debit, credit) VALUES (?1, ?2, 'L2', 0, ?3)", params![format!("{}-C", v_id), v_id, total]).map_err(|e| e.to_string())?;
     
-    // 3. Update Inventory Stock
     for item in items {
         let id: String = serde_json::from_value(item["id"].clone()).unwrap();
         let qty: f64 = serde_json::from_value(item["qty"].clone()).unwrap();
         conn.execute("UPDATE inventory SET stock = stock - ?1 WHERE id = ?2", params![qty, id]).map_err(|e| e.to_string())?;
     }
-    
     Ok(v_id)
 }
