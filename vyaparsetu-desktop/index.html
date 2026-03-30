@@ -5,13 +5,16 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- System fonts (Tahoma, Arial) will be used natively for data density -->
+    <!-- Inter Font for clean, minimalist typography matching the new UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <title>VyaparSetu POS</title>
   </head>
 
-  <!-- Setting the strict Tally background baseline -->
-  <body class="bg-tally-bg text-tally-black m-0 p-0 overflow-hidden font-sans">
+  <!-- Setting the strict minimalist background baseline -->
+  <body class="bg-brand-white text-brand-text m-0 p-0 overflow-hidden font-sans antialiased">
     <div id="root" class="h-screen w-screen flex flex-col"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

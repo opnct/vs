@@ -7,26 +7,23 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Strict Tally Prime Desktop UI Palette
-        tally: {
-          darkBlue: '#1E487C',   // Top main navbar
-          cyan: '#5793C4',       // Secondary headers / active path
-          lightBlue: '#E8F1F8',  // Right menu backgrounds & utilities
-          yellow: '#F9CB41',     // Active selection highlight
-          bg: '#E8EDF2',         // Main application background (Dashboard space)
-          white: '#FFFFFF',      // Pure white for data panels and tables
-          black: '#000000',      // Strict black for dense data text
-          border: '#A9B9C6',     // Thin grey/blue borders for classic windows
-          headerText: '#A1C8E1', // Light blue inactive text on dark blue background
+        // Strict Minimalist Notion-style Palette (Tally.so inspired)
+        brand: {
+          white: '#FFFFFF',      // Main content background
+          sidebar: '#F9F9F9',    // Off-White/Sidebar Gray
+          text: '#111111',       // Charcoal Text for primary headings/body
+          muted: '#9B9A97',      // Muted Gray Text for secondary labels/icons
+          accent: '#0A85D1',     // Accent Blue for primary buttons/links
+          border: '#EAEAEA',     // Subtle border grays for dividers
         }
       },
       fontFamily: {
-        // Tally uses classic, dense system fonts for maximum data visibility
-        sans: ['Tahoma', 'Arial', 'system-ui', 'sans-serif'],
+        // Clean, minimalist typography matching the reference
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       boxShadow: {
-        // Tally uses very flat, thin-bordered UI. Retaining a sharp shadow only for modals.
-        'tally-window': '2px 2px 8px rgba(0, 0, 0, 0.25)',
+        // Minimalist soft shadows replacing hard classic windows shadows
+        'minimal': 'rgba(15, 15, 15, 0.05) 0px 0px 0px 1px, rgba(15, 15, 15, 0.1) 0px 3px 6px, rgba(15, 15, 15, 0.2) 0px 9px 24px',
       },
       keyframes: {
         // Retained functional micro-interactions
