@@ -4,11 +4,10 @@
 
 @layer base {
   html, body { @apply bg-vscode-bg text-vscode-text font-sans; overscroll-behavior: none; }
-  /* Terminal/Editor Input Resets */
-  input, textarea, select { @apply bg-[#3c3c3c] border border-transparent focus:border-vscode-accent outline-none text-vscode-text px-2 py-1 text-sm font-mono transition-colors; }
-  table { @apply w-full text-left border-collapse font-mono text-sm; }
-  th { @apply border-b border-vscode-border py-2 text-vscode-textDark font-normal; }
-  td { @apply border-b border-vscode-border/50 py-2; }
+  input, textarea, select { @apply bg-[#3c3c3c] border border-transparent focus:border-vscode-accent outline-none text-vscode-text px-3 py-1.5 text-sm font-mono transition-colors rounded-sm; }
+  table { @apply w-full text-left border-collapse font-mono text-[13px]; }
+  th { @apply border-b border-vscode-border py-2 px-2 text-vscode-textDark font-normal whitespace-nowrap; }
+  td { @apply border-b border-vscode-border/40 py-2 px-2; }
 }
 
 @layer utilities {
