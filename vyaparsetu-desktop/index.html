@@ -5,16 +5,14 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Premium Montserrat Font for heavy, geometric corporate typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- System fonts (Tahoma, Arial) will be used natively for data density -->
     
-    <title>VyaparSetu Login Portal</title>
+    <title>VyaparSetu POS</title>
   </head>
 
-  <body>
-    <div id="root"></div>
+  <!-- Setting the strict Tally background baseline -->
+  <body class="bg-tally-bg text-tally-black m-0 p-0 overflow-hidden font-sans">
+    <div id="root" class="h-screen w-screen flex flex-col"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -1,38 +1,37 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   html, body {
-    /* Strictly #141414 (bg) and #FEFFFE (text) */
-    @apply bg-brand-bg text-brand-text font-sans antialiased;
+    /* Strictly Tally Light Theme Base */
+    @apply bg-tally-bg text-tally-black font-sans antialiased;
     /* Prevents the elastic bounce effect on Mac for a native app feel */
     overscroll-behavior: none; 
   }
 }
 
-/* Custom Scrollbar using STRICTLY authorized palette */
+/* Custom Scrollbar replicating classic Windows/Tally desktop feel */
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 12px;
+    height: 12px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
-    @apply bg-brand-bg; /* #141414 */
+    @apply bg-gray-100 border-l border-gray-300; 
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-brand-border rounded-full; /* #58595A */
+    /* Classic squared Windows grey thumb */
+    @apply bg-gray-400 border border-gray-100 rounded-none; 
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-brand-primary; /* #005FA3 */
+    @apply bg-gray-500; 
   }
   
   /* Firefox Support */
   .custom-scrollbar {
     scrollbar-width: thin;
-    /* #58595A thumb, #141414 track */
-    scrollbar-color: #58595A #141414; 
+    /* gray-400 thumb, gray-100 track */
+    scrollbar-color: #9ca3af #f3f4f6; 
   }
 }
