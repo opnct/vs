@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@tauri-apps/api/core'; // TAURI v2 IMPORT
 
 export default function Inventory() {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState({ code: '', name: '', stock: '', rate: '' });
-  const [log, setLog] = useState('// Status: Engine Online');
+  const [log, setLog] = useState('// Status: Inventory Engine Online');
   const [filter, setFilter] = useState('');
 
   // S1: Initialization
@@ -31,31 +31,31 @@ export default function Inventory() {
 
   return (
     <div className="flex flex-col h-full gap-4 pb-10 font-mono text-sm">
-      {/* S5: Status & Metrics */}
+      {/* S5: Top Metrics Dashboard */}
       <div className="flex gap-4">
-        <div className="flex-1 p-3 border border-vscode-border bg-[#252526] flex justify-between">
-          <span className="text-vscode-textDark">Total Items: <span className="text-vscode-type">{items.length}</span></span>
-          <span className="text-vscode-textDark">Low Stock Alert: <span className="text-red-400">{lowStock}</span></span>
-          <span className="text-vscode-textDark">Est. Valuation: <span className="text-vscode-func">₹{totalValuation.toFixed(2)}</span></span>
+        <div className="flex-1 p-4 border border-vscode-border bg-[#252526] flex justify-between text-base">
+          <span className="text-vscode-textDark">Total Items: <span className="text-vscode-type ml-2">{items.length}</span></span>
+          <span className="text-vscode-textDark">Low Stock Alert: <span className="text-red-400 ml-2">{lowStock}</span></span>
+          <span className="text-vscode-textDark">Est. Valuation: <span className="text-vscode-func ml-2">₹{totalValuation.toFixed(2)}</span></span>
         </div>
       </div>
 
       <div className="p-4 border border-vscode-border bg-[#1e1e1e]">
         <div className="text-vscode-keyword mb-4">// Insert Inventory Item</div>
         <div className="flex gap-4">
-          <input type="text" placeholder="Barcode/Code" value={form.code} onChange={e=>setForm({...form, code: e.target.value})} className="w-32" />
+          <input type="text" placeholder="Barcode/Code" value={form.code} onChange={e=>setForm({...form, code: e.target.value})} className="w-40" />
           <input type="text" placeholder="Item Name" value={form.name} onChange={e=>setForm({...form, name: e.target.value})} className="flex-1" />
-          <input type="number" placeholder="Qty" value={form.stock} onChange={e=>setForm({...form, stock: e.target.value})} className="w-24" />
-          <input type="number" placeholder="Rate" value={form.rate} onChange={e=>setForm({...form, rate: e.target.value})} className="w-24" />
-          <button onClick={handleCreate} className="bg-vscode-accent px-4 py-1 text-white rounded hover:bg-blue-600">insert()</button>
+          <input type="number" placeholder="Qty" value={form.stock} onChange={e=>setForm({...form, stock: e.target.value})} className="w-32" />
+          <input type="number" placeholder="Rate" value={form.rate} onChange={e=>setForm({...form, rate: e.target.value})} className="w-32" />
+          <button onClick={handleCreate} className="bg-vscode-accent px-6 py-1.5 text-white rounded hover:bg-blue-600 font-bold">insert()</button>
         </div>
       </div>
       
       <div className="flex-1 flex flex-col border border-vscode-border bg-[#1e1e1e] overflow-hidden">
-        <div className="p-2 bg-[#252526] border-b border-vscode-border">
-          <input type="text" placeholder="Filter items..." value={filter} onChange={e=>setFilter(e.target.value)} className="w-full bg-[#1e1e1e]" />
+        <div className="p-3 bg-[#252526] border-b border-vscode-border">
+          <input type="text" placeholder="Filter items by name or code..." value={filter} onChange={e=>setFilter(e.target.value)} className="w-full bg-[#1e1e1e]" />
         </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
           <table>
             <thead><tr><th>item_code</th><th>name</th><th>closing_stock</th><th>rate</th><th>valuation</th></tr></thead>
             <tbody>

@@ -25,7 +25,7 @@
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tanstack/react-table": "^8.21.3",
-    "@tauri-apps/api": "^1.6.0",
+    "@tauri-apps/api": "^2.10.1",
     "better-sqlite3": "^12.8.0",
     "clsx": "^2.1.1",
     "firebase": "^12.11.0",

@@ -3,11 +3,6 @@ use serde::{Serialize, Deserialize};
 use rusqlite::params;
 use crate::db::init_db;
 
-#[derive(Serialize)]
-pub struct Ledger { pub id: String, pub name: String, pub balance: f64, pub group_name: String }
-#[derive(Serialize)]
-pub struct Item { pub id: String, pub code: String, pub name: String, pub stock: f64, pub rate: f64 }
-
 #[tauri::command]
 pub fn exec_sql(query: String) -> Result<String, String> {
     let conn = init_db().map_err(|e| e.to_string())?;
@@ -15,7 +10,6 @@ pub fn exec_sql(query: String) -> Result<String, String> {
     Ok("Executed".to_string())
 }
 
-// POWERFUL: Read ANY SQL Query directly into React JSON
 #[tauri::command]
 pub fn exec_sql_read(query: String) -> Result<Vec<serde_json::Value>, String> {
     let conn = init_db().map_err(|e| e.to_string())?;
@@ -48,15 +42,15 @@ pub fn post_pos_sale(total: f64, items: Vec<serde_json::Value>, customer_id: Opt
     let conn = init_db().map_err(|e| e.to_string())?;
     let v_id = format!("VCH-{}", chrono::Local::now().timestamp());
     
+    // 1. Sales Voucher Header
     conn.execute("INSERT INTO vouchers (id, v_type, date, total, narration) VALUES (?1, 'Sales', date('now'), ?2, 'POS Sale')", params![v_id, total]).map_err(|e| e.to_string())?;
     
-    // Debit Cash OR Customer Account
+    // 2. Double-Entry: Debit Customer/Cash & Credit Sales
     let dr_ledger = customer_id.unwrap_or_else(|| "L1".to_string());
     conn.execute("INSERT INTO voucher_entries (id, voucher_id, ledger_id, debit, credit) VALUES (?1, ?2, ?3, ?4, 0)", params![format!("{}-D", v_id), v_id, dr_ledger, total]).map_err(|e| e.to_string())?;
-    
-    // Credit Sales Account
     conn.execute("INSERT INTO voucher_entries (id, voucher_id, ledger_id, debit, credit) VALUES (?1, ?2, 'L2', 0, ?3)", params![format!("{}-C", v_id), v_id, total]).map_err(|e| e.to_string())?;
     
+    // 3. Update Inventory Stock Levels
     for item in items {
         let id: String = serde_json::from_value(item["id"].clone()).unwrap();
         let qty: f64 = serde_json::from_value(item["qty"].clone()).unwrap();

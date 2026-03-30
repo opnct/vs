@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod db;
 mod commands;
+
 fn main() {
     tauri::Builder::default()
         .setup(|_app| { db::init_db().unwrap(); Ok(()) })

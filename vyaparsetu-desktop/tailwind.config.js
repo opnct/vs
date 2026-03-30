@@ -5,18 +5,17 @@ export default {
     extend: {
       colors: {
         vscode: {
-          bg: '#1e1e1e',         // Editor background
-          sidebar: '#252526',    // Explorer background
-          activity: '#333333',   // Leftmost icon bar
-          accent: '#007acc',     // VS Code Blue highlight
-          text: '#cccccc',       // Default text
-          textDark: '#858585',   // Muted text/comments
-          string: '#ce9178',     // Syntax: string
-          keyword: '#569cd6',    // Syntax: keyword
-          func: '#dcdcaa',       // Syntax: function
-          type: '#4ec9b0',       // Syntax: type/success
-          border: '#3c3c3c',     // Editor borders
-          tabActive: '#1e1e1e',
+          bg: '#1e1e1e',         
+          sidebar: '#252526',    
+          activity: '#333333',   
+          accent: '#007acc',     
+          text: '#cccccc',       
+          textDark: '#858585',   
+          string: '#ce9178',     
+          keyword: '#569cd6',    
+          func: '#dcdcaa',       
+          type: '#4ec9b0',       
+          border: '#3c3c3c',     
           tabInactive: '#2d2d2d',
           statusBg: '#007acc',
         }
@@ -25,7 +24,7 @@ export default {
         mono: ['"Fira Code"', 'Consolas', 'monospace'],
         sans: ['Inter', 'Segoe UI', 'sans-serif'],
       }
-    },
+    }
   },
   plugins: [],
 }

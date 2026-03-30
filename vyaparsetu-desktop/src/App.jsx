@@ -22,7 +22,6 @@ const Explorer = () => {
   return (
     <div className="w-64 h-full bg-vscode-sidebar border-r border-vscode-border flex flex-col shrink-0 select-none">
       <div className="px-4 py-3 text-[11px] font-bold tracking-widest text-vscode-textDark">EXPLORER</div>
-      <div className="px-4 py-1 text-[11px] font-bold text-vscode-text flex items-center gap-1"><span className="rotate-90 text-vscode-textDark">›</span> VYAPARSETU_WORKSPACE</div>
       <div className="flex-1 overflow-y-auto mt-2">
         {files.map(f => (
           <div key={f.name} onClick={() => openFile(f.name)} className={`flex items-center gap-2 px-6 py-1 cursor-pointer text-[13px] ${activeTab === f.name ? 'bg-[#37373d] text-white' : 'text-vscode-text hover:bg-[#2a2d2e]'}`}>
@@ -44,7 +43,7 @@ export default function App() {
       case 'Chart_Of_Accounts.json': return <Ledgers />;
       case 'Inventory_Master.sql': return <Inventory />;
       case 'Financial_Reports.csv': return <Reports />;
-      default: return <div className="p-10 font-mono text-vscode-textDark">// Module initializing...</div>;
+      default: return null;
     }
   };
 
@@ -67,7 +66,7 @@ export default function App() {
         <main className="flex-1 overflow-y-auto relative custom-scrollbar p-1">{renderContent()}</main>
       </div>
       <div className="absolute bottom-0 w-full h-6 bg-vscode-statusBg text-white flex items-center px-3 text-[11px] font-sans justify-between z-50">
-        <div className="flex items-center gap-4"><Check size={12}/> Tauri v1 IPC Locked</div>
+        <div className="flex items-center gap-4"><Check size={12}/> Tauri v2 Engine Online</div>
         <div>sqlite3: workspace.db</div>
       </div>
     </div>
