@@ -7,27 +7,29 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Strict 7-Color Corporate Enterprise Palette
-        brand: {
-          primary: '#005FA3', // Active states, primary buttons, accents
-          border: '#58595A',  // Dividers, input borders, structural lines
-          bg: '#141414',      // Main application background
-          muted: '#A6B5C3',   // Secondary text, inactive icons, placeholders
-          light: '#DBE9F2',   // Hover states, subtle highlights
-          surface: '#1D1F20', // Cards, modals, floating panels
-          text: '#FEFFFE',    // Primary headings and main body text
+        // Strict Tally Prime Desktop UI Palette
+        tally: {
+          darkBlue: '#1E487C',   // Top main navbar
+          cyan: '#5793C4',       // Secondary headers / active path
+          lightBlue: '#E8F1F8',  // Right menu backgrounds & utilities
+          yellow: '#F9CB41',     // Active selection highlight
+          bg: '#E8EDF2',         // Main application background (Dashboard space)
+          white: '#FFFFFF',      // Pure white for data panels and tables
+          black: '#000000',      // Strict black for dense data text
+          border: '#A9B9C6',     // Thin grey/blue borders for classic windows
+          headerText: '#A1C8E1', // Light blue inactive text on dark blue background
         }
       },
       fontFamily: {
-        sans: ['Montserrat', 'system-ui', '-apple-system', 'sans-serif'],
+        // Tally uses classic, dense system fonts for maximum data visibility
+        sans: ['Tahoma', 'Arial', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        // Flat/minimal corporate depth (Strictly no neon glows)
-        'corporate': '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1)',
-        'corporate-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15)',
+        // Tally uses very flat, thin-bordered UI. Retaining a sharp shadow only for modals.
+        'tally-window': '2px 2px 8px rgba(0, 0, 0, 0.25)',
       },
       keyframes: {
-        // Retained smooth micro-interactions for UI responsiveness
+        // Retained functional micro-interactions
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
@@ -42,9 +44,9 @@ export default {
         }
       },
       animation: {
-        'fade-in': 'fadeIn 0.3s ease-out',
-        'scale-up': 'scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-        'slide-up-fade': 'slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        'fade-in': 'fadeIn 0.2s ease-out',
+        'scale-up': 'scaleUp 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
+        'slide-up-fade': 'slideUpFade 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
       }
     },
   },
