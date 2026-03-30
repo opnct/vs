@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store/useAppStore';
 import { Minus, Square, X, Database } from 'lucide-react';
@@ -13,7 +12,21 @@ import Vouchers from './pages/Vouchers';
 
 const TopMenu = () => {
   const { openFile } = useAppStore();
-  const appWindow = getCurrentWindow();
+  const [appWindow, setAppWindow] = useState(null);
+  const [isTauri, setIsTauri] = useState(false);
+
+  useEffect(() => {
+    // Safely check if running inside the Tauri native container
+    if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__) {
+      setIsTauri(true);
+      try {
+        setAppWindow(getCurrentWindow());
+      } catch (error) {
+        console.warn("Not running in native Tauri window environment:", error);
+      }
+    }
+  }, []);
+
   return (
     <div className="h-8 bg-np-menuBg flex items-center justify-between select-none font-sans" data-tauri-drag-region>
       <div className="flex items-center">
@@ -32,11 +45,14 @@ const TopMenu = () => {
           </div>
         </div>
       </div>
-      <div className="flex">
-        <button onClick={() => appWindow?.minimize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Minus size={14} /></button>
-        <button onClick={() => appWindow?.toggleMaximize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Square size={12} /></button>
-        <button onClick={() => appWindow?.close()} className="h-8 w-12 flex items-center justify-center hover:bg-red-500"><X size={16} /></button>
-      </div>
+      {/* Gracefully hide window controls if running in a standard web browser */}
+      {isTauri && appWindow && (
+        <div className="flex">
+          <button onClick={() => appWindow.minimize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Minus size={14} /></button>
+          <button onClick={() => appWindow.toggleMaximize()} className="h-8 w-12 flex items-center justify-center hover:bg-white/10"><Square size={12} /></button>
+          <button onClick={() => appWindow.close()} className="h-8 w-12 flex items-center justify-center hover:bg-red-500"><X size={16} /></button>
+        </div>
+      )}
     </div>
   );
 };

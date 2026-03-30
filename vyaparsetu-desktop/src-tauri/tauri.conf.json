@@ -13,5 +13,8 @@
       { "title": "VyaparSetu - Notepad", "width": 1280, "height": 800, "decorations": false }
     ],
     "security": { "csp": null }
+  },
+  "bundle": {
+    "icon": []
   }
 }
