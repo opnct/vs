@@ -1,25 +1,43 @@
-
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
 export default function Inventory() {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState({ code: '', name: '', stock: '', rate: '' });
-  const [log, setLog] = useState('Ready.');
+  const [log, setLog] = useState('Loading inventory...');
   const [filter, setFilter] = useState('');
 
-  const loadItems = () => invoke('exec_sql_read', { query: "SELECT * FROM inventory" }).then(setItems).catch(e => setLog(`ERR: ${e}`));
+  const loadItems = async () => {
+    if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__) {
+      try {
+        const result = await invoke('exec_sql_read', { query: "SELECT * FROM inventory" });
+        setItems(result);
+        setLog('Ready.');
+      } catch (e) {
+        setLog(`ERR: ${e}`);
+      }
+    } else {
+      setLog('ERR: Native engine missing. Running in standard browser.');
+    }
+  };
+
   useEffect(() => { loadItems(); }, []);
 
   const handleCreate = async () => {
     if(!form.name) return setLog('ERR: Missing Name');
+    if (typeof window === 'undefined' || !window.__TAURI_INTERNALS__) {
+      return setLog('ERR: Cannot save. Native engine missing.');
+    }
+
     try {
       const id = `ITM${Date.now()}`;
       await invoke('exec_sql', { query: `INSERT INTO inventory (id, item_code, name, stock, rate, unit) VALUES ('${id}', '${form.code}', '${form.name}', ${form.stock || 0}, ${form.rate || 0}, 'PCS')`});
       setLog(`OK: Created ${form.name}`);
       loadItems();
       setForm({ code: '', name: '', stock: '', rate: '' });
-    } catch (e) { setLog(`ERR: ${e}`); }
+    } catch (e) { 
+      setLog(`ERR: ${e}`); 
+    }
   };
 
   const lowStock = items.filter(i => i.stock <= 5).length;

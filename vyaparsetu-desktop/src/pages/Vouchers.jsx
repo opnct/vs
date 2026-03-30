@@ -1,24 +1,31 @@
-
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
 export default function Vouchers() {
   const [ledgers, setLedgers] = useState([]);
   const [form, setForm] = useState({ vType: 'Contra', dr: '', cr: '', amount: '', narration: '' });
-  const [log, setLog] = useState('Voucher Engine Ready.');
+  const [log, setLog] = useState('Loading voucher engine...');
   const [recent, setRecent] = useState([]);
 
-  // S1: Initialization
+  // S1: Initialization with Native Safety Check
   const loadData = async () => {
-    try {
-      const ls = await invoke('exec_sql_read', { query: "SELECT * FROM ledgers" });
-      setLedgers(ls);
-      if(ls.length > 0 && !form.dr) setForm(f => ({...f, dr: ls[0].id, cr: ls[0].id}));
-      
-      const rec = await invoke('exec_sql_read', { query: "SELECT v.date, v.v_type, v.total, l.name FROM vouchers v JOIN voucher_entries ve ON v.id = ve.voucher_id JOIN ledgers l ON ve.ledger_id = l.id WHERE ve.debit > 0 ORDER BY v.date DESC LIMIT 10" });
-      setRecent(rec);
-    } catch(e) { setLog(`ERR: ${e}`); }
+    if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__) {
+      try {
+        const ls = await invoke('exec_sql_read', { query: "SELECT * FROM ledgers" });
+        setLedgers(ls);
+        if(ls.length > 0 && !form.dr) setForm(f => ({...f, dr: ls[0].id, cr: ls[0].id}));
+        
+        const rec = await invoke('exec_sql_read', { query: "SELECT v.date, v.v_type, v.total, l.name FROM vouchers v JOIN voucher_entries ve ON v.id = ve.voucher_id JOIN ledgers l ON ve.ledger_id = l.id WHERE ve.debit > 0 ORDER BY v.date DESC LIMIT 10" });
+        setRecent(rec);
+        setLog('Voucher Engine Ready.');
+      } catch(e) { 
+        setLog(`ERR: ${e}`); 
+      }
+    } else {
+      setLog('ERR: Native engine missing. Running in standard browser.');
+    }
   };
+  
   useEffect(() => { loadData(); }, []);
 
   // S2: Keyboard Shortcuts
@@ -33,15 +40,19 @@ export default function Vouchers() {
     return () => window.removeEventListener('keydown', hk);
   }, []);
 
-  // S3: Post Double Entry
+  // S3: Post Double Entry with Native Safety Check
   const handlePost = async () => {
     if(!form.amount || form.dr === form.cr) return setLog('ERR: Invalid Entry. Check accounts/amount.');
+    if (typeof window === 'undefined' || !window.__TAURI_INTERNALS__) return setLog('ERR: Cannot post. Native engine missing.');
+
     try {
       const vchId = await invoke('post_double_entry', { v_type: form.vType, total: parseFloat(form.amount), dr_ledger: form.dr, cr_ledger: form.cr, narration: form.narration, items: [] });
       setLog(`OK: Voucher ${vchId} Posted.`);
       setForm({...form, amount: '', narration: ''});
       loadData();
-    } catch (e) { setLog(`ERR: ${e}`); }
+    } catch (e) { 
+      setLog(`ERR: ${e}`); 
+    }
   };
 
   return (

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -6,10 +5,16 @@ export default function Config() {
   const [log, setLog] = useState('Settings ready.');
   
   const handleBackup = async () => {
+    if (typeof window === 'undefined' || !window.__TAURI_INTERNALS__) {
+      return setLog('ERR: Cannot optimize/backup. Native engine missing.');
+    }
+
     try {
-      await invoke('exec_sql', { query: "VACUUM;" }); // Simulated DB optimize/backup command
+      await invoke('exec_sql', { query: "VACUUM;" }); // Execute real SQLite DB optimize command
       setLog('OK: Database optimized and backup snapshot created.');
-    } catch(e) { setLog(`ERR: ${e}`); }
+    } catch(e) { 
+      setLog(`ERR: ${e}`); 
+    }
   }
 
   return (

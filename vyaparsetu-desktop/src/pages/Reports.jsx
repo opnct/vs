@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core'; 
 
@@ -6,6 +5,7 @@ export default function Reports() {
   const [data, setData] = useState([]);
   const [cols, setCols] = useState([]);
   const [reportType, setReportType] = useState('DayBook');
+  const [log, setLog] = useState('Ready.');
   
   // S1: Advanced SQL Tally Reports
   const queries = {
@@ -14,14 +14,22 @@ export default function Reports() {
     'StockSummary': "SELECT item_code as Code, name as Particulars, stock as Closing_Bal, rate as Rate, (stock*rate) as Value FROM inventory"
   };
 
-  // S2: Data Execution
+  // S2: Data Execution with Native Safety Check
   useEffect(() => {
-    invoke('exec_sql_read', { query: queries[reportType] })
-      .then(res => {
-        setData(res);
-        if(res.length > 0) setCols(Object.keys(res[0]));
-        else setCols([]);
-      }).catch(console.error);
+    if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__) {
+      invoke('exec_sql_read', { query: queries[reportType] })
+        .then(res => {
+          setData(res);
+          if(res.length > 0) setCols(Object.keys(res[0]));
+          else setCols([]);
+          setLog(`OK: ${reportType} loaded successfully.`);
+        }).catch(e => {
+          console.error(e);
+          setLog(`ERR: ${e}`);
+        });
+    } else {
+      setLog('ERR: Native engine missing. Running in standard browser.');
+    }
   }, [reportType]);
 
   // S3: CSV Export
@@ -79,6 +87,7 @@ export default function Reports() {
           {getTotals()}
         </div>
       </div>
+      <div className="text-xs text-np-muted">{log}</div>
     </div>
   );
 }
