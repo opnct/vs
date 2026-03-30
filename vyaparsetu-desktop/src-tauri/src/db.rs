@@ -4,6 +4,7 @@ pub fn init_db() -> Result<Connection> {
     let conn = Connection::open("vyaparsetu_data.db")?;
     let schema = include_str!("schema.sql");
     conn.execute_batch(schema)?;
+    
     // Core Tally Ledgers & Groups Seed
     conn.execute_batch("
         INSERT OR IGNORE INTO ledger_groups (id, name, nature) VALUES 

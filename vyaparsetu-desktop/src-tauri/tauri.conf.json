@@ -1,5 +1,5 @@
 {
-  "productName": "VyaparSetu Notepad",
+  "productName": "VyaparSetu",
   "version": "0.1.0",
   "identifier": "com.vyaparsetu.notepad",
   "build": {
@@ -10,7 +10,7 @@
   },
   "app": {
     "windows": [
-      { "title": "VyaparSetu - Notepad", "width": 1280, "height": 800, "decorations": false, "transparent": true }
+      { "title": "VyaparSetu - Notepad", "width": 1280, "height": 800, "decorations": false }
     ],
     "security": { "csp": null }
   }
